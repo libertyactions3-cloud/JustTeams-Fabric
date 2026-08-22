@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
 import eu.kotori.justTeams.team.TeamPlayer;
@@ -86,12 +87,14 @@ public final class TeamHomeGui {
             if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
             TeamLocation home = team.getHome();
             if (home == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
+            if (!FeatureCostManager.charge(player, "home")) return;
             JustTeamsFabric.teleports().requestHome(player, home);
         }
 
         private void setHome(ServerPlayerEntity player) {
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null || !member.canSetHome()) { player.sendMessage(Text.literal("You do not have permission to set the team home."), true); return; }
+            if (!FeatureCostManager.charge(player, "sethome")) return;
             team.setHome(TeamLocation.fromPlayer(player));
             save();
             player.sendMessage(Text.literal("Team home set at your current location."), true);
