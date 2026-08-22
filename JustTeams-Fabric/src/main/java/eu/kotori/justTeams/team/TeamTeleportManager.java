@@ -61,13 +61,21 @@ public final class TeamTeleportManager {
     }
 
     public boolean requestHome(ServerPlayerEntity player, TeamLocation location) {
-        if (isOnCooldown(player, Type.HOME)) return false;
+        if (checkHomeCooldown(player)) return false;
         return startWarmup(player, location, Type.HOME, JustTeamsFabric.config().getHomeWarmupSeconds());
     }
 
     public boolean requestWarp(ServerPlayerEntity player, TeamLocation location) {
-        if (isOnCooldown(player, Type.WARP)) return false;
+        if (checkWarpCooldown(player)) return false;
         return startWarmup(player, location, Type.WARP, JustTeamsFabric.config().getWarpWarmupSeconds());
+    }
+
+    public boolean checkHomeCooldown(ServerPlayerEntity player) {
+        return isOnCooldown(player, Type.HOME);
+    }
+
+    public boolean checkWarpCooldown(ServerPlayerEntity player) {
+        return isOnCooldown(player, Type.WARP);
     }
 
     private boolean startWarmup(ServerPlayerEntity player, TeamLocation location, Type type, int warmupSeconds) {
