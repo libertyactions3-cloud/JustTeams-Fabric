@@ -98,15 +98,15 @@ public final class TeamWarpManagementGui {
             switch (slotIndex) {
                 case 20 -> { warp.setEnabled(!warp.isEnabled()); save(); refresh(serverPlayer); }
                 case 22 -> { warp.setMembersCanUse(!warp.isMembersCanUse()); save(); refresh(serverPlayer); }
-                case 24 -> TeamStringInputGui.open(serverPlayer, "Warp Cost", "Enter cost (0 for free)", value -> {
+                case 24 -> TeamStringInputGui.open(serverPlayer, "Warp Cost", "Enter whole-number cost (0 for free)", value -> {
                     try {
                         double cost = Double.parseDouble(value);
-                        if (!Double.isFinite(cost) || cost < 0.0D) throw new NumberFormatException();
+                        if (!Double.isFinite(cost) || cost < 0.0D || cost != Math.rint(cost)) throw new NumberFormatException();
                         warp.setCost(cost);
                         save();
                         open(serverPlayer, team, warp);
                     } catch (NumberFormatException exception) {
-                        serverPlayer.sendMessage(Text.literal("Enter a non-negative number."), true);
+                        serverPlayer.sendMessage(Text.literal("Enter a non-negative whole number."), true);
                         open(serverPlayer, team, warp);
                     }
                 }, () -> open(serverPlayer, team, warp));
