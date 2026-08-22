@@ -2,6 +2,7 @@ package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.economy.EconomyTransactionResult;
+import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
 import eu.kotori.justTeams.team.TeamPlayer;
@@ -72,6 +73,7 @@ public final class TeamWarpGui {
     }
 
     private static void createWarp(ServerPlayerEntity player, Team team, String name, String password) {
+        if (!FeatureCostManager.charge(player, "setwarp")) return;
         var world = player.getEntityWorld();
         TeamWarp warp = new TeamWarp(name, player.getUuid(), world.getRegistryKey().getValue().toString(),
                 player.getX(), player.getY(), player.getZ(), player.getYaw(), player.getPitch());
