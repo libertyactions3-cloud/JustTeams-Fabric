@@ -1,20 +1,147 @@
-# JustTeams-Fabric Project Status
+# CONTINUATION / HANDOFF PROTOCOL — READ THIS FIRST
 
-## Purpose
+> **Purpose:** This section is the operational handoff for any new ChatGPT conversation continuing the JustTeams-Fabric project. Read this entire section **before searching, editing, auditing, or claiming progress**. The project below is a Fabric recreation/port whose goal is behaviorally informed parity with the actual JustTeams 2.5.3 reference—not merely a project that compiles.
 
-Persistent implementation checklist, completed-work ledger, investigation notebook, and resume point for the Fabric recreation of JustTeams 2.5.3.
+## 1. Canonical project and repositories
 
-## Working rules
+### Fabric implementation — canonical target
 
-1. The canonical repository is `libertyactions3-cloud/JustTeams-Fabric`; work is being performed on its `main` branch. Do not use the old `libertyactions3-cloud/test` repository/branch.
-2. Consult this file before beginning a feature so completed work is not repeated.
-3. Compare the Fabric implementation against the actual justTeams 2.5.3 source before declaring parity.
-4. Establish reference behavior first; only then translate it to the pinned Fabric/Yarn API.
-5. Do not mark a feature replicated merely because it compiles.
-6. Record deliberate deviations explicitly.
-7. The user has requested **no clean build until Round 10**.
+- Repository: `libertyactions3-cloud/JustTeams-Fabric`
+- Branch: `main`
+- Project directory inside repository: `JustTeams-Fabric/`
+- Primary continuation/status file: `JustTeams-Fabric/PROJECT_STATUS.md`
 
-## Version constraints
+Do **not** accidentally continue work in the old `libertyactions3-cloud/test` repository. That repository/branch was used earlier during development and investigation; it is not the canonical target now.
+
+### Paper reference implementation
+
+The behavioral reference is **justTeams 2.5.3**, previously examined from:
+
+- `libertyactions3-cloud/two-test/tree/main/justTeams-2.5.3`
+
+Use the actual reference source to establish behavior whenever parity is being investigated. Do not infer reference behavior from permission names, assumptions, or similarly named APIs.
+
+---
+
+# 2. User collaboration protocol — IMPORTANT
+
+The user is an active research partner. Preserve this workflow.
+
+## Ask the user when research would materially unblock or improve the work
+
+The user explicitly wants the assistant to say what it is looking for and ask for help when functionality references, source searches, exact API information, or other information would help.
+
+When appropriate, explain in this form:
+
+```text
+What I am trying to determine:
+...
+
+Why it matters:
+...
+
+What exact search/reference would help:
+...
+
+What I can continue doing without that information:
+...
+```
+
+Do **not** pretend to know something that has not been verified. Do not silently substitute a weak guess for an exact reference if the user can help retrieve the missing information.
+
+## Repository-wide search protocol
+
+The user specifically said:
+
+> Ask me whenever you need to search repository-wide.
+
+This is especially important when GitHub connector code search is unavailable or reports:
+
+```text
+is_code_search_indexed: false
+```
+
+When true repository-wide enumeration is needed, ask the user for the exact search instead of claiming that individual-file inspection proves repository-wide absence.
+
+However, do **not** unnecessarily ask the user to perform work that the available GitHub connector can do directly. First use efficient direct inspection of known files/paths and the available connector capabilities.
+
+### Critical distinction
+
+- **Exact search returning no result:** only proves no result for that exact search/scope.
+- **Repository-wide indexed search:** may support a broader absence claim if the index and scope are valid.
+- **Individual known-file inspection:** does not prove repository-wide absence.
+
+Never blur these categories.
+
+---
+
+# 3. Core development philosophy
+
+The required comparison chain is:
+
+```text
+actual 2.5.3 feature entry point
+        ↓
+authorization / permission context
+        ↓
+state mutation
+        ↓
+gameplay / rendering mechanism
+        ↓
+affected players
+        ↓
+lifecycle and cleanup
+        ↓
+persistence / synchronization
+        ↓
+edge cases
+```
+
+A feature is **not** considered replicated merely because:
+
+- a permission constant exists;
+- a similarly named method exists;
+- a GUI button exists;
+- the project compiles;
+- the state can be changed but side effects/lifecycle behavior differ.
+
+Trace the real call chain.
+
+## Use resemblance and call-chain searching
+
+The reference implementation may use terminology different from the expected name. Search by:
+
+- method behavior;
+- nearby `hasPermission(...)` or elevated-permission checks;
+- callers and callees;
+- state mutations;
+- persistence calls;
+- lifecycle methods;
+- related GUI actions;
+- command literals;
+- data structures.
+
+Do not conclude that a feature is absent merely because searching for one guessed name returns zero results.
+
+---
+
+# 4. Verification hierarchy
+
+Use this order of confidence:
+
+1. **Actual source code and exact call chain**
+2. **Pinned Yarn/Fabric API documentation matching the project's exact versions**
+3. **Existing project code already using the relevant API**
+4. **Trusted official documentation**
+5. **Reasoned inference, clearly labeled as inference**
+
+Never present level 5 as level 1.
+
+When working with Minecraft APIs, verify against the pinned versions below rather than using remembered APIs from older versions.
+
+---
+
+# 5. Version constraints
 
 - Minecraft: `1.21.11`
 - Yarn mappings: `1.21.11+build.4`
@@ -22,194 +149,352 @@ Persistent implementation checklist, completed-work ledger, investigation notebo
 - Fabric API: `0.141.4+1.21.11`
 - Fabric Loom observed during builds: `1.15.5`
 
-Verify API calls against these pinned versions before committing implementation code.
+Known packet/API work for the viewer-specific glow implementation was based on exact Yarn 1.21.11+build.4 names, including:
 
-## Build cadence
+```text
+EntityTrackerUpdateS2CPacket
+TeamS2CPacket
+DataTracker.SerializedEntry<?>
+ServerPlayerEntity.networkHandler.sendPacket(...)
+```
 
-Work proceeds through **10 repository/activity rounds**, followed by the user's clean build:
+Do not downgrade these APIs to older mapping names without verification.
+
+---
+
+# 6. Build and testing protocol
+
+The user builds locally in PowerShell using:
 
 ```powershell
 ./gradlew clean build --refresh-dependencies
 ```
 
-**Do not run that clean build before Round 10.**
+A successful build proves compilation/remapping success. It does **not** by itself prove behavioral parity.
 
-Latest previously recorded successful user build checkpoint:
+## Most recent known user build
 
-- `BUILD SUCCESSFUL`
-- Fabric Loom `1.15.5`
-- 8 actionable tasks executed
-- approximately 2m 52s
-
-## Completed infrastructure requiring audit, not recreation
-
-- Core Fabric project setup and pinned dependency compatibility.
-- Team creation, membership, ownership/co-owner state, persistence.
-- Invites and join requests.
-- Team chat and chat-spy infrastructure.
-- Friendly-fire/PvP state and event handling.
-- Team home and warps.
-- Item-backed team bank with configured currency items.
-- LuckPerms-aware permission service with fallback behavior.
-- Team GUI/settings GUI infrastructure.
-- Persisted team glow state and Round 7 glow implementation/lifecycle work.
-
-These areas still receive the final feature-parity audit before release.
-
-## Reference investigation method
-
-For each reference feature:
+After the GUI kick lifecycle cleanup fix, the user reported:
 
 ```text
-command/UI
-  -> authorization
-  -> state mutation
-  -> gameplay/rendering mechanism
-  -> affected players
-  -> lifecycle/cleanup
-  -> persistence
+BUILD SUCCESSFUL in 1m 58s
+Fabric Loom: 1.15.5
+8 actionable tasks: 8 executed
 ```
 
-Use call-chain and resemblance searches rather than relying only on exact class names or permission names. Verify permission context broadly before inventing a Fabric permission node.
+Therefore the current code state at that checkpoint compiled successfully.
 
-## Round history
+Do not ask for another clean build until a meaningful subsequent code change requires verification, unless the current round/testing plan explicitly requires it.
 
-### Rounds 1–6
+---
 
-Established the project ledger, verified persisted glow state, traced `/team glow` authorization, and established that the reference does not use a dedicated `justteams.command.glow` check in the command handler.
+# 7. The 10-round workflow
 
-### Round 7 — Team Glow — COMPLETE
+The user and assistant adopted a structured **10-round** workflow.
 
-The Fabric branch now contains the glow state, command integration, refresh mechanism, team-role coloring, and membership/lifecycle cleanup established during the Round 7 work.
+Each round should generally follow:
 
-Runtime verification remains part of the final testing pass, but Round 7 implementation work is complete. Do not restart the glow investigation unless a specific parity defect is found.
+```text
+1. State the investigation target.
+2. Establish the reference behavior.
+3. Inspect the current Fabric implementation.
+4. Identify only concrete discrepancies.
+5. Implement the smallest verified correction.
+6. Preserve existing working behavior.
+7. Record the result and reasoning in this status file.
+8. Build/test when appropriate.
+9. Move to the next round only when the current target is adequately resolved or explicitly recorded as an exception/unresolved dependency.
+```
 
-### Round 8 — Team Ender Chest — COMPLETE (with recorded deliberate exceptions)
+Do not restart completed investigations without a concrete new parity defect.
 
-#### Reference behavior verified against actual justTeams 2.5.3 source
+Do not use rounds as permission to invent work merely to fill ten rounds. A round should be evidence-driven.
 
-- `/team enderchest` and `/team ec` open a shared team-owned inventory.
-- Access checks the Ender Chest feature, team membership, `canUseEnderChest`, and the `justteams.bypass.enderchest.use` bypass.
-- The inventory is persistent and belongs to the team, not an individual player.
-- The inventory is created at `configManager.getEnderChestRows() * 9` slots; the reference default is `team_enderchest.rows = 3`.
-- Multiple members can open the same inventory simultaneously.
-- Viewers are tracked and the inventory is saved/released after the final viewer closes.
-- Inventory mutations are saved through the shared chest lifecycle.
-- Single-server and cross-server modes use locking; cross-server mode additionally uses database locks and synchronization.
+---
 
-#### Fabric implementation established
+# 8. Current known progress and important completed fixes
 
-- `TeamEnderChest` is one shared `SimpleInventory` owned by a `Team` while loaded.
-- Every Ender Chest screen handler uses that same inventory instance, preserving simultaneous-viewer behavior.
-- The implementation uses the pinned 1.21.11 `ItemStack.CODEC` with NBT operations for occupied-slot persistence instead of Bukkit object streams.
-- Ender Chest state is persisted by `TeamStorage` and restored into the current configured size.
-- `enderchest.enabled` defaults to `true`; `enderchest.rows` defaults to `3` and is constrained to vanilla generic-container sizes of 1–6 rows.
-- Opening checks membership, `canUseEnderChest`, and `justteams.bypass.enderchest.use`.
-- `/team enderchest` and `/team ec` are integrated with `justteams.command.enderchest`.
-- Normal close, disconnect, kick, leave, and disband paths clean up viewer registrations while preserving save-before-team-removal ordering.
+## Membership system
 
-#### Configured-row-count edge case — reference check complete
+The Fabric branch has a central membership mutation system:
 
-The actual 2.5.3 `InventoryUtil.deserializeInventory()` reads the saved inventory size and then calls `inventory.setItem(i, item)` for every saved slot without checking whether that slot exists in the newly created inventory. The inventory itself is created first from the *current* configured row count.
+```text
+TeamManager.addMember(...)
+TeamManager.removeMember(...)
+```
 
-Therefore the reference does **not** perform a compatibility resize/migration when the configured row count is reduced. A saved slot beyond the newly created inventory's bounds is not explicitly handled by the reference deserializer.
+Membership mutations maintain both team membership and the UUID → team index.
 
-The Fabric implementation explicitly bounds restored slots to the current inventory size. This prevents an out-of-range restore failure but can omit items stored in slots that no longer exist after a downward row-count change. Record this as a **deliberate compatibility hardening/deviation**, not as unverified parity.
+Two verified membership entry paths include:
 
-#### Remaining deliberate exceptions
+```text
+/team invite
+    → Team.addInvite(...)
+    → /team accept
+    → TeamManager.addMember(...)
+```
 
-1. **Cross-server locking and Redis synchronization:** Paper 2.5.3 supports database-backed Ender Chest locks and cross-server synchronization. The Fabric port currently has no corresponding database/Redis infrastructure.
-2. **Bukkit serialization format:** Fabric uses Minecraft-native `ItemStack.CODEC` persistence and cannot read/write the Bukkit `BukkitObjectOutputStream`/Base64 format.
-3. **Downward row-count change handling:** Fabric safely ignores saved slots outside the newly configured inventory instead of relying on the reference's unchecked `Inventory#setItem` path.
-4. **Reference messages/effects:** The Paper implementation sends message-manager messages and success/error sounds at several Ender Chest lifecycle points. Fabric currently uses its existing direct-text infrastructure and does not yet have the full 2.5.3 MessageManager/EffectsUtil system; this broader infrastructure gap remains for the later parity pass rather than being silently counted as Ender Chest message parity.
+and:
 
-No clean build has been run; compilation verification remains reserved for Round 10 as requested.
+```text
+/team join
+    → Team.addJoinRequest(...)
+    → /team requests GUI
+    → approve(...)
+    → TeamManager.addMember(...)
+```
 
-## Permission parity — ACTIVE
+## Glow — Round 7 implementation work
 
-The canonical permission class contains the Ender Chest command and bypass nodes, but every feature must still be audited to verify that handlers actually enforce the same semantics as 2.5.3.
+Viewer-specific glow is implemented using Fabric/Minecraft packets rather than globally changing entity glow for all viewers.
 
-Do not infer parity from a constant's existence alone.
+Architecture conceptually:
 
-## Round 9 — Compatibility / parity / edge-case pass — ACTIVE
+```text
+team glow state
+    ↓
+GlowManager refresh
+    ↓
+receiver-specific TeamS2CPacket + entity metadata glowing state
+    ↓
+receiver sees target glowing with team/role color
+```
 
-### Round 9 audit: GUI membership lifecycle cleanup
+Known characteristics:
 
-The actual 2.5.3 source audit identified a cleanup consistency issue around GUI-driven member removal/disbanding: the command leave/disband paths explicitly disable team chat and stop glow, while the GUI leave/disband path did not. The reference call-chain evidence records the command cleanup as `TeamChatManager.disable(...)` + `GlowManager.stopGlowForPlayer(...)` before membership/team removal. The GUI paths were missing those cleanup calls.
+- viewer-specific cache;
+- packet-only/fake glow teams;
+- configured team glow color with role-color fallback;
+- refresh handling around player lifecycle;
+- join/respawn/world-change refresh work;
+- membership cleanup integration.
 
-The canonical Fabric `TeamGuiManager.leaveOrDisband()` was verified to have the same gap: its non-owner leave path removed the member and saved, but did not disable team chat or stop glow; its owner disband path unregistered and saved without clearing those per-member runtime states.
+Do not restart the entire glow implementation. Audit only concrete parity defects.
 
-**Fixed in Round 9:**
+## Join-request approval lifecycle
 
-- GUI leave now disables the leaving player's team-chat mode and stops that player's glow before membership removal.
-- GUI disband now disables team-chat mode and stops glow for every team member before unregistering the team.
-- The existing Ender Chest viewer/release cleanup remains before membership/team removal.
+A prior lifecycle audit identified that join-request approval needed to refresh glow after membership was actually added. That fix was completed and successfully compiled in subsequent builds.
 
-Commit: `5a3c41a4438895ee8929aa9233c43dc0d652e1eb` — `Round 9: fix GUI leave/disband lifecycle cleanup`
+## GUI kick lifecycle cleanup
 
-The implementation uses existing verified project methods (`TeamChatManager.disable`, `GlowManager.stopGlowForPlayer`, `TeamManager.removeMember`, and `TeamManager.unregister`) rather than introducing new lifecycle APIs.
+A concrete inconsistency was found:
 
-### Round 9 audit: command surface vs permission ledger — CORRECTED / ACTIVE
+- command leave/disband paths performed runtime cleanup;
+- the GUI kick path originally removed membership without equivalent cleanup.
 
-The earlier audit treated every permission constant absent from the Fabric `TeamCommand.register()` method as a possible missing command. That was too broad. The reference source must be considered separately from the Fabric permission ledger.
+The GUI kick path was fixed to:
 
-The canonical Fabric permission class deliberately mirrors the Paper permission nodes and therefore contains nodes that are **not necessarily commands actually registered by the 2.5.3 command dispatcher**. The permission class currently includes `COMMAND_KICK`, `COMMAND_TRANSFER`, `COMMAND_SETTAG`, `COMMAND_SETDESCRIPTION`, `COMMAND_PROMOTE`, `COMMAND_DEMOTE`, `COMMAND_TOP`, `COMMAND_TEAMMSG`, `COMMAND_PUBLIC`, and `COMMAND_BANK`. fileciteturn292file0
+```text
+1. disable target team-chat mode
+2. remove/stop target viewer-specific glow relationships
+3. remove target from TeamManager
+4. persist state
+```
 
-#### Verified reference findings
+Commit recorded during this work:
 
-- **`kick`: not a missing `/team kick` command.** The actual 2.5.3 `eu.kotori.justTeams` command system has no direct `/team kick` registration. The `COMMAND_KICK` permission node exists, but the actual kick implementation is GUI-based in `MemberManagementGui`. Its verified cleanup calls disable team chat, stop glow, and remove the member. fileciteturn302file8
-- **`transfer`: not currently evidenced as an implemented reference command.** The reference `Team.setOwnerUuid(UUID)` setter exists, but the source audit found no caller that performs a proper ownership transfer. Therefore the setter exists while an ownership-transfer implementation is absent. Do **not** invent `/team transfer` merely because the Fabric permission constant exists. fileciteturn303file4
-- **`settag`, `setdescription`, and `public`: the Fabric side already has team-setting state and GUI behavior for these operations.** `Team` contains verified setters for tag, description, and public state, and `TeamSettingsGui` already exposes those three settings to elevated team members. This establishes existing Fabric state/UI support, but does not by itself establish that 2.5.3 has command registrations for them. fileciteturn297file0 fileciteturn299file0
-- **`promote`, `demote`, `top`, `teammsg`, and `bank`: remain unresolved.** The permission constants exist, but the evidence currently retrieved does not establish their actual 2.5.3 command registration/call-chain. They remain audit targets, not implementation targets.
+```text
+633e499869b85d2a4c1c6338057cde0dcce92a95
+```
 
-#### Important conclusion
+The user subsequently ran a successful clean Gradle build after this fix.
 
-The correct question is **not**:
+## GUI leave/disband lifecycle cleanup
 
-> “Which permission constants aren't in `TeamCommand`?”
+The status history also records a canonical-repository fix for GUI leave/disband runtime cleanup:
 
-It is:
+```text
+5a3c41a4438895ee8929aa9233c43dc0d652e1eb
+Round 9: fix GUI leave/disband lifecycle cleanup
+```
 
-> “Which actual 2.5.3 user-facing commands/features are missing from the Fabric port, and which permission nodes merely exist in the reference permission ledger without a corresponding command?”
+The intended cleanup parity is:
 
-This distinction prevents adding commands that the reference never exposed.
+```text
+team chat cleanup
++ viewer-specific glow cleanup
++ Ender Chest viewer/release cleanup where applicable
+before membership/team removal
+```
 
-#### Current Fabric command surface
+Before changing this area again, inspect the **current canonical repository file**, not stale conversation snippets.
 
-`TeamCommand.register()` currently exposes the verified Fabric command paths for create, GUI, info, leave, disband, pvp, glow, Ender Chest/ec, home, warp, invite, accept, deny, join, unjoin, requests, and chat. fileciteturn295file0
+## Team Ender Chest
 
-No command should be added solely because a corresponding permission constant exists.
+The status history records an implemented shared Ender Chest system with deliberate exceptions concerning:
 
-### Remaining Round 9 audit targets
+- cross-server database/Redis locking and synchronization;
+- Bukkit serialization compatibility;
+- downward configured-row-count restoration behavior;
+- full Paper message/effects infrastructure.
 
-Continue repository-wide comparison of:
+Treat those as documented deliberate architectural differences unless new requirements change the scope.
 
-- actual 2.5.3 command registration and aliases
-- permissions and bypasses
-- state transitions
-- messages/effects where applicable
-- GUI actions
-- lifecycle behavior
-- persistence
-- edge cases
+---
 
-Resolve only verified discrepancies and record deliberate exceptions.
+# 9. Current feature-parity mindset
 
-## Round 10 — Final integration and acceptance
+Do not treat the following as automatically missing merely because they are not direct `/team` commands:
 
-- Finish all remaining fixes.
-- Remove dead code and unjustified placeholders.
-- Document deliberate deviations.
-- Perform the final clean Gradle build only now.
-- Use the build result as compilation verification, not as the sole parity criterion.
-- Produce the final acceptance classification for every reference capability:
-  - **Replicated**
-  - **Deliberate exception**
-  - **Not applicable**
-  - **Still missing**
+- kick;
+- promote/demote;
+- tag/description/public controls;
+- other GUI-driven features.
 
-## Current resume point
+First determine whether 2.5.3 itself exposes a command or implements the feature through GUI.
 
-**Round 9 is active. The GUI leave/disband lifecycle discrepancy has been fixed. The next active audit is the actual 2.5.3 command registration/call-chain comparison, with permission constants treated only as evidence—not as proof that a command exists.**
+Likewise, **permission constants are evidence, not proof of command existence**.
 
-Do not clean-build yet.
+The current permission audit established this important correction:
+
+```text
+Wrong question:
+"Which permission constants aren't registered as Fabric commands?"
+
+Correct question:
+"Which actual 2.5.3 user-facing capabilities and call chains are missing or behaviorally different in Fabric?"
+```
+
+Known example:
+
+- `COMMAND_KICK` exists as a permission node, but the reference kick implementation is GUI-based rather than proof that `/team kick` must exist.
+- `Team.setOwnerUuid(...)` existing does not prove a complete ownership-transfer feature exists.
+
+Do not invent commands solely from permission names.
+
+---
+
+# 10. Current resume point
+
+The latest active work was a lifecycle/parity audit focused on **member removal paths**.
+
+The next useful continuation target is:
+
+```text
+Enumerate and audit all actual member-removal/team-removal paths that can be reliably established:
+
+- command leave
+- command disband
+- GUI leave
+- GUI disband
+- GUI kick
+- any other verified removal path
+
+For each path compare:
+
+team-chat cleanup
+viewer-specific glow cleanup
+Ender Chest viewer/lock cleanup
+membership/index mutation
+team unregistering where applicable
+persistence ordering
+notifications/effects where relevant
+```
+
+### Important limitation at the last stop
+
+The GitHub connector previously reported repository code search as unavailable/unindexed:
+
+```text
+is_code_search_indexed: false
+```
+
+Therefore a new chat must **not claim that every removal path has been audited repository-wide** unless:
+
+1. the index has become usable and a valid repository-wide search is performed, or
+2. the user provides repository-wide search results, or
+3. all relevant paths can otherwise be enumerated from a verified command/GUI/lifecycle call graph.
+
+If true repository-wide search is necessary, ask the user as requested.
+
+---
+
+# 11. Status-file maintenance protocol
+
+This file is not merely a changelog. It is the continuation memory for future chats.
+
+After meaningful work, update it with:
+
+- what was investigated;
+- exact reference behavior established;
+- Fabric behavior established;
+- discrepancy found;
+- fix made;
+- commit, if available;
+- build/test result;
+- deliberate exceptions;
+- unresolved blockers;
+- exact next resume point.
+
+Also record **useful investigation approaches** when they may prevent future repeated work, especially:
+
+- successful resemblance-search strategies;
+- terminology differences between Paper and Fabric;
+- why a guessed search failed;
+- where the actual state mutation was found.
+
+Do not overwrite older history blindly. Correct stale conclusions explicitly.
+
+---
+
+# 12. Communication requirements
+
+The user values clear, cooperative communication. Preserve these habits:
+
+- Say what you are currently looking for.
+- Explain what the thing is intended to do and why it matters.
+- Ask for functionality references/search help when genuinely useful.
+- Do not hide uncertainty.
+- Do not claim repository-wide absence from a narrow search.
+- Prefer efficient methods; do not intentionally switch to inferior/manual approaches when a reliable connector method exists.
+- When the user helps resolve a difficult research/API problem, incorporate the verified result into the status notes so it is not rediscovered unnecessarily.
+- Before asking the user to build, explain exactly what changed and what the build is expected to verify.
+
+A useful communication pattern is:
+
+```text
+What I verified:
+...
+
+What remains uncertain:
+...
+
+What I am checking next:
+...
+
+What I need from you, if anything:
+...
+```
+
+---
+
+# 13. Rules for the next chat — short checklist
+
+Before continuing:
+
+```text
+[ ] Read this handoff section.
+[ ] Read the remaining PROJECT_STATUS history below it.
+[ ] Inspect the current canonical repository state.
+[ ] Do not assume old commits/snippets still match current files.
+[ ] State the current investigation target.
+[ ] Establish reference behavior before changing Fabric behavior.
+[ ] Use exact pinned 1.21.11/Yarn build.4 APIs.
+[ ] Ask the user when repository-wide search is required.
+[ ] Do not infer features from permission constants alone.
+[ ] Update this file after meaningful progress.
+[ ] Build only when appropriate for the current change/test checkpoint.
+```
+
+---
+
+# 14. Handoff instruction
+
+If this project is opened in a new chat, the new assistant should begin from the **Current resume point** above, inspect the current repository state, and then continue the lifecycle/parity audit rather than restarting old rounds or reimplementing already-completed glow, membership, or Ender Chest work.
+
+The next assistant should preserve the collaborative workflow with the user and explicitly ask for repository-wide search or external reference help when those capabilities are genuinely needed.
+
+---
+
+# Historical project status
+
