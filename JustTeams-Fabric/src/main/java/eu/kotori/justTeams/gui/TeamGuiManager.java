@@ -1,8 +1,10 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.chat.TeamChatManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
+import eu.kotori.justTeams.team.TeamPlayer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -55,10 +57,20 @@ public final class TeamGuiManager {
             else TeamEnderChestGui.closeViewer(serverPlayer.getEntityWorld().getServer(), team, player.getUuid());
         }
         if (team.isOwner(player.getUuid())) {
+            for (TeamPlayer member : team.getMembers()) {
+                TeamChatManager.disable(member.getPlayerUuid());
+                if (player instanceof ServerPlayerEntity serverPlayer) {
+                    JustTeamsFabric.glow().stopGlowForPlayer(serverPlayer.getEntityWorld().getServer(), member.getPlayerUuid());
+                }
+            }
             JustTeamsFabric.teams().unregister(team);
             save(); close(player);
             player.sendMessage(Text.literal("Team disbanded."), false);
         } else {
+            TeamChatManager.disable(player.getUuid());
+            if (player instanceof ServerPlayerEntity serverPlayer) {
+                JustTeamsFabric.glow().stopGlowForPlayer(serverPlayer.getEntityWorld().getServer(), player.getUuid());
+            }
             JustTeamsFabric.teams().removeMember(team, player.getUuid());
             save(); close(player);
             player.sendMessage(Text.literal("You left the team."), false);
