@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamEnderChest;
@@ -34,6 +35,7 @@ public final class TeamEnderChestGui {
             player.sendMessage(Text.literal("You do not have permission to use the team Ender Chest."), true);
             return;
         }
+        if (!FeatureCostManager.charge(serverPlayer, "enderchest")) return;
 
         TeamEnderChest enderChest = team.getEnderChest();
         if (enderChest == null) {
