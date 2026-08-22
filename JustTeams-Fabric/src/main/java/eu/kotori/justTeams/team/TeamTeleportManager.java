@@ -28,6 +28,7 @@ public final class TeamTeleportManager {
     private static final class Warmup {
         private final Type type;
         private final UUID playerUuid;
+        private final ServerWorld startWorld;
         private final ServerWorld targetWorld;
         private final TeamLocation location;
         private final double startX;
@@ -39,6 +40,7 @@ public final class TeamTeleportManager {
         private Warmup(Type type, ServerPlayerEntity player, ServerWorld targetWorld, TeamLocation location, int remainingSeconds) {
             this.type = type;
             this.playerUuid = player.getUuid();
+            this.startWorld = player.getEntityWorld();
             this.targetWorld = targetWorld;
             this.location = location;
             this.startX = player.getX();
@@ -75,12 +77,13 @@ public final class TeamTeleportManager {
         ServerWorld targetWorld = resolveWorld(player, location);
         if (targetWorld == null) return false;
 
+        Warmup warmup = new Warmup(type, player, targetWorld, location, warmupSeconds);
         if (warmupSeconds <= 0) {
-            finishWarmup(player, new Warmup(type, player, targetWorld, location, 0));
+            finishWarmup(player, warmup);
             return true;
         }
 
-        warmups.put(player.getUuid(), new Warmup(type, player, targetWorld, location, warmupSeconds));
+        warmups.put(player.getUuid(), warmup);
         return true;
     }
 
@@ -97,7 +100,7 @@ public final class TeamTeleportManager {
                 continue;
             }
 
-            if (player.getEntityWorld() != warmup.targetWorld
+            if (player.getEntityWorld() != warmup.startWorld
                     || player.squaredDistanceTo(warmup.startX, warmup.startY, warmup.startZ) > 1.0D) {
                 cancelWarmup(player, iterator);
                 continue;
@@ -125,7 +128,7 @@ public final class TeamTeleportManager {
     }
 
     private void finishWarmup(ServerPlayerEntity player, Warmup warmup) {
-        if (!player.isAlive() || player.getEntityWorld() != warmup.targetWorld) return;
+        if (!player.isAlive() || player.getEntityWorld() != warmup.startWorld) return;
 
         player.teleport(
                 warmup.targetWorld,
@@ -138,7 +141,9 @@ public final class TeamTeleportManager {
                 true);
 
         player.sendMessage(Text.literal("You have been successfully teleported to your team home."), true);
-        player.playSoundToPlayer(SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0F, 1.0F);
+        if (JustTeamsFabric.config().isSoundsEnabled()) {
+            player.playSoundToPlayer(SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0F, 1.0F);
+        }
         spawnSuccessParticles(player);
         setCooldown(player, warmup.type);
     }
