@@ -19,19 +19,12 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.world.World;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /** Server-side Team Warps inventory GUI. */
@@ -78,7 +71,7 @@ public final class TeamWarpGui {
     }
 
     private static void createWarp(ServerPlayerEntity player, Team team, String name, String password) {
-        ServerWorld world = player.getEntityWorld();
+        var world = player.getEntityWorld();
         TeamWarp warp = new TeamWarp(name, player.getUuid(), world.getRegistryKey().getValue().toString(),
                 player.getX(), player.getY(), player.getZ(), player.getYaw(), player.getPitch());
         warp.setPassword(password);
@@ -201,7 +194,7 @@ public final class TeamWarpGui {
                         open(player, team);
                         return;
                     }
-                    teleport(player, new TeamLocation(warp.getWorld(), warp.getX(), warp.getY(), warp.getZ(), warp.getYaw(), warp.getPitch()));
+                    requestTeleport(player, warp);
                 }, () -> open(player, team));
                 return;
             }
@@ -209,18 +202,12 @@ public final class TeamWarpGui {
                 player.sendMessage(Text.literal("That warp costs " + formatCost(warp.getCost()) + ". Payment is not configured yet."), true);
                 return;
             }
-            teleport(player, new TeamLocation(warp.getWorld(), warp.getX(), warp.getY(), warp.getZ(), warp.getYaw(), warp.getPitch()));
+            requestTeleport(player, warp);
         }
 
-        private void teleport(ServerPlayerEntity player, TeamLocation location) {
-            Identifier identifier = Identifier.tryParse(location.getDimension());
-            if (identifier == null) { player.sendMessage(Text.literal("The saved warp has an invalid dimension."), true); return; }
-            RegistryKey<World> key = RegistryKey.of(RegistryKeys.WORLD, identifier);
-            MinecraftServer server = player.getEntityWorld().getServer();
-            ServerWorld world = server.getWorld(key);
-            if (world == null) { player.sendMessage(Text.literal("The saved warp's dimension is not available."), true); return; }
-            player.teleport(world, location.getX(), location.getY(), location.getZ(), Set.of(), location.getYaw(), location.getPitch(), true);
-            player.sendMessage(Text.literal("Teleported to team warp."), true);
+        private void requestTeleport(ServerPlayerEntity player, TeamWarp warp) {
+            JustTeamsFabric.teleports().requestWarp(player,
+                    new TeamLocation(warp.getWorld(), warp.getX(), warp.getY(), warp.getZ(), warp.getYaw(), warp.getPitch()));
         }
 
         private static String formatCost(double cost) {
