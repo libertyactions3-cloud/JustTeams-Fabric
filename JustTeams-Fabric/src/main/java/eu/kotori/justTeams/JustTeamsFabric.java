@@ -3,6 +3,8 @@ package eu.kotori.justTeams;
 import eu.kotori.justTeams.chat.TeamChatEvents;
 import eu.kotori.justTeams.commands.TeamCommand;
 import eu.kotori.justTeams.config.JustTeamsConfig;
+import eu.kotori.justTeams.economy.EconomyProvider;
+import eu.kotori.justTeams.economy.ItemEconomyProvider;
 import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.LuckPermsPermissionService;
@@ -32,6 +34,7 @@ public final class JustTeamsFabric implements ModInitializer {
     private static PermissionService permissionService;
     private static GlowManager glowManager;
     private static TeamTeleportManager teleportManager;
+    private static EconomyProvider economyProvider;
 
     @Override
     public void onInitialize() {
@@ -46,6 +49,7 @@ public final class JustTeamsFabric implements ModInitializer {
         permissionService = createPermissionService();
         glowManager = new GlowManager();
         teleportManager = new TeamTeleportManager();
+        economyProvider = new ItemEconomyProvider();
 
         ServerLifecycleEvents.SERVER_STARTING.register(this::loadTeamData);
         ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> saveTeamData(server, false));
@@ -117,5 +121,10 @@ public final class JustTeamsFabric implements ModInitializer {
     public static TeamTeleportManager teleports() {
         if (teleportManager == null) throw new IllegalStateException("JustTeams has not initialized");
         return teleportManager;
+    }
+
+    public static EconomyProvider economy() {
+        if (economyProvider == null) throw new IllegalStateException("JustTeams has not initialized");
+        return economyProvider;
     }
 }
