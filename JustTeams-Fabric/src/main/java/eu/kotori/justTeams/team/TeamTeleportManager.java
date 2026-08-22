@@ -229,35 +229,36 @@ public final class TeamTeleportManager {
     }
 
     private SoundEvent getTeleportSound() {
-        return soundByName(JustTeamsFabric.config().getTeleportSound(), SoundEvents.BLOCK_BEACON_ACTIVATE);
+        return switch (JustTeamsFabric.config().getTeleportSound().toUpperCase()) {
+            case "BLOCK_NOTE_BLOCK_PLING" -> SoundEvents.BLOCK_NOTE_BLOCK_PLING.value();
+            case "BLOCK_NOTE_BLOCK_BASS" -> SoundEvents.BLOCK_NOTE_BLOCK_BASS.value();
+            case "BLOCK_BEACON_ACTIVATE" -> SoundEvents.BLOCK_BEACON_ACTIVATE;
+            default -> SoundEvents.BLOCK_BEACON_ACTIVATE;
+        };
     }
 
     private SoundEvent getErrorSound() {
-        return soundByName(JustTeamsFabric.config().getErrorSound(), SoundEvents.BLOCK_NOTE_BLOCK_BASS);
-    }
-
-    private SoundEvent soundByName(String name, SoundEvent fallback) {
-        return switch (name.toUpperCase()) {
-            case "BLOCK_NOTE_BLOCK_PLING" -> SoundEvents.BLOCK_NOTE_BLOCK_PLING;
-            case "BLOCK_NOTE_BLOCK_BASS" -> SoundEvents.BLOCK_NOTE_BLOCK_BASS;
+        return switch (JustTeamsFabric.config().getErrorSound().toUpperCase()) {
+            case "BLOCK_NOTE_BLOCK_PLING" -> SoundEvents.BLOCK_NOTE_BLOCK_PLING.value();
+            case "BLOCK_NOTE_BLOCK_BASS" -> SoundEvents.BLOCK_NOTE_BLOCK_BASS.value();
             case "BLOCK_BEACON_ACTIVATE" -> SoundEvents.BLOCK_BEACON_ACTIVATE;
-            default -> fallback;
+            default -> SoundEvents.BLOCK_NOTE_BLOCK_BASS.value();
         };
     }
 
     private ParticleEffect getWarmupParticle() {
-        return particleByName(JustTeamsFabric.config().getWarmupParticle(), ParticleTypes.PORTAL);
+        return switch (JustTeamsFabric.config().getWarmupParticle().toUpperCase()) {
+            case "END_ROD" -> ParticleTypes.END_ROD;
+            case "PORTAL" -> ParticleTypes.PORTAL;
+            default -> ParticleTypes.PORTAL;
+        };
     }
 
     private ParticleEffect getSuccessParticle() {
-        return particleByName(JustTeamsFabric.config().getSuccessParticle(), ParticleTypes.END_ROD);
-    }
-
-    private ParticleEffect particleByName(String name, ParticleEffect fallback) {
-        return switch (name.toUpperCase()) {
+        return switch (JustTeamsFabric.config().getSuccessParticle().toUpperCase()) {
             case "PORTAL" -> ParticleTypes.PORTAL;
             case "END_ROD" -> ParticleTypes.END_ROD;
-            default -> fallback;
+            default -> ParticleTypes.END_ROD;
         };
     }
 }
