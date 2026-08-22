@@ -131,11 +131,27 @@ The canonical permission class contains the Ender Chest command and bypass nodes
 
 Do not infer parity from a constant's existence alone.
 
-## Remaining roadmap
+## Round 9 — Compatibility / parity / edge-case pass — ACTIVE
 
-### Round 9 — Compatibility / parity / edge-case pass — ACTIVE
+### Round 9 audit: GUI membership lifecycle cleanup
 
-Audit every implemented feature against 2.5.3 for:
+The actual 2.5.3 source audit identified a cleanup consistency issue around GUI-driven member removal/disbanding: the command leave/disband paths explicitly disable team chat and stop glow, while the GUI leave/disband path did not. The reference call-chain evidence records the command cleanup as `TeamChatManager.disable(...)` + `GlowManager.stopGlowForPlayer(...)` before membership/team removal. The GUI paths were missing those cleanup calls.
+
+The canonical Fabric `TeamGuiManager.leaveOrDisband()` was verified to have the same gap: its non-owner leave path removed the member and saved, but did not disable team chat or stop glow; its owner disband path unregistered and saved without clearing those per-member runtime states.
+
+**Fixed in Round 9:**
+
+- GUI leave now disables the leaving player's team-chat mode and stops that player's glow before membership removal.
+- GUI disband now disables team-chat mode and stops glow for every team member before unregistering the team.
+- The existing Ender Chest viewer/release cleanup remains before membership/team removal.
+
+Commit: `5a3c41a4438895ee8929aa9233c43dc0d652e1eb` — `Round 9: fix GUI leave/disband lifecycle cleanup`
+
+The implementation uses existing verified project methods (`TeamChatManager.disable`, `GlowManager.stopGlowForPlayer`, `TeamManager.removeMember`, and `TeamManager.unregister`) rather than introducing new lifecycle APIs.
+
+### Remaining Round 9 audit targets
+
+Continue repository-wide comparison of:
 
 - commands and aliases
 - permissions and bypasses
@@ -148,7 +164,7 @@ Audit every implemented feature against 2.5.3 for:
 
 Resolve only verified discrepancies and record deliberate exceptions.
 
-### Round 10 — Final integration and acceptance
+## Round 10 — Final integration and acceptance
 
 - Finish all remaining fixes.
 - Remove dead code and unjustified placeholders.
@@ -163,6 +179,6 @@ Resolve only verified discrepancies and record deliberate exceptions.
 
 ## Current resume point
 
-**Round 8 is complete. Continue with Round 9: repository-wide compatibility, parity, and edge-case auditing. Start from the existing command/permission/lifecycle surfaces and compare them against actual justTeams 2.5.3 behavior.**
+**Round 9 is active. The first verified lifecycle discrepancy has been fixed in `TeamGuiManager`. Continue with the next repository-wide parity audit target.**
 
 Do not clean-build yet.
