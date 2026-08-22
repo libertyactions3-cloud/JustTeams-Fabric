@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.team;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.economy.FeatureCostManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
@@ -61,6 +62,7 @@ public final class TeamTeleportManager {
     }
 
     public boolean requestHome(ServerPlayerEntity player, TeamLocation location) {
+        if (!FeatureCostManager.charge(player, "home")) return false;
         if (checkHomeCooldown(player)) return false;
         return startWarmup(player, location, Type.HOME, JustTeamsFabric.config().getHomeWarmupSeconds());
     }
