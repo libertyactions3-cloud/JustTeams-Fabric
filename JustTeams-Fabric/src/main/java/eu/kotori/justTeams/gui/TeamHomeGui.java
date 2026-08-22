@@ -15,17 +15,11 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.world.World;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.UUID;
 
 /** Server-side Home GUI following the inventory pattern used by Fabric claim mods such as Flan. */
 public final class TeamHomeGui {
@@ -40,10 +34,10 @@ public final class TeamHomeGui {
 
     private static final class Handler extends ScreenHandler {
         private final Inventory menuInventory = new SimpleInventory(27);
-        private final java.util.UUID viewerUuid;
+        private final UUID viewerUuid;
         private final Team team;
 
-        private Handler(int syncId, PlayerInventory playerInventory, java.util.UUID viewerUuid, Team team) {
+        private Handler(int syncId, PlayerInventory playerInventory, UUID viewerUuid, Team team) {
             super(ScreenHandlerType.GENERIC_9X3, syncId);
             this.viewerUuid = viewerUuid;
             this.team = team;
@@ -92,7 +86,7 @@ public final class TeamHomeGui {
             if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
             TeamLocation home = team.getHome();
             if (home == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
-            if (!teleport(player, home)) return;
+            JustTeamsFabric.teleports().requestHome(player, home);
         }
 
         private void setHome(ServerPlayerEntity player) {
@@ -114,18 +108,6 @@ public final class TeamHomeGui {
             player.sendMessage(Text.literal("Team home cleared."), true);
             populate();
             sendContentUpdates();
-        }
-
-        private boolean teleport(ServerPlayerEntity player, TeamLocation location) {
-            Identifier identifier = Identifier.tryParse(location.getDimension());
-            if (identifier == null) { player.sendMessage(Text.literal("The saved home has an invalid dimension."), true); return false; }
-            RegistryKey<World> key = RegistryKey.of(RegistryKeys.WORLD, identifier);
-            MinecraftServer server = player.getEntityWorld().getServer();
-            ServerWorld world = server.getWorld(key);
-            if (world == null) { player.sendMessage(Text.literal("The saved home's dimension is not available."), true); return false; }
-            player.teleport(world, location.getX(), location.getY(), location.getZ(), Set.of(), location.getYaw(), location.getPitch(), true);
-            player.sendMessage(Text.literal("Teleported to the team home."), true);
-            return true;
         }
 
         private void save() {
