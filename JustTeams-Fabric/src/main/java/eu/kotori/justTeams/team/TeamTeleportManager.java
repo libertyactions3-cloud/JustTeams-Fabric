@@ -2,11 +2,13 @@ package eu.kotori.justTeams.team;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -142,7 +144,7 @@ public final class TeamTeleportManager {
 
         player.sendMessage(Text.literal("You have been successfully teleported to your team home."), true);
         if (JustTeamsFabric.config().isSoundsEnabled()) {
-            player.playSoundToPlayer(SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0F, 1.0F);
+            player.playSoundToPlayer(getTeleportSound(), SoundCategory.PLAYERS, 1.0F, 1.0F);
         }
         spawnSuccessParticles(player);
         setCooldown(player, warmup.type);
@@ -205,7 +207,7 @@ public final class TeamTeleportManager {
     private void spawnWarmupParticles(ServerPlayerEntity player) {
         if (!JustTeamsFabric.config().isParticlesEnabled()) return;
         player.getEntityWorld().spawnParticles(
-                ParticleTypes.PORTAL,
+                getWarmupParticle(),
                 player.getX(), player.getY() + 1.0D, player.getZ(),
                 JustTeamsFabric.config().getWarmupParticleCount(),
                 0.5D, 0.5D, 0.5D, 0.0D);
@@ -214,7 +216,7 @@ public final class TeamTeleportManager {
     private void spawnSuccessParticles(ServerPlayerEntity player) {
         if (!JustTeamsFabric.config().isParticlesEnabled()) return;
         player.getEntityWorld().spawnParticles(
-                ParticleTypes.END_ROD,
+                getSuccessParticle(),
                 player.getX(), player.getY(), player.getZ(),
                 JustTeamsFabric.config().getSuccessParticleCount(),
                 0.5D, 0.5D, 0.5D, 0.0D);
@@ -222,7 +224,40 @@ public final class TeamTeleportManager {
 
     private void playErrorSound(ServerPlayerEntity player) {
         if (JustTeamsFabric.config().isSoundsEnabled()) {
-            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BASS, SoundCategory.PLAYERS, 1.0F, 1.0F);
+            player.playSoundToPlayer(getErrorSound(), SoundCategory.PLAYERS, 1.0F, 1.0F);
         }
+    }
+
+    private SoundEvent getTeleportSound() {
+        return soundByName(JustTeamsFabric.config().getTeleportSound(), SoundEvents.BLOCK_BEACON_ACTIVATE);
+    }
+
+    private SoundEvent getErrorSound() {
+        return soundByName(JustTeamsFabric.config().getErrorSound(), SoundEvents.BLOCK_NOTE_BLOCK_BASS);
+    }
+
+    private SoundEvent soundByName(String name, SoundEvent fallback) {
+        return switch (name.toUpperCase()) {
+            case "BLOCK_NOTE_BLOCK_PLING" -> SoundEvents.BLOCK_NOTE_BLOCK_PLING;
+            case "BLOCK_NOTE_BLOCK_BASS" -> SoundEvents.BLOCK_NOTE_BLOCK_BASS;
+            case "BLOCK_BEACON_ACTIVATE" -> SoundEvents.BLOCK_BEACON_ACTIVATE;
+            default -> fallback;
+        };
+    }
+
+    private ParticleEffect getWarmupParticle() {
+        return particleByName(JustTeamsFabric.config().getWarmupParticle(), ParticleTypes.PORTAL);
+    }
+
+    private ParticleEffect getSuccessParticle() {
+        return particleByName(JustTeamsFabric.config().getSuccessParticle(), ParticleTypes.END_ROD);
+    }
+
+    private ParticleEffect particleByName(String name, ParticleEffect fallback) {
+        return switch (name.toUpperCase()) {
+            case "PORTAL" -> ParticleTypes.PORTAL;
+            case "END_ROD" -> ParticleTypes.END_ROD;
+            default -> fallback;
+        };
     }
 }
