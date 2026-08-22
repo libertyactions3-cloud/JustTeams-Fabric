@@ -149,11 +149,34 @@ Commit: `5a3c41a4438895ee8929aa9233c43dc0d652e1eb` — `Round 9: fix GUI leave/d
 
 The implementation uses existing verified project methods (`TeamChatManager.disable`, `GlowManager.stopGlowForPlayer`, `TeamManager.removeMember`, and `TeamManager.unregister`) rather than introducing new lifecycle APIs.
 
+### Round 9 audit: command surface vs permission ledger — ACTIVE
+
+The current Fabric `TeamCommand` was compared against the canonical Fabric permission ledger before adding any new APIs. The command registration currently exposes only a subset of the command permission constants.
+
+The following permission constants exist but currently have no corresponding registration in `TeamCommand.register()`:
+
+- `justteams.command.kick`
+- `justteams.command.settag`
+- `justteams.command.setdescription`
+- `justteams.command.transfer`
+- `justteams.command.promote`
+- `justteams.command.demote`
+- `justteams.command.top`
+- `justteams.command.teammsg`
+- `justteams.command.public`
+- `justteams.command.bank`
+
+This is a **verified Fabric-side command-surface gap**, not yet a declaration that all ten are missing from 2.5.3. The permission constants themselves are not sufficient evidence of reference command behavior. Before implementing them, each must be traced against the actual 2.5.3 command registration/call-chain and then mapped only to methods already verified against the pinned Fabric API/project classes.
+
+The existing Fabric GUI already supplies some related functionality (member management, team bank access, settings, and team state changes), so GUI availability must not be confused with command parity.
+
+No code was added for these candidates during this audit. This prevents inventing command semantics or Fabric methods before the reference behavior is established.
+
 ### Remaining Round 9 audit targets
 
 Continue repository-wide comparison of:
 
-- commands and aliases
+- command registration and aliases
 - permissions and bypasses
 - state transitions
 - messages/effects where applicable
@@ -179,6 +202,6 @@ Resolve only verified discrepancies and record deliberate exceptions.
 
 ## Current resume point
 
-**Round 9 is active. The first verified lifecycle discrepancy has been fixed in `TeamGuiManager`. Continue with the next repository-wide parity audit target.**
+**Round 9 is active. The GUI leave/disband lifecycle discrepancy has been fixed. The next active audit is the command-surface comparison recorded above. Continue by establishing the actual 2.5.3 behavior for the candidate commands before implementing anything.**
 
 Do not clean-build yet.
