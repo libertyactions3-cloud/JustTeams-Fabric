@@ -87,7 +87,6 @@ public final class TeamHomeGui {
             if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
             TeamLocation home = team.getHome();
             if (home == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
-            if (!FeatureCostManager.charge(player, "home")) return;
             JustTeamsFabric.teleports().requestHome(player, home);
         }
 
