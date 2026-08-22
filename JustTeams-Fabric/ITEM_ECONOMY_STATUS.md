@@ -2,7 +2,7 @@
 
 ## Current implementation
 
-The canonical `libertyactions3-cloud/JustTeams-Fabric` `main` branch now has a concrete `ItemEconomyProvider` implementing the existing `EconomyProvider` abstraction.
+The canonical `libertyactions3-cloud/JustTeams-Fabric` `main` branch has a concrete `ItemEconomyProvider` implementing the existing `EconomyProvider` abstraction.
 
 ### Currency denominations
 
@@ -37,11 +37,11 @@ The implementation is targeted to and checked against the project's pinned envir
 - Fabric API `0.141.4+1.21.11`
 - Java 21
 
-The relevant Yarn inventory APIs were checked against the `1.21.11+build.4` documentation. In particular, `Inventory.getStack(int)`, `Inventory.removeStack(int, int)`, `PlayerInventory.offerOrDrop(ItemStack)`, and the existing `PlayerInventory` inventory access pattern are valid for this environment. citeturn904013search0turn904013search7
+The relevant Yarn inventory APIs were checked against the `1.21.11+build.4` documentation, including the project's existing `PlayerInventory` access pattern, `getStack(int)`, `removeStack(int, int)`, and `offerOrDrop(ItemStack)` APIs.
 
 ### Core wiring
 
-`JustTeamsFabric` now creates the item economy provider during initialization and exposes it through:
+`JustTeamsFabric` creates the item economy provider during initialization and exposes it through:
 
 ```java
 JustTeamsFabric.economy()
@@ -57,71 +57,80 @@ ItemEconomyProvider
   = player-owned currency balance / withdraw / deposit abstraction
 ```
 
-## Warp integration completed
+## Generic feature costs
 
-The item economy is now connected to the real Fabric warp command and warp GUI paths.
-
-### `/team warp`
-
-The current Fabric command now performs:
+Added `FeatureCostManager`, backed by the same item economy, with the verified 2.5.3 numeric feature-cost defaults:
 
 ```text
-team lookup
-  ↓
+sethome       100
+home           50
+enderchest     25
+setwarp       200
+warp           75
+bank-withdraw  10
+rename        500
+```
+
+These values are stored in the Fabric `justteams.properties` configuration as `feature-costs.*` settings. Because this port is using an item economy, the values represent whole units of the configured emerald currency rather than Vault money.
+
+## Current integrations
+
+### Warp
+
+The item economy is connected to the actual Fabric warp command and GUI paths.
+
+The verified 2.5.3 order is preserved for warp use:
+
+```text
 warp lookup
   ↓
 warp enabled check
   ↓
-withdraw item-economy cost
+withdraw warp cost
   ↓
 warp cooldown check
   ↓
 password check
-  ↓
-TeamTeleportManager.requestWarp(...)
   ↓
 5-second warmup
   ↓
 teleport
 ```
 
-This preserves the verified 2.5.3 ordering where the cost is withdrawn before `TeamManager.teleportToTeamWarp()`. The reference source establishes that the payment occurs before the cooldown/password/warmup logic inside `teleportToTeamWarp`.
+A failed password after payment is intentionally not refunded, matching the reference ordering.
 
-### Warp GUI
+### Home teleport
 
-The current Fabric `TeamWarpGui` now also withdraws the configured warp cost before the password prompt/teleport request. This mirrors the reference GUI behavior: the 2.5.3 warp-item click calls `canAffordAndPay(player, "warp")` before `teleportToTeamWarp(...)`. fileciteturn341file0
+`TeamTeleportManager.requestHome()` now charges the `home` feature cost before the home cooldown/warmup path. This covers both `/team home` and the Home GUI because both route through the centralized teleport controller.
 
-Therefore a failed password after payment is intentionally **not refunded**, matching the verified reference ordering.
+The Home GUI's **set home** action separately charges `sethome` before changing the stored team location.
 
-### Fractional costs
+The Home GUI does not charge the teleport a second time; the centralized controller owns that charge.
 
-Because the Fabric provider is an item economy with integer denominations, fractional warp costs cannot be represented exactly. `TeamWarpManagementGui` now only accepts whole-number non-negative warp costs and displays an explicit validation error for fractional values.
+### Main Team GUI Ender Chest
 
-This is an intentional Fabric item-economy constraint rather than a silent rounding/truncation behavior.
+The main Team GUI's Ender Chest entry point now charges `enderchest` before opening the shared chest.
 
-## Important reference observation
+The direct `/team enderchest` command still requires its own command-path cost wiring; no speculative replacement of the compact command source was made.
 
-The 2.5.3 TeamGUI's `warps` button itself also calls `canAffordAndPay(player, "warp")` before opening `WarpsGUI`, while the individual `warp_item` click calls it again before teleporting. fileciteturn336file0 fileciteturn341file0
+### Warp creation GUI
 
-The current Fabric GUI does **not** intentionally reproduce that apparent double-charge quirk on opening the warp list; it charges at the actual warp-use point. This is recorded as a deliberate parity exception pending a broader decision about whether that 2.5.3 behavior is an intended feature cost or an upstream GUI bug.
+The Fabric Warp GUI's `set new warp` path now charges `setwarp` before creating the warp, matching the verified 2.5.3 command's feature-cost check before `setTeamWarp()`.
 
-## Commits
+## Reference observations
 
-- `390c51bdc50740dc0633d7d07adddde2c97011a3` — add item-backed emerald economy provider
-- `fcc3b2006ce24288a277a73a40202962907bb803` — wire the economy provider into `JustTeamsFabric`
-- `d78e56a0e0e611b51f829098f19a51ad34aa450d` — integrate item economy into `/team warp`
-- `a926173020eca95fa3fc73e2030f61992fb2698f` — integrate item economy into warp GUI
-- `528ef0068e4bf066983009db6d6247020219b57f` — restrict warp costs to whole-number item-economy values
+The verified 2.5.3 `FeatureRestrictionManager` performs feature economy withdrawal before the feature method continues. It is generic across feature names rather than being a warp-only mechanism. fileciteturn352file0
+
+The verified 2.5.3 command paths explicitly charge `sethome`, `home`, `enderchest`, `setwarp`, and `warp` before invoking their feature methods. fileciteturn370file0 fileciteturn371file0 fileciteturn372file0
+
+The 2.5.3 TeamGUI also contains an apparent double-charge path for the `warps` button: it calls `canAffordAndPay(player, "warp")` before opening the warp GUI, and the individual warp item calls it again before teleporting. This is recorded as a reference observation rather than intentionally reproduced because it appears to be an upstream GUI bug rather than a meaningful feature requirement. fileciteturn336file0 fileciteturn341file0
+
+## Known remaining economy work
+
+- Add the verified feature-cost behavior to the remaining direct command paths where they exist in the Fabric port (`sethome`, `enderchest`, and any future implemented paid features), without creating duplicate charges where a centralized controller already owns the charge.
+- Decide whether Fabric's per-warp `TeamWarp.cost` should remain as a deliberate extension or be replaced by the 2.5.3 global `feature-costs.warp` concept. No destructive change has been made yet.
+- Review `bank-withdraw` and `rename` only if/when those corresponding Fabric feature paths are actually implemented; do not create dead commands merely to populate the cost table.
 
 ## Build status
 
-No Gradle build was run for these economy changes. The project protocol reserves the appropriate clean-build checkpoint for later. The implementation was checked against the project's pinned Gradle/Yarn environment before inserting the Minecraft API calls.
-
-## Next resume point
-
-Audit the rest of the item-economy consequences before moving to another parity feature:
-
-1. Verify whether other 2.5.3 paid features should use the same item economy.
-2. Audit whether `TeamWarp.cost` remains intentionally per-warp in the Fabric port or should be mapped to the reference's global feature cost concept.
-3. Reconcile the apparent 2.5.3 double-charge when opening the warp GUI versus using a warp.
-4. Then move on to the next evidence-based parity target.
+No Gradle build has been run for these economy changes. The project protocol reserves the clean build for the later final checkpoint. The Minecraft inventory APIs used by the provider were checked against the project's pinned Gradle/Yarn environment before insertion.
