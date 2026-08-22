@@ -48,6 +48,15 @@ public final class JustTeamsConfig {
         changed |= putDefault("enderchest.enabled", "true");
         changed |= putDefault("enderchest.rows", "3");
 
+        changed |= putDefault("feature-costs.enabled", "true");
+        changed |= putDefault("feature-costs.sethome", "100");
+        changed |= putDefault("feature-costs.home", "50");
+        changed |= putDefault("feature-costs.enderchest", "25");
+        changed |= putDefault("feature-costs.setwarp", "200");
+        changed |= putDefault("feature-costs.warp", "75");
+        changed |= putDefault("feature-costs.bank-withdraw", "10");
+        changed |= putDefault("feature-costs.rename", "500");
+
         // 2.5.3 teleport parity defaults.
         changed |= putDefault("team_home.warmup_seconds", "5");
         changed |= putDefault("team_home.cooldown_seconds", "300");
@@ -94,6 +103,9 @@ public final class JustTeamsConfig {
     public Path getFile() { return file; }
     public Formatting getGlowColor(TeamRole role) { return glowColors.getOrDefault(role, Formatting.WHITE); }
 
+    public boolean isFeatureCostsEnabled() { return Boolean.parseBoolean(properties.getProperty("feature-costs.enabled", "true")); }
+    public double getFeatureCost(String feature) { return getDouble("feature-costs." + feature, 0.0D); }
+
     public int getHomeWarmupSeconds() { return getInt("team_home.warmup_seconds", 5, 0); }
     public int getHomeCooldownSeconds() { return getInt("team_home.cooldown_seconds", 300, 0); }
     public int getWarpWarmupSeconds() { return getInt("team_warps.warmup_seconds", 5, 0); }
@@ -111,6 +123,15 @@ public final class JustTeamsConfig {
     private int getInt(String key, int fallback, int minimum) {
         try { return Math.max(minimum, Integer.parseInt(properties.getProperty(key, Integer.toString(fallback)))); }
         catch (NumberFormatException ignored) { return fallback; }
+    }
+
+    private double getDouble(String key, double fallback) {
+        try {
+            double value = Double.parseDouble(properties.getProperty(key, Double.toString(fallback)));
+            return Double.isFinite(value) ? Math.max(0.0D, value) : fallback;
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     private static String roleKey(TeamRole role) {
