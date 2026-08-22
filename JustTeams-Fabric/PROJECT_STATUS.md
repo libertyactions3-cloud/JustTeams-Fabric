@@ -6,7 +6,7 @@ Persistent implementation checklist, completed-work ledger, investigation notebo
 
 ## Working rules
 
-1. Use the `JustTeams-Fabric` branch for this project; do not use `main` as the working reference.
+1. The canonical repository is `libertyactions3-cloud/JustTeams-Fabric`; work is being performed on its `main` branch. Do not use the old `libertyactions3-cloud/test` repository/branch.
 2. Consult this file before beginning a feature so completed work is not repeated.
 3. Compare the Fabric implementation against the actual justTeams 2.5.3 source before declaring parity.
 4. Establish reference behavior first; only then translate it to the pinned Fabric/Yarn API.
@@ -117,7 +117,7 @@ Reference behavior from justTeams 2.5.3 has been established:
 
 ### Important current correction
 
-The branch's Ender Chest work was initially ahead of its supporting `Team`, configuration, and storage pieces. Round 8 has now reconciled those pieces on the actual `JustTeams-Fabric` branch:
+The branch's Ender Chest work was initially ahead of its supporting `Team`, configuration, and storage pieces. Round 8 has now reconciled those pieces on the canonical `libertyactions3-cloud/JustTeams-Fabric` `main` branch:
 
 - `Team` owns optional `TeamEnderChest` state.
 - `JustTeamsConfig` exposes the referenced Ender Chest settings.
@@ -127,6 +127,35 @@ The branch's Ender Chest work was initially ahead of its supporting `Team`, conf
 
 No clean build has been run to validate these changes because the user explicitly requires waiting until Round 10.
 
+## Round 8 audit findings
+
+### Simultaneous viewers — implementation parity established
+
+The Fabric implementation uses one `TeamEnderChest` instance per team while it is open. Every `TeamEnderChestScreenHandler` is backed by that same inventory instance, rather than a per-player copy. This matches the reference's shared-inventory model.
+
+The pinned Yarn 1.21.11 ScreenHandler API documents that slots backed by an inventory are synchronized by the screen-handler system and that `sendContentUpdates()` sends changed slot stacks to listeners. Therefore no invented custom packet layer is required merely to synchronize ordinary inventory mutations between simultaneous viewers.
+
+### Save/release ordering — verified by code path
+
+- Normal close removes the viewer and releases/saves only when the final viewer closes.
+- Disconnect removes the stale viewer registration and releases/saves when the final viewer is gone.
+- Kick closes the viewer before removing the member from the team.
+- Leave closes the player's handled screen before removing the member.
+- Disband closes/releases the shared chest before unregistering the team.
+- Inventory mutations call the shared inventory's save callback through `markDirty()` while the inventory is not being loaded.
+
+This preserves the important ordering requirement: the team and its shared inventory still exist when the final save occurs.
+
+### Persistence semantics — verified with one configuration edge case retained for final testing
+
+Non-empty inventories are written as occupied-slot `ItemStack` data using the 1.21.11 codec and restored into a newly created team chest. Empty inventories are intentionally omitted from the team file; reopening creates an empty chest, which preserves the observable inventory state.
+
+The configured row count is applied when the in-memory chest is created or restored. One edge case remains for final parity testing: changing the configured row count downward after data was stored can make previously stored higher-numbered slots inaccessible because restoration bounds slots to the currently configured inventory size. Do not classify this as a defect against 2.5.3 until the reference's behavior for a runtime configuration-row change is checked.
+
+### Authorization — implementation path established
+
+The command layer requires `justteams.command.enderchest` for both `/team enderchest` and `/team ec`. The GUI/opening layer then independently verifies the Ender Chest feature setting, team membership, `canUseEnderChest`, and `justteams.bypass.enderchest.use`. This matches the reference behavior already established for `TeamManager.openEnderChest` rather than relying only on the command permission constant.
+
 ## Known deliberate deviation
 
 The Paper 2.5.3 Ender Chest has distributed database locking and Redis cross-server synchronization. The Fabric port currently has no equivalent database/Redis infrastructure.
@@ -135,11 +164,11 @@ Therefore this is **not** to be silently classified as replicated. For the final
 
 ## Round 8 remaining work
 
-1. Audit simultaneous-viewer behavior and save/release ordering against the reference.
-2. Verify leave/disband behavior while one or more members have the shared Ender Chest open.
-3. Verify persistence semantics for empty and non-empty inventories and configured row counts.
-4. Verify GUI and command authorization against the exact 2.5.3 reference.
-5. Update this document after the lifecycle/parity checks.
+1. Check the configured-row-count change edge case against the actual 2.5.3 reference.
+2. Perform the final Round 8 source-level parity pass for any overlooked Ender Chest lifecycle/authorization path.
+3. Update this document and advance to Round 9 only after those checks are complete.
+
+No clean build is permitted before Round 10.
 
 ## Permission parity — ACTIVE
 
@@ -168,6 +197,6 @@ Audit every implemented feature against 2.5.3 for commands, permissions, state t
 
 ## Current resume point
 
-**Continue Round 8 with simultaneous-viewer behavior, leave/disband lifecycle ordering, persistence semantics, and exact authorization parity.**
+**Continue Round 8 with the configured-row-count reference check and final Ender Chest source-level parity pass.**
 
 Do not begin unrelated feature work until this Round 8 audit is complete. Do not clean-build yet.
