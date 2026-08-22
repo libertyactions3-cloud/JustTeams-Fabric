@@ -37,7 +37,7 @@ public final class TeamTeleportManager {
         private final double startY;
         private final double startZ;
         private int remainingSeconds;
-        private int tickCounter;
+        private int tickCounter = 19;
 
         private Warmup(Type type, ServerPlayerEntity player, ServerWorld targetWorld, TeamLocation location, int remainingSeconds) {
             this.type = type;
