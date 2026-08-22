@@ -2,6 +2,7 @@ package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.chat.TeamChatManager;
+import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
@@ -37,7 +38,11 @@ public final class TeamGuiManager {
             case 49 -> { team.cycleSortType(); save(); menu.refresh(); }
             case 52 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamSettingsGui.open(player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access team settings."), true); }
             case 8 -> { if (team.hasElevatedPermissions(player.getUuid())) JoinRequestGui.open(player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access join requests."), true); }
-            case 46 -> TeamEnderChestGui.open(player, team);
+            case 46 -> {
+                if (player instanceof ServerPlayerEntity serverPlayer && FeatureCostManager.charge(serverPlayer, "enderchest")) {
+                    TeamEnderChestGui.open(player, team);
+                }
+            }
             case 47 -> TeamHomeGui.open(player, team);
             case 48 -> { }
             case 50 -> { if (player instanceof ServerPlayerEntity serverPlayer && JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK)) TeamBankGui.open(player, team); else player.sendMessage(Text.literal("You do not have permission to use the team bank."), true); }
