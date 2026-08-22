@@ -169,9 +169,9 @@ public final class TeamTeleportManager {
 
         long seconds = Math.max(0L, Duration.between(Instant.now(), end).toSeconds());
         if (type == Type.HOME) {
-            player.sendMessage(Text.literal("You must wait " + seconds + "s before teleporting again."), true);
+            player.sendMessage(Text.literal("You must wait " + seconds + "s before using this again."), true);
         } else {
-            player.sendMessage(Text.literal("Warp cooldown: " + seconds + "s remaining."), true);
+            player.sendMessage(Text.literal("You must wait " + seconds + " seconds before using another warp."), true);
         }
         return true;
     }
