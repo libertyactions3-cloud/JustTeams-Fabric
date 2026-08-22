@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "justteams",
+	"version": "${version}",
+	"name": "JustTeams",
+	"description": "A Fabric 1.21.11 port of JustTeams, with Paper feature and GUI parity as the target.",
+	"authors": [
+		"kotori / JustTeams contributors"
+	],
+	"contact": {
+		"sources": "https://github.com/kotorinet/justTeams"
+	},
+	"license": "All Rights Reserved",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			"com.bba.allied.Allied",
+			"eu.kotori.justTeams.JustTeamsFabric"
+		]
+	},
+	"mixins": [
+		"allied.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
