@@ -149,34 +149,42 @@ Commit: `5a3c41a4438895ee8929aa9233c43dc0d652e1eb` — `Round 9: fix GUI leave/d
 
 The implementation uses existing verified project methods (`TeamChatManager.disable`, `GlowManager.stopGlowForPlayer`, `TeamManager.removeMember`, and `TeamManager.unregister`) rather than introducing new lifecycle APIs.
 
-### Round 9 audit: command surface vs permission ledger — ACTIVE
+### Round 9 audit: command surface vs permission ledger — CORRECTED / ACTIVE
 
-The current Fabric `TeamCommand` was compared against the canonical Fabric permission ledger before adding any new APIs. The command registration currently exposes only a subset of the command permission constants.
+The earlier audit treated every permission constant absent from the Fabric `TeamCommand.register()` method as a possible missing command. That was too broad. The reference source must be considered separately from the Fabric permission ledger.
 
-The following permission constants exist but currently have no corresponding registration in `TeamCommand.register()`:
+The canonical Fabric permission class deliberately mirrors the Paper permission nodes and therefore contains nodes that are **not necessarily commands actually registered by the 2.5.3 command dispatcher**. The permission class currently includes `COMMAND_KICK`, `COMMAND_TRANSFER`, `COMMAND_SETTAG`, `COMMAND_SETDESCRIPTION`, `COMMAND_PROMOTE`, `COMMAND_DEMOTE`, `COMMAND_TOP`, `COMMAND_TEAMMSG`, `COMMAND_PUBLIC`, and `COMMAND_BANK`. fileciteturn292file0
 
-- `justteams.command.kick`
-- `justteams.command.settag`
-- `justteams.command.setdescription`
-- `justteams.command.transfer`
-- `justteams.command.promote`
-- `justteams.command.demote`
-- `justteams.command.top`
-- `justteams.command.teammsg`
-- `justteams.command.public`
-- `justteams.command.bank`
+#### Verified reference findings
 
-This is a **verified Fabric-side command-surface gap**, not yet a declaration that all ten are missing from 2.5.3. The permission constants themselves are not sufficient evidence of reference command behavior. Before implementing them, each must be traced against the actual 2.5.3 command registration/call-chain and then mapped only to methods already verified against the pinned Fabric API/project classes.
+- **`kick`: not a missing `/team kick` command.** The actual 2.5.3 `eu.kotori.justTeams` command system has no direct `/team kick` registration. The `COMMAND_KICK` permission node exists, but the actual kick implementation is GUI-based in `MemberManagementGui`. Its verified cleanup calls disable team chat, stop glow, and remove the member. fileciteturn302file8
+- **`transfer`: not currently evidenced as an implemented reference command.** The reference `Team.setOwnerUuid(UUID)` setter exists, but the source audit found no caller that performs a proper ownership transfer. Therefore the setter exists while an ownership-transfer implementation is absent. Do **not** invent `/team transfer` merely because the Fabric permission constant exists. fileciteturn303file4
+- **`settag`, `setdescription`, and `public`: the Fabric side already has team-setting state and GUI behavior for these operations.** `Team` contains verified setters for tag, description, and public state, and `TeamSettingsGui` already exposes those three settings to elevated team members. This establishes existing Fabric state/UI support, but does not by itself establish that 2.5.3 has command registrations for them. fileciteturn297file0 fileciteturn299file0
+- **`promote`, `demote`, `top`, `teammsg`, and `bank`: remain unresolved.** The permission constants exist, but the evidence currently retrieved does not establish their actual 2.5.3 command registration/call-chain. They remain audit targets, not implementation targets.
 
-The existing Fabric GUI already supplies some related functionality (member management, team bank access, settings, and team state changes), so GUI availability must not be confused with command parity.
+#### Important conclusion
 
-No code was added for these candidates during this audit. This prevents inventing command semantics or Fabric methods before the reference behavior is established.
+The correct question is **not**:
+
+> “Which permission constants aren't in `TeamCommand`?”
+
+It is:
+
+> “Which actual 2.5.3 user-facing commands/features are missing from the Fabric port, and which permission nodes merely exist in the reference permission ledger without a corresponding command?”
+
+This distinction prevents adding commands that the reference never exposed.
+
+#### Current Fabric command surface
+
+`TeamCommand.register()` currently exposes the verified Fabric command paths for create, GUI, info, leave, disband, pvp, glow, Ender Chest/ec, home, warp, invite, accept, deny, join, unjoin, requests, and chat. fileciteturn295file0
+
+No command should be added solely because a corresponding permission constant exists.
 
 ### Remaining Round 9 audit targets
 
 Continue repository-wide comparison of:
 
-- command registration and aliases
+- actual 2.5.3 command registration and aliases
 - permissions and bypasses
 - state transitions
 - messages/effects where applicable
@@ -202,6 +210,6 @@ Resolve only verified discrepancies and record deliberate exceptions.
 
 ## Current resume point
 
-**Round 9 is active. The GUI leave/disband lifecycle discrepancy has been fixed. The next active audit is the command-surface comparison recorded above. Continue by establishing the actual 2.5.3 behavior for the candidate commands before implementing anything.**
+**Round 9 is active. The GUI leave/disband lifecycle discrepancy has been fixed. The next active audit is the actual 2.5.3 command registration/call-chain comparison, with permission constants treated only as evidence—not as proof that a command exists.**
 
 Do not clean-build yet.
