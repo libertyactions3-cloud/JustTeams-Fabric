@@ -1,5 +1,19 @@
 # Item Economy Status
 
+## Working / conversation protocol
+
+These instructions are part of the active project handoff and should be followed when continuing this repository work:
+
+1. The goal is **not** to audit the entire Fabric project. For the current feature, establish the exact verified 2.5.3 behavior, identify only the Fabric pieces required for that feature, and then implement only those missing pieces.
+2. Stay scoped to the **current feature path being traced or implemented**. Do not investigate or redesign unrelated parts of the repository merely because they are noticed.
+3. Record unrelated bugs or architectural observations only as a brief **Later** note when useful. Do not investigate them further unless they directly block or affect the current feature.
+4. Do **not** change repository code during audit/design unless the user explicitly says the work is moving into implementation.
+5. Prefer the **smallest correct implementation** that reproduces the verified 2.5.3 behavior.
+6. When command and GUI paths implement the same feature, make them use the same underlying behavior where necessary for parity, but do not use that as a reason to redesign unrelated systems.
+7. Continue the established **repository-activity rounds** before the eventual Gradle clean-build checkpoint. Repository activity should be focused, incremental source inspection rather than broad project-wide auditing.
+8. The `.md` handoff files are used as project memory/state. Important decisions, verified behavior, missing pieces, and workflow instructions should be recorded here so later sessions can resume accurately.
+9. The standing chat rule is: **always continue the current work on every user message**, including questions, clarifications, corrections, or other messages. The user's word **"Continue"** is only a reminder to continue; it does not mean to pause, restart, or ask for confirmation.
+
 ## Current implementation
 
 The canonical `libertyactions3-cloud/JustTeams-Fabric` `main` branch has a concrete `ItemEconomyProvider` implementing the existing `EconomyProvider` abstraction.
