@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.team;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.economy.EconomyTransactionResult;
 import eu.kotori.justTeams.economy.FeatureCostManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.particle.ParticleEffect;
@@ -34,18 +35,21 @@ public final class TeamTeleportManager {
         private final ServerWorld startWorld;
         private final ServerWorld targetWorld;
         private final TeamLocation location;
+        private final double cost;
         private final double startX;
         private final double startY;
         private final double startZ;
         private int remainingSeconds;
         private int tickCounter = 19;
 
-        private Warmup(Type type, ServerPlayerEntity player, ServerWorld targetWorld, TeamLocation location, int remainingSeconds) {
+        private Warmup(Type type, ServerPlayerEntity player, ServerWorld targetWorld, TeamLocation location,
+                        double cost, int remainingSeconds) {
             this.type = type;
             this.playerUuid = player.getUuid();
             this.startWorld = player.getEntityWorld();
             this.targetWorld = targetWorld;
             this.location = location;
+            this.cost = cost;
             this.startX = player.getX();
             this.startY = player.getY();
             this.startZ = player.getZ();
@@ -62,14 +66,16 @@ public final class TeamTeleportManager {
     }
 
     public boolean requestHome(ServerPlayerEntity player, TeamLocation location) {
-        if (!FeatureCostManager.charge(player, "home")) return false;
         if (checkHomeCooldown(player)) return false;
-        return startWarmup(player, location, Type.HOME, JustTeamsFabric.config().getHomeWarmupSeconds());
+        if (!FeatureCostManager.canAfford(player, "home")) return false;
+        double cost = JustTeamsFabric.config().getFeatureCost("home");
+        return startWarmup(player, location, Type.HOME, cost, JustTeamsFabric.config().getHomeWarmupSeconds());
     }
 
-    public boolean requestWarp(ServerPlayerEntity player, TeamLocation location) {
+    public boolean requestWarp(ServerPlayerEntity player, TeamLocation location, double cost) {
         if (checkWarpCooldown(player)) return false;
-        return startWarmup(player, location, Type.WARP, JustTeamsFabric.config().getWarpWarmupSeconds());
+        if (!canAffordAmount(player, cost)) return false;
+        return startWarmup(player, location, Type.WARP, cost, JustTeamsFabric.config().getWarpWarmupSeconds());
     }
 
     public boolean checkHomeCooldown(ServerPlayerEntity player) {
@@ -80,7 +86,7 @@ public final class TeamTeleportManager {
         return isOnCooldown(player, Type.WARP);
     }
 
-    private boolean startWarmup(ServerPlayerEntity player, TeamLocation location, Type type, int warmupSeconds) {
+    private boolean startWarmup(ServerPlayerEntity player, TeamLocation location, Type type, double cost, int warmupSeconds) {
         if (warmups.containsKey(player.getUuid())) {
             player.sendMessage(Text.literal("You already have a teleportation in progress."), true);
             return false;
@@ -89,7 +95,7 @@ public final class TeamTeleportManager {
         ServerWorld targetWorld = resolveWorld(player, location);
         if (targetWorld == null) return false;
 
-        Warmup warmup = new Warmup(type, player, targetWorld, location, warmupSeconds);
+        Warmup warmup = new Warmup(type, player, targetWorld, location, cost, warmupSeconds);
         if (warmupSeconds <= 0) {
             finishWarmup(player, warmup);
             return true;
@@ -143,7 +149,7 @@ public final class TeamTeleportManager {
     private void finishWarmup(ServerPlayerEntity player, Warmup warmup) {
         if (!player.isAlive() || player.getEntityWorld() != warmup.startWorld) return;
 
-        player.teleport(
+        boolean teleported = player.teleport(
                 warmup.targetWorld,
                 warmup.location.getX(),
                 warmup.location.getY(),
@@ -153,12 +159,43 @@ public final class TeamTeleportManager {
                 warmup.location.getPitch(),
                 true);
 
-        player.sendMessage(Text.literal("You have been successfully teleported to your team home."), true);
+        if (!teleported) {
+            player.sendMessage(Text.literal("Teleportation failed."), true);
+            playErrorSound(player);
+            return;
+        }
+
+        if (warmup.cost > 0.0D) {
+            EconomyTransactionResult payment = JustTeamsFabric.economy().withdraw(player, warmup.cost);
+            if (!payment.successful()) {
+                player.sendMessage(Text.literal("Teleport succeeded, but the item economy could not collect the teleport cost."), true);
+            }
+        }
+
+        String destination = warmup.type == Type.HOME ? "your team home" : "your team warp";
+        player.sendMessage(Text.literal("You have been successfully teleported to " + destination + "."), true);
         if (JustTeamsFabric.config().isSoundsEnabled()) {
             player.playSound(getTeleportSound(), 1.0F, 1.0F);
         }
         spawnSuccessParticles(player);
         setCooldown(player, warmup.type);
+    }
+
+    private boolean canAffordAmount(ServerPlayerEntity player, double cost) {
+        if (cost <= 0.0D) return true;
+        if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
+            player.sendMessage(Text.literal("This warp has an invalid item-economy cost."), true);
+            return false;
+        }
+        if (!JustTeamsFabric.economy().isAvailable()) {
+            player.sendMessage(Text.literal("The item economy is unavailable."), true);
+            return false;
+        }
+        if (JustTeamsFabric.economy().getBalance(player) >= cost) return true;
+        player.sendMessage(Text.literal(
+                "You do not have enough " + JustTeamsFabric.economy().getCurrencyName()
+                        + " (cost: " + JustTeamsFabric.economy().format(cost) + ")."), true);
+        return false;
     }
 
     private boolean isOnCooldown(ServerPlayerEntity player, Type type) {
