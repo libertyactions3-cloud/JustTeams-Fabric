@@ -1,144 +1,93 @@
 # CONTINUATION / HANDOFF PROTOCOL — READ THIS FIRST
 
-> **Purpose:** This section is the operational handoff for any new ChatGPT conversation continuing the JustTeams-Fabric project. Read this entire section **before searching, editing, auditing, or claiming progress**. The project below is a Fabric recreation/port whose goal is behaviorally informed parity with the actual JustTeams 2.5.3 reference—not merely a project that compiles.
+> This file is the persistent handoff for continuing the JustTeams-Fabric port. Read it before auditing, editing, or claiming progress.
 
-## Latest continuation update — economy / current resume point
+## Canonical project
 
-**Canonical repository:** `libertyactions3-cloud/JustTeams-Fabric`  
-**Branch:** `main`  
-**Project directory:** `JustTeams-Fabric/`
+Repository: `libertyactions3-cloud/JustTeams-Fabric`
+Branch: `main`
+Project directory: `JustTeams-Fabric/`
 
-The old `libertyactions3-cloud/test` repository is obsolete for this work. Do not use it.
+Do not use the obsolete `libertyactions3-cloud/test` repository for this work.
 
-### Exact pinned environment
+Pinned environment:
 
-Use and verify Minecraft/Fabric APIs against the current project versions:
+```text
+Minecraft 1.21.11
+Yarn 1.21.11+build.4
+Fabric Loader 0.18.4
+Fabric API 0.141.4+1.21.11
+Fabric Loom 1.15.5
+Java 21
+```
 
-- Minecraft `1.21.11`
-- Yarn mappings `1.21.11+build.4`
-- Fabric Loader `0.18.4`
-- Fabric API `0.141.4+1.21.11`
-- Fabric Loom observed during builds: `1.15.5`
-- Java 21
-
-The user specifically requires that inserted Minecraft/Fabric methods be verified against these actual mappings/project settings instead of being invented from memory or copied from another Minecraft version.
-
-### User continuation rule
-
-Treat every user message as permission to continue the project. The word **“Continue”** is only a reminder, not a special trigger.
-
-When repository-wide search is genuinely required and the GitHub connector cannot perform a reliable repository-wide search, ask the user for the exact search and use their results. Do not claim repository-wide absence from a narrow search.
-
-### 10-round workflow
-
-The project uses a structured 10-round workflow, but rounds are evidence-driven. Do not invent work merely to fill a round.
-
-Do not clean-build before the final Round 10 checkpoint unless a meaningful testing decision explicitly requires it. The user has stated that they will not clean-build until Round 10.
+Minecraft/Fabric APIs must be verified against these actual mappings/settings before inserting code.
 
 ---
 
-# Current completed work
+# USER WORKFLOW RULES — CURRENT
 
-## Core project / Fabric setup
+These rules override older/general workflow assumptions in this document.
 
-Completed earlier.
+## Continue on every message
 
-## Team system / persistence
+Treat **every user message** as permission to continue the project.
 
-Completed earlier.
+The word **`Continue`** is only a reminder to continue. It is not a request to pause, wait, ask for confirmation, or stop repository activity.
 
-## Permissions / command framework
+## Stay scoped to the current feature
 
-Completed earlier.
+The goal is **not** to audit the entire Fabric project at once.
 
-## Team chat
-
-Completed earlier.
-
-## Currency / bank foundation
-
-Completed earlier.
-
-## Glow — Round 7
-
-Viewer-specific team glow was implemented using receiver-specific packets/metadata rather than globally making entities glow for everyone.
-
-Important existing architecture:
+For the current feature:
 
 ```text
-team glow state
-    ↓
-GlowManager refresh
-    ↓
-receiver-specific TeamS2CPacket + entity metadata glowing state
-    ↓
-receiver sees target glowing with team/role color
+exact verified 2.5.3 behavior
+        ↓
+identify Fabric pieces actually missing
+        ↓
+implement only those pieces
 ```
 
-Do not restart the glow implementation without a concrete parity defect.
+Do not investigate unrelated subsystems merely because a bug or architectural improvement is noticed.
 
-## Membership lifecycle
+Unrelated issues may be recorded briefly as `Later`, but must not be investigated further unless they directly block or affect the current feature.
 
-`TeamManager.addMember(...)` and `TeamManager.removeMember(...)` maintain both team membership and the UUID → team index.
+Do not redesign broader architecture merely because a cleaner design is possible.
 
-Verified lifecycle cleanup work includes:
+When command and GUI paths implement the same feature, make them converge on the same underlying behavior where necessary for parity, but do not use that as a reason to redesign unrelated systems.
 
-- GUI kick cleanup;
-- GUI leave/disband cleanup;
-- team-chat cleanup;
-- viewer-specific glow cleanup;
-- Ender Chest viewer/release cleanup where applicable;
-- persistence after membership mutation.
+## Audit/design before implementation
 
-Known commits from earlier work:
+Do **not** change repository Java/source code while we are still establishing behavior or designing the missing pieces unless the user explicitly says we are moving into implementation.
 
-```text
-633e499869b85d2a4c1c6338057cde0dcce92a95
-5a3c41a4438895ee8929aa9233c43dc0d652e1eb
+Small documentation/status updates are allowed when they record verified evidence or workflow decisions.
+
+Prefer the **smallest correct implementation** that reproduces verified 2.5.3 behavior.
+
+Never create behavior solely because a configuration key, permission, setter, or similarly named class exists.
+
+## Repository activity / 10-round workflow
+
+Continue doing repository activity in the established rounds before the final build checkpoint.
+
+Rounds are evidence-driven. Do not invent work merely to fill a round.
+
+Do not run the final clean build before Round 10 unless a meaningful testing decision explicitly requires it.
+
+Final build command:
+
+```powershell
+./gradlew clean build --refresh-dependencies
 ```
-
-The user previously reported a successful clean build after the GUI kick lifecycle fix. No new clean build has been run for the later economy work.
-
-## Team Ender Chest
-
-The Fabric port has a shared persistent team-owned Ender Chest with real-time multi-viewer inventory behavior.
-
-Known deliberate architectural differences from Paper/2.5.3 include:
-
-- no Bukkit serialization;
-- no Paper database/Redis locking implementation unless separately reintroduced;
-- Fabric-native item/NBT persistence;
-- current configured row behavior is Fabric-native where it differs from the old reference;
-- Paper-only message/effects infrastructure is not copied literally.
-
-Do not reimplement this subsystem without a concrete new parity defect.
-
-## Teleport parity
-
-A centralized `TeamTeleportManager` is implemented.
-
-Verified/implemented parity work includes:
-
-- home warmup: 5 seconds;
-- home cooldown: 300 seconds;
-- warp warmup: 5 seconds;
-- warp cooldown: 300 seconds;
-- warmup movement cancellation;
-- squared-distance movement threshold consistent with the investigated reference behavior;
-- same-world/start-world handling during warmup;
-- immediate first countdown timing rather than an accidental extra second;
-- configured warmup/success particles;
-- configured success/error/teleport sounds;
-- cooldown bypass handling where already established;
-- centralized routing of `/team home`, warp usage, Home GUI, and Warp GUI through the teleport controller.
-
-Do not restart this work without a concrete parity defect.
 
 ---
 
-# Item economy implementation — NEWEST COMPLETED WORK
+# CURRENT RESUME POINT — ITEM ECONOMY / FEATURE COSTS
 
-The project already had the `EconomyProvider` abstraction, and the user explicitly chose to create an **internal item economy** rather than depend on an external economy plugin/mod.
+The current workstream is the **internal item economy and 2.5.3 feature-cost parity**.
+
+The user explicitly chose an internal item economy instead of requiring an external economy plugin/mod.
 
 Existing abstraction:
 
@@ -151,7 +100,7 @@ EconomyProvider
     └── deposit(player, amount)
 ```
 
-`EconomyTransactionResult` provides structured outcomes:
+`EconomyTransactionResult` supports:
 
 ```text
 SUCCESS
@@ -160,102 +109,59 @@ UNAVAILABLE
 INVALID_AMOUNT
 ```
 
-A concrete `ItemEconomyProvider` has been added and wired through:
+A concrete `ItemEconomyProvider` is wired through:
 
 ```java
 JustTeamsFabric.economy()
 ```
 
-### Item denominations
+## Currency denominations
 
-The user supplied an existing server Skript that establishes the desired item-currency behavior. The implementation follows that model:
+Reference item economy established from the user's server Skript:
 
 ```text
-Emerald                  = 1
-Emerald Block            = 9
-Deepslate Emerald Ore    = 81
+Emerald               = 1
+Emerald Block         = 9
+Deepslate Emerald Ore = 81
 ```
 
-The existing Fabric configuration already defaults `bank.currency-items` to those three items.
+The configured currency boundary is `bank.currency-items`.
 
-Important distinction:
+Important separation:
 
 ```text
 TeamBank
-  = team-owned currency inventory
+  = team-owned currency-item inventory
 
 ItemEconomyProvider
   = player-owned currency balance / withdraw / deposit abstraction
 ```
 
-Do not conflate the TeamBank's storage with the player's personal item-economy balance.
+Do not merge these two concepts.
 
-### Skript behavior used as the item-economy reference
+## Item-economy semantics
 
-The user's Skript calculates:
+The provider follows the supplied Skript's behavior, including its denomination ordering/preservation rules, intentional overpayment, and change behavior.
 
-```text
-ore amount × 81
-+ block amount × 9
-+ emerald amount
-= total player currency value
-```
-
-Withdrawal order is:
-
-```text
-Emeralds
-    ↓
-Emerald Blocks
-    ↓
-Deepslate Emerald Ore
-```
-
-The Skript deliberately preserves a lower denomination in certain cases when a higher denomination exists. The Fabric implementation reproduces that preservation behavior rather than using a simpler greedy algorithm.
-
-The Skript allows overpayment and returns change as:
+Change is returned as:
 
 ```text
 Emerald Blocks + Emeralds
 ```
 
-It does **not** return Deepslate Emerald Ore as change.
+Deepslate Emerald Ore is not returned as change.
 
-The provider follows these semantics.
+Failed withdrawals must not mutate the player's inventory.
 
-### Important example
-
-A stack of 64 Deepslate Emerald Ore is **64 items worth 81 each**, not 5,184 items:
-
-```text
-64 × 81 = 5,184 currency value
-```
-
-If a cost is 75, the desired exact payment can be represented as:
-
-```text
-8 Emerald Blocks = 72
-3 Emeralds       = 3
-Total            = 75
-```
-
-The physical item counts are unchanged by the arithmetic; 5,184 is only the calculated currency value.
-
-### Inventory API verification
-
-The provider was implemented against the project's pinned Yarn/Fabric environment and the relevant APIs were checked before insertion.
-
-Known verified APIs include the project's current `PlayerInventory` access pattern, `getStack(int)`, `removeStack(int,int)`, `markDirty()`, `offerOrDrop(ItemStack)`, `ItemStack.isOf(...)`, `ItemStack.getCount()`, and the current Minecraft item constants used by the provider.
-
-Do not replace these with older mapping names without verifying against Yarn `1.21.11+build.4` first.
+The implementation was checked against the pinned 1.21.11/Yarn/Fabric environment, including the current PlayerInventory and ItemStack APIs used by the provider.
 
 ---
 
-# Feature-cost layer
+# FEATURE-COST LAYER
 
-A `FeatureCostManager` was added as the generic bridge from the verified 2.5.3 feature-cost concept into the Fabric item economy.
+`FeatureCostManager` is the generic feature-level charge boundary backed by the item economy.
 
-Current configured defaults:
+Configured defaults:
 
 ```text
 sethome        100
@@ -267,9 +173,9 @@ bank-withdraw    10
 rename          500
 ```
 
-These are Fabric item-currency units, not Vault money.
+These are item-currency units, not Vault money.
 
-The current configuration keys are:
+Configuration keys:
 
 ```text
 feature-costs.enabled
@@ -282,17 +188,15 @@ feature-costs.bank-withdraw
 feature-costs.rename
 ```
 
-Because item currency uses discrete whole denominations, fractional feature costs are rejected rather than silently rounded/truncated.
+Fractional feature costs are rejected because the configured item currency is discrete.
 
 ---
 
-# Paid-feature integration currently completed
+# VERIFIED PAID-FEATURE INTEGRATIONS
 
-## `/team warp` usage
+## Warp use
 
-Current Fabric warp use charges the item's configured **per-warp `TeamWarp.cost`** before the downstream cooldown/password/warmup process.
-
-Current command ordering:
+Current Fabric warp usage charges the existing per-warp `TeamWarp.cost` before cooldown/password/warmup.
 
 ```text
 team lookup
@@ -301,7 +205,7 @@ warp lookup
     ↓
 warp enabled check
     ↓
-withdraw per-warp TeamWarp.cost
+withdraw TeamWarp.cost
     ↓
 warp cooldown check
     ↓
@@ -314,47 +218,28 @@ warmup
 teleport
 ```
 
-This preserves the verified 2.5.3 ordering where payment occurs before the call to the main warp teleport method, which then performs its cooldown/password/warmup work.
+Payment is intentionally not refunded after a failed password or warmup cancellation because that ordering matches the observed 2.5.3 behavior.
 
-A failed password after payment is intentionally **not refunded**, because that is the observed reference ordering.
-
-Warmup cancellation likewise does not refund the payment.
-
-## Warp GUI usage
-
-The actual Warp GUI item-click path also charges before password/teleport. This matches the verified 2.5.3 GUI item path.
-
-The 2.5.3 TeamGUI also appears to call `canAffordAndPay("warp")` when opening the warp list and then again on the individual warp item. That looks like an upstream double-charge bug. The Fabric port deliberately does **not** reproduce the apparent double charge when merely opening the warp-list GUI.
-
-Record this as a deliberate parity exception, not as an unresolved implementation failure.
+The 2.5.3 TeamGUI also appears to charge when opening the warp list and again on the individual warp item. Fabric deliberately does not reproduce that apparent double-charge quirk merely for opening the list. Treat this as a documented parity exception unless later evidence establishes that it was intentional.
 
 ## Home teleport
 
-`TeamTeleportManager.requestHome(...)` now owns the `home` feature charge, so both:
+`TeamTeleportManager.requestHome(...)` owns the `home` feature charge, covering both `/team home` and Home GUI teleport use without double charging.
 
-```text
-/team home
-Home GUI → teleport to home
-```
-
-converge on one charge path and do not double-charge.
-
-The charge occurs before the home cooldown/warmup process.
+The charge occurs before the cooldown/warmup path.
 
 ## Set home
 
-Both known entry points charge `sethome`:
+Both known entry points charge `sethome` before changing the stored location:
 
 ```text
 /team home set
 Home GUI → Set Home
 ```
 
-The direct command was fixed after an audit found it bypassing the GUI/feature-cost layer.
-
 ## Team Ender Chest
 
-The actual `TeamEnderChestGui.open(...)` feature entry point owns the `enderchest` charge. This means these callers converge on one charging point:
+`TeamEnderChestGui.open(...)` owns the `enderchest` feature charge, so these callers converge on one charge boundary:
 
 ```text
 /team enderchest
@@ -362,233 +247,205 @@ The actual `TeamEnderChestGui.open(...)` feature entry point owns the `enderches
 Team main GUI → Ender Chest
 ```
 
-Do not add another caller-side `enderchest` charge without checking for double charging.
+Do not add another caller-side charge without checking for double charging.
 
 ## Warp creation
 
-Both known entry points charge `setwarp`:
+Both known entry points charge `setwarp` before creating the warp:
 
 ```text
 /team warp set <name>
 Warp GUI → Create New Warp
 ```
 
-The direct command was fixed after an audit found it bypassing the GUI/feature-cost layer.
-
 ---
 
-# `TeamWarp.cost` vs. 2.5.3 global warp cost — current decision
+# BANK-WITHDRAW — VERIFIED 2.5.3 PARITY DECISION
 
-The 2.5.3 reference feature-cost system uses a global configured cost:
+This is **resolved**, not an outstanding omission.
+
+The shipped 2.5.3 configuration contains:
 
 ```text
-feature_costs.economy.warp = 75
+feature_costs.economy.bank_withdraw = 10.0
 ```
 
-The Fabric port already has a persistent per-warp field:
+However, the actual 2.5.3 bank-withdraw call path that was established from the reference source does **not** call:
 
-```java
-TeamWarp.cost
+```text
+canAffordAndPay(player, "bank_withdraw")
 ```
 
-and the Warp Management GUI allows that value to be changed.
+The actual reference withdrawal sequence is:
 
-**Current decision:** keep `TeamWarp.cost` as a deliberate Fabric-side extension rather than destructively replacing/removing it. Do not delete persisted per-warp cost data.
+```text
+permission check
+    ↓
+amount validation
+    ↓
+team balance check
+    ↓
+remove amount from team balance
+    ↓
+deposit amount into player's Vault balance
+```
 
-The global Fabric `feature-costs.warp = 75` remains documented as the 2.5.3 reference value, but current warp-use payment uses the per-warp `TeamWarp.cost` model.
+Therefore the configured `bank_withdraw` cost is an unused/dead configuration entry in the verified 2.5.3 path.
 
-This is an explicit parity/porting exception that should be revisited only if the user decides to enforce strict global-cost parity.
+Fabric must **not** invent a charge for it.
 
----
-
-# Bank-withdraw — CURRENT UNRESOLVED RESEARCH TARGET
-
-The Fabric TeamBank currently enforces withdrawal permission through the inventory slot layer:
+Current Fabric behavior is correct:
 
 ```text
 TeamBankScreenHandler
     ↓
 BankSlot.canTakeItems(player)
     ↓
-member.canWithdraw()
-OR
 BYPASS_BANK_WITHDRAW
+       OR
+member.canWithdraw()
 ```
 
-This is currently **not** charged through `FeatureCostManager`.
+`canTakeItems()` is authorization/inventory mechanics only. It is not a feature-payment transaction boundary.
 
-Do **not** simply put `FeatureCostManager.charge(player, "bank-withdraw")` inside `Slot.canTakeItems(...)` without first verifying the reference behavior. That method participates in inventory mechanics and may be called for many kinds of inventory interactions rather than a single explicit withdrawal transaction.
+Do **not** add:
 
-The unresolved question is:
-
-```text
-What exactly does 2.5.3 mean by the bank_withdraw feature cost?
+```java
+FeatureCostManager.charge(player, "bank-withdraw")
 ```
 
-We need the actual reference call chain to establish whether the cost applies:
+to `canTakeItems()` or another bank withdrawal predicate.
 
-- once when opening/using the bank;
-- once per item withdrawal transaction;
-- once per click/action;
-- once per GUI operation;
-- or under some other feature-specific condition.
+The `feature-costs.bank-withdraw` configuration entry remains solely for configuration parity with shipped 2.5.3.
 
-### Repository-wide search handoff for the next chat
-
-The GitHub connector's broad code search has returned no useful results for this investigation, so a new chat should **ask the user to perform repository-wide searches** rather than making an unsupported absence claim.
-
-For the **Fabric repository**, ask the user to search:
+The current repository status for this feature is:
 
 ```text
-bank-withdraw
-canWithdraw
-canTakeItems
-TeamBank
-withdraw
+2.5.3 configured cost       10   (present)
+2.5.3 actual charge call     none
+Fabric charge missing       no
+Fabric authorization         present
+Fabric bypass permission     present
+Fabric TeamBank              present
 ```
 
-For the **2.5.3 reference**, ask the user to search:
+---
+
+# TEAMWARP.COST — DELIBERATE FABRIC EXTENSION
+
+2.5.3 uses a global:
 
 ```text
-bank_withdraw
-canAffordAndPay
-withdrawPlayer
-bank
+feature_costs.economy.warp = 75
 ```
 
-The most useful reference result is code showing where the `bank_withdraw` feature cost is charged relative to the actual inventory withdrawal operation.
+Fabric already has persistent:
 
-Once those results are supplied:
+```java
+TeamWarp.cost
+```
+
+and its GUI allows per-warp configuration.
+
+Current decision: **keep `TeamWarp.cost`**. Do not delete persisted per-warp cost data or replace it with the global 75-unit value unless the user explicitly chooses strict global-cost parity.
+
+---
+
+# RENAME COST — NOT YET A FEATURE IMPLEMENTATION TARGET
+
+The reference has:
 
 ```text
-reference charge boundary
+rename = 500
+```
+
+Do not create a rename command or charge solely because this configuration entry exists.
+
+Only investigate it when the corresponding actual Fabric rename feature path is the current feature being traced.
+
+Required process:
+
+```text
+establish actual Fabric rename entry point
         ↓
-Fabric equivalent charge boundary
+establish exact 2.5.3 rename charge call path
         ↓
-implement only if behavior is established
+identify only missing Fabric pieces
+        ↓
+implement only those pieces
 ```
 
-Do not fabricate a charge boundary.
+---
+
+# STATUS RULES FOR OTHER SUBSYSTEMS
+
+Completed work should not be restarted without a concrete parity defect.
+
+Major completed areas include:
+
+- core Fabric setup;
+- team system/persistence;
+- permissions/command framework;
+- team chat;
+- viewer-specific glow;
+- team membership lifecycle;
+- persistent team Ender Chest;
+- centralized home/warp teleport behavior;
+- internal item economy.
+
+Record unrelated bugs as a brief `Later` note only. Do not investigate them during the current feature round unless they directly block the feature.
 
 ---
 
-# Rename cost — unresolved only if the Fabric rename feature exists
+# ROUND 10 / BUILD PROTOCOL
 
-The reference has a global `rename` feature cost of 500.
-
-Before adding any Fabric rename charge:
-
-1. establish whether the corresponding actual Fabric rename feature exists;
-2. identify its real command/GUI entry point;
-3. compare its 2.5.3 call chain;
-4. only then add the charge.
-
-Do not create a rename command solely because `feature-costs.rename` exists.
-
----
-
-# Remaining major work after economy
-
-Once `bank-withdraw` is established and any necessary rename behavior is handled:
-
-1. Continue the broader actual-feature parity audit against 2.5.3.
-2. For each feature, trace:
+The final checkpoint remains:
 
 ```text
-2.5.3 entry point
+Rounds 1–9
     ↓
-authorization / permission context
+evidence / parity / targeted implementation
     ↓
-state mutation
+Round 10
     ↓
-gameplay / rendering effect
-    ↓
-affected players
-    ↓
-lifecycle cleanup
-    ↓
-persistence / synchronization
-    ↓
-edge cases
-```
-
-3. Do not infer missing functionality solely from permission constants or similarly named classes.
-4. Do not restart completed glow, membership, Ender Chest, teleport, or item-economy work unless a concrete defect is found.
-5. Record meaningful discrepancies and decisions in the status files.
-
----
-
-# Build / Round 10 protocol
-
-The user will not perform another clean build until Round 10.
-
-Use:
-
-```powershell
 ./gradlew clean build --refresh-dependencies
+    ↓
+local runtime testing
+    ↓
+fix verified failures only
+    ↓
+final status reconciliation
 ```
 
-for the eventual final checkpoint.
-
-No clean Gradle build has been run for the most recent item-economy changes.
-
-Before requesting Round 10 build/testing, ensure:
-
-```text
-item economy complete
-bank-withdraw semantics resolved
-remaining concrete parity discrepancies addressed or explicitly documented
-status files reconciled
-```
-
-Then Round 10 should be:
-
-```text
-clean build
-    ↓
-user local runtime testing
-    ↓
-fix any verified failures
-    ↓
-final PROJECT_STATUS.md update
-    ↓
-completion
-```
+No clean Gradle build has been run for the current/latest item-economy changes.
 
 ---
 
-# Communication / repository-search protocol
+# HANDOFF / SEARCH PROTOCOL
 
-The user wants the assistant to continue working on every message; “Continue” is merely a reminder.
+When a repository-wide search is required:
 
-When external or repository-wide research would materially unblock the task:
+1. Use the GitHub repository search when it is actually available and reliable.
+2. If the connector cannot perform a reliable repository-wide search, tell the user exactly what search terms/results are needed.
+3. Never convert a narrow/no-result search into a claim of repository-wide absence.
+4. Use the user's supplied repository search results as authoritative evidence for the current audit when they directly show the relevant call path.
+
+When a feature is being audited, the required output of the round is:
 
 ```text
-What I am trying to determine:
-...
-
-Why it matters:
-...
-
-What exact search/reference would help:
-...
-
-What I can continue doing without that information:
-...
+exact verified 2.5.3 behavior
+        ↓
+current Fabric behavior
+        ↓
+missing Fabric pieces
+        ↓
+implementation decision
 ```
 
-When the GitHub connector can search directly, use it first.
-
-When the connector cannot perform a reliable repository-wide search, ask the user to run the exact search and provide the results.
-
-Never confuse:
-
-- no result from a narrow search;
-- an unavailable/unindexed code search;
-- repository-wide absence.
-
-Always verify Minecraft APIs against the pinned Yarn/Fabric versions before inserting them into the repository.
+Nothing outside that feature path should be investigated unless it blocks the current feature.
 
 ---
 
-# Historical project status
+# HISTORICAL NOTE
+
+Earlier completed rounds included the Fabric setup, permissions, team chat, glow, membership lifecycle, Ender Chest, teleport, and item-economy foundation. Their detailed implementation history may exist in older project `.md` handoff/audit files, but this file should be treated as the current operational source of truth for continuation behavior and current status.
