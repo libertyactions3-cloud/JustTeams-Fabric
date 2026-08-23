@@ -8,11 +8,38 @@ import net.minecraft.text.Text;
 public final class FeatureCostManager {
     private FeatureCostManager() {}
 
+    public static boolean canAfford(ServerPlayerEntity player, String feature) {
+        if (player == null || feature == null || feature.isBlank()) return false;
+        if (!JustTeamsFabric.config().isFeatureCostsEnabled()) return true;
+        return canAfford(player, JustTeamsFabric.config().getFeatureCost(feature), feature);
+    }
+
     public static boolean charge(ServerPlayerEntity player, String feature) {
         if (player == null || feature == null || feature.isBlank()) return false;
         if (!JustTeamsFabric.config().isFeatureCostsEnabled()) return true;
+        return charge(player, JustTeamsFabric.config().getFeatureCost(feature), feature);
+    }
 
-        double cost = JustTeamsFabric.config().getFeatureCost(feature);
+    public static boolean canAfford(ServerPlayerEntity player, double cost, String feature) {
+        if (player == null) return false;
+        if (cost <= 0.0D) return true;
+        if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
+            player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
+            return false;
+        }
+        if (!JustTeamsFabric.economy().isAvailable()) {
+            player.sendMessage(Text.literal("The item economy is unavailable."), true);
+            return false;
+        }
+        if (JustTeamsFabric.economy().getBalance(player) >= cost) return true;
+        player.sendMessage(Text.literal(
+                "You do not have enough " + JustTeamsFabric.economy().getCurrencyName()
+                        + " (cost: " + JustTeamsFabric.economy().format(cost) + ")."), true);
+        return false;
+    }
+
+    public static boolean charge(ServerPlayerEntity player, double cost, String feature) {
+        if (player == null) return false;
         if (cost <= 0.0D) return true;
         if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
             player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
