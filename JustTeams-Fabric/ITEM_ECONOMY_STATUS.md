@@ -101,39 +101,71 @@ A failed password after payment is intentionally not refunded, matching the refe
 
 ### Home teleport
 
-`TeamTeleportManager.requestHome()` now charges the `home` feature cost before the home cooldown/warmup path. This covers both `/team home` and the Home GUI because both route through the centralized teleport controller.
+`TeamTeleportManager.requestHome()` charges the `home` feature cost before the home cooldown/warmup path. This covers both `/team home` and the Home GUI because both route through the centralized teleport controller.
 
 The Home GUI's **set home** action separately charges `sethome` before changing the stored team location.
 
 The Home GUI does not charge the teleport a second time; the centralized controller owns that charge.
 
-The direct `/team home set` command now also charges `sethome` before changing the stored location.
+The direct `/team home set` command also charges `sethome` before changing the stored location.
 
 ### Ender Chest
 
-`TeamEnderChestGui.open(...)` now charges `enderchest` before opening the shared team Ender Chest. This is the central feature entry point, so `/team enderchest`, `/team ec`, and GUI access converge on the same charge path instead of duplicating charges.
+`TeamEnderChestGui.open(...)` charges `enderchest` before opening the shared team Ender Chest. This is the central feature entry point, so `/team enderchest`, `/team ec`, and GUI access converge on the same charge path instead of duplicating charges.
 
 ### Warp creation
 
 The Fabric Warp GUI's `set new warp` path charges `setwarp` before creating the warp.
 
-The direct `/team warp set <name>` command now also charges `setwarp` before creating the warp.
+The direct `/team warp set <name>` command also charges `setwarp` before creating the warp.
 
 Both match the verified 2.5.3 command/GUI feature-cost ordering: charge before the underlying creation method continues.
 
-## Reference observations
+## Bank-withdraw parity decision
 
-The verified 2.5.3 `FeatureRestrictionManager` performs feature economy withdrawal before the feature method continues. It is generic across feature names rather than being a warp-only mechanism.
+The configured 2.5.3 value `feature_costs.economy.bank_withdraw = 10.0` is **not charged by the actual 2.5.3 bank-withdraw call path** that was established through repository-wide source search supplied by the user.
 
-The verified 2.5.3 command paths explicitly charge `sethome`, `home`, `enderchest`, `setwarp`, and `warp` before invoking their feature methods.
+The reference bank withdrawal performs:
 
-The 2.5.3 TeamGUI also contains an apparent double-charge path for the `warps` button: it calls `canAffordAndPay(player, "warp")` before opening the warp GUI, and the individual warp item calls it again before teleporting. The current Fabric GUI does **not** intentionally reproduce that apparent double-charge quirk; it charges at the actual warp-use point. This remains a documented parity exception pending a deliberate decision that the upstream behavior is intentional rather than an apparent GUI bug.
+```text
+permission check
+  ↓
+amount validation
+  ↓
+team balance check
+  ↓
+remove amount from team balance
+  ↓
+deposit amount into player's Vault balance
+```
 
-## Known remaining economy work
+There is no `canAffordAndPay(player, "bank_withdraw")` call in that path.
 
-- Decide whether Fabric's per-warp `TeamWarp.cost` should remain as a deliberate extension or be replaced by the 2.5.3 global `feature-costs.warp` concept. No destructive change has been made yet.
-- Review `bank-withdraw` and `rename` only if/when those corresponding Fabric feature paths are actually implemented; do not create dead commands merely to populate the cost table.
-- Perform a final audit for any additional actual GUI or command entry point that performs a paid feature without passing through the centralized cost path. Avoid claiming repository-wide absence unless the search/index supports it.
+Therefore Fabric deliberately does **not** add `FeatureCostManager.charge(player, "bank-withdraw")` to `TeamBankScreenHandler.canTakeItems()` or any other bank withdrawal predicate.
+
+`TeamBankScreenHandler.canTakeItems()` remains an authorization/mechanics gate only. This is a verified parity decision, not an unresolved omission.
+
+The `feature-costs.bank-withdraw` configuration entry remains because it mirrors the shipped 2.5.3 configuration, but it is intentionally unused just as the reference call graph leaves it unused.
+
+## Team bank vs player item economy
+
+These remain separate concepts:
+
+```text
+TeamBank
+  = team-owned configured currency-item storage
+
+ItemEconomyProvider
+  = player's configured currency-item balance
+```
+
+That mirrors the 2.5.3 conceptual split between team bank balance and the player's Vault balance.
+
+## Remaining economy questions
+
+- `TeamWarp.cost` remains a deliberate Fabric extension. The current Fabric `TeamWarp` model persists a per-warp numeric cost and the warp-management GUI exposes it for configuration. The strict 2.5.3 global reference value remains documented as `feature-costs.warp = 75`; the Fabric implementation does not destructively remove the existing per-warp model.
+- The 2.5.3 TeamGUI contains an apparent double-charge path for the `warps` button: it calls `canAffordAndPay(player, "warp")` before opening the warp GUI, and the individual warp item calls it again before teleporting. The current Fabric GUI does **not** intentionally reproduce that apparent double-charge quirk; it charges at the actual warp-use point. This remains a documented parity exception unless new evidence establishes that the upstream behavior was intentional.
+- Perform a final audit for any additional actual GUI or command entry point that performs a paid feature without passing through the centralized cost path. Repository-wide search should be requested from the user whenever the connector's repository-wide search becomes unavailable.
 
 ## Build status
 
