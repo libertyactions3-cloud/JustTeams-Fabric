@@ -93,7 +93,10 @@ public final class TeamStringInputGui {
         @Override
         public void onClosed(PlayerEntity player) {
             super.onClosed(player);
-            if (!completed && player instanceof ServerPlayerEntity) cancelled.run();
+            if (completed || !(player instanceof ServerPlayerEntity serverPlayer)) return;
+            var server = serverPlayer.getEntityWorld().getServer();
+            if (server != null) server.execute(cancelled);
+            else cancelled.run();
         }
     }
 }
