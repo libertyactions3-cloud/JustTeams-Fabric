@@ -107,7 +107,8 @@ public final class TeamTeleportManager {
             Warmup warmup = iterator.next().getValue();
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(warmup.playerUuid);
 
-            if (player == null || !player.isAlive() || player.getServer() != server) {
+            if (player == null || !player.isAlive()
+                    || ((ServerWorld) player.getEntityWorld()).getServer() != server) {
                 iterator.remove();
                 continue;
             }
@@ -154,7 +155,7 @@ public final class TeamTeleportManager {
 
         player.sendMessage(Text.literal("You have been successfully teleported to your team home."), true);
         if (JustTeamsFabric.config().isSoundsEnabled()) {
-            player.playSoundToPlayer(getTeleportSound(), SoundCategory.PLAYERS, 1.0F, 1.0F);
+            player.playSound(getTeleportSound(), 1.0F, 1.0F);
         }
         spawnSuccessParticles(player);
         setCooldown(player, warmup.type);
@@ -206,7 +207,8 @@ public final class TeamTeleportManager {
             return null;
         }
         RegistryKey<World> key = RegistryKey.of(RegistryKeys.WORLD, identifier);
-        ServerWorld world = player.getServer().getWorld(key);
+        ServerWorld serverWorld = (ServerWorld) player.getEntityWorld();
+        ServerWorld world = serverWorld.getServer().getWorld(key);
         if (world == null) {
             player.sendMessage(Text.literal("The saved teleport location's dimension is not available."), true);
             return null;
@@ -234,7 +236,7 @@ public final class TeamTeleportManager {
 
     private void playErrorSound(ServerPlayerEntity player) {
         if (JustTeamsFabric.config().isSoundsEnabled()) {
-            player.playSoundToPlayer(getErrorSound(), SoundCategory.PLAYERS, 1.0F, 1.0F);
+            player.playSound(getErrorSound(), 1.0F, 1.0F);
         }
     }
 
