@@ -77,6 +77,7 @@ public final class JustTeamsFabric implements ModInitializer {
 
     private void loadTeamData(MinecraftServer server) {
         try {
+            teamStorage.setRegistryLookup(server.getRegistryManager());
             teamStorage.load(teamManager);
             LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size());
         } catch (IOException exception) {
@@ -86,6 +87,7 @@ public final class JustTeamsFabric implements ModInitializer {
 
     private void saveTeamData(MinecraftServer server, boolean logSuccess) {
         try {
+            teamStorage.setRegistryLookup(server.getRegistryManager());
             teamStorage.save(teamManager);
             if (logSuccess) LOGGER.info("Saved {} team(s) including persistent bank inventories", teamManager.size());
         } catch (IOException exception) {
