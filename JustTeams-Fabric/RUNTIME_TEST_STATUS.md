@@ -118,7 +118,41 @@ team tag
 
 This keeps team creation inside the already-working GUI text-input path and avoids changing unrelated chat behavior.
 
-Runtime verification of the new creation GUI flow is still pending.
+#### Crash discovered during runtime testing
+
+The user reported a server `StackOverflowError` while cancelling/restarting the team-creation anvil input after an invalid 5-character tag.
+
+The relevant recursion is:
+
+```text
+NoTeamGui.open()
+    ↓
+TeamStringInputGui.onClosed()
+    ↓
+cancelled.run()
+    ↓
+NoTeamGui.open()
+    ↓
+closeHandledScreen()
+    ↓
+TeamStringInputGui.onClosed()
+    ↓
+...
+```
+
+Cause: `ScreenHandler.onClosed()` is invoked as part of server-side screen closing, and the cancellation callback was reopening another handled screen synchronously from inside `onClosed()`.
+
+Targeted fix:
+
+```text
+TeamStringInputGui.onClosed()
+    ↓
+server.execute(cancelled)
+```
+
+The callback now runs after the current close operation has completed, preventing re-entrant screen-close recursion. This uses the pinned 1.21.11 `ServerPlayerEntity#getEntityWorld()` → `ServerWorld#getServer()` path and `MinecraftServer` executor behavior.
+
+Runtime verification of the corrected team-creation GUI is still pending.
 
 ## Targeted fixes committed
 
@@ -130,6 +164,7 @@ Runtime verification of the new creation GUI flow is still pending.
 - `/team warp set <name> [password]` now supports an optional password.
 - Warp GUI creation and management support optional password entry.
 - `/team` team-creation GUI now uses the existing anvil-style text input for name/tag entry.
+- `TeamStringInputGui` now defers cancellation callbacks through the server executor to prevent recursive handled-screen reopening.
 
 ## Remaining focused runtime verification
 
@@ -139,7 +174,7 @@ After pulling the latest `main` changes and successfully building, run only:
 2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and corrected warp success message.
 3. `/team warp set <name> <password>` — verify the password persists and `/team warp <name> <password>` works.
 4. Warp GUI → create a password-protected warp — verify the password persists and can be used.
-5. `/team` → Create Team GUI — verify entering the name and tag through the GUI creates the team successfully.
+5. `/team` → Create Team GUI — verify an invalid tag such as 5 characters cancels safely without crashing, and valid name/tag entry creates the team successfully.
 6. Verify command and GUI paths do not double-charge.
 
 ## Important parity decisions
