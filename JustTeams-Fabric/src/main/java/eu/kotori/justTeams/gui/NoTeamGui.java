@@ -1,7 +1,6 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
-import eu.kotori.justTeams.util.ChatInputManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -100,14 +99,14 @@ public final class NoTeamGui {
     }
 
     private static void beginCreation(ServerPlayerEntity player) {
-        ChatInputManager.begin(player, "Enter your new team's name (1-16 characters), or type cancel:", name -> {
+        TeamStringInputGui.open(player, "Create Team", "Enter your new team's name (1-16 characters)", name -> {
             String cleanName = name.trim();
             if (cleanName.isBlank() || cleanName.length() > 16 || cleanName.contains(" ")) {
                 player.sendMessage(Text.literal("Invalid team name. Use 1-16 non-space characters."), false);
                 open(player);
                 return;
             }
-            ChatInputManager.begin(player, "Enter your team's tag (1-4 characters), or type cancel:", tag -> {
+            TeamStringInputGui.open(player, "Create Team", "Enter your team's tag (1-4 characters)", tag -> {
                 String cleanTag = tag.trim();
                 if (cleanTag.isBlank() || cleanTag.length() > 4 || cleanTag.contains(" ")) {
                     player.sendMessage(Text.literal("Invalid team tag. Use 1-4 non-space characters."), false);
@@ -128,8 +127,8 @@ public final class NoTeamGui {
                     player.sendMessage(Text.literal("Unable to create the team."), false);
                     open(player);
                 }
-            });
-        });
+            }, () -> open(player));
+        }, () -> open(player));
     }
 
     private static ItemStack named(net.minecraft.item.Item item, String name) {
