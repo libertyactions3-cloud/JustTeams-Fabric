@@ -14,6 +14,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Formatting;
 
 import java.io.IOException;
@@ -25,6 +26,11 @@ import java.util.UUID;
 public final class TeamStorage {
     private static final int DATA_VERSION = 5;
     private final Path path = FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("teams.dat");
+    private RegistryWrapper.WrapperLookup registries;
+
+    public void setRegistryLookup(RegistryWrapper.WrapperLookup registries) {
+        this.registries = registries;
+    }
 
     public void load(TeamManager manager) throws IOException {
         manager.clear();
@@ -77,15 +83,15 @@ public final class TeamStorage {
 
     private void writeEnderChest(Team team, NbtCompound teamTag) {
         TeamEnderChest enderChest = team.getEnderChest();
-        if (enderChest == null) return;
-        NbtList inventory = enderChest.toNbtList();
+        if (enderChest == null || registries == null) return;
+        NbtList inventory = enderChest.toNbtList(registries);
         if (!inventory.isEmpty()) teamTag.put("enderChest", inventory);
     }
 
     private void readEnderChest(Team team, NbtCompound teamTag) {
-        if (!teamTag.contains("enderChest")) return;
+        if (registries == null || !teamTag.contains("enderChest")) return;
         TeamEnderChest enderChest = new TeamEnderChest(team, JustTeamsFabric.config().getEnderChestRows());
-        enderChest.readNbtList(teamTag.getListOrEmpty("enderChest"));
+        enderChest.readNbtList(teamTag.getListOrEmpty("enderChest"), registries);
         team.setEnderChest(enderChest);
     }
 
