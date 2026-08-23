@@ -35,7 +35,7 @@ The team home was stored correctly.
 
 Teleport destination: PASS.
 
-Payment timing: FAILED relative to the requested behavior. The feature currently charged before the teleport completed.
+Payment timing: previously FAILED relative to the requested behavior. The targeted fix now defers the withdrawal until the teleport succeeds.
 
 Required behavior now:
 
@@ -51,6 +51,8 @@ withdraw item currency
 success message
 ```
 
+Runtime verification of the corrected payment timing is still pending.
+
 ### Warp use
 
 Teleport destination: PASS.
@@ -61,40 +63,39 @@ The runtime test exposed a message-parity bug: warp use displayed the home succe
 You have been successfully teleported to your team home.
 ```
 
-The current fix makes the success message depend on the teleport type:
+The targeted fix now makes the success message depend on teleport type:
 
 ```text
 home → You have been successfully teleported to your team home.
 warp → You have been successfully teleported to your team warp.
 ```
 
-Warp payment is now deferred until the actual teleport returns success. Both command and GUI paths use the same `TeamTeleportManager.requestWarp(..., cost)` path.
+Warp payment is now intended to occur only after successful teleport. Runtime verification of the corrected payment timing/message is still pending.
 
 ### Team Ender Chest
 
 `/team enderchest` and `/team ec` correctly open the same feature.
 
-Runtime persistence: FAILED.
+Persistence: PASS.
 
-Items placed in the team Ender Chest disappeared after closing the GUI.
+The user confirmed that items placed in `/team ec` remain after closing and reopening it.
 
-The verified 2.5.3 reference explicitly serializes the shared Ender Chest inventory and saves it when the chest is released/closed. The Fabric implementation had an NBT serialization path, but it encoded `ItemStack` without the live registry lookup required by the 1.21.11 ItemStack NBT API. The fix now uses `ItemStack.toNbt(RegistryWrapper.WrapperLookup)` and `ItemStack.fromNbt(...)` with the server's registry manager supplied to `TeamStorage`.
+The final fix was deliberately aligned with the already-working TeamBank persistence pattern: both inventories use the project's compatible `ItemStack.CODEC` + `NbtOps` serialization path, while the Ender Chest remains attached to the team after release so it can be reused on the next open.
 
 ## Targeted fixes committed
 
-- `FeatureCostManager` now supports non-mutating affordability checks plus explicit amount charges.
-- `TeamTeleportManager` only withdraws teleport currency after `ServerPlayerEntity.teleport(...)` reports success and uses a distinct home/warp success message.
-- `/team warp` command and Warp GUI no longer withdraw the warp cost before password/warmup/teleport; both pass the per-warp cost into `TeamTeleportManager`.
-- Team Ender Chest persistence now uses the pinned 1.21.11 registry-aware ItemStack NBT API.
+- `FeatureCostManager` supports non-mutating affordability checks plus explicit amount charges.
+- `TeamTeleportManager` defers teleport currency withdrawal until successful teleport and uses distinct home/warp success messages.
+- `/team warp` command and Warp GUI no longer withdraw the warp cost before password/warmup/teleport; both pass the per-warp cost into the teleport path.
+- Team Ender Chest persistence uses the same compatible ItemStack codec/NBT approach as TeamBank and preserves the team's Ender Chest instance across close/reopen.
 
 ## Remaining runtime verification
 
-After pulling the latest `main` changes, rerun the focused tests:
+After pulling the latest `main` changes, run only the focused remaining tests:
 
 1. `/team home` — verify currency is unchanged during warmup/cancellation and is removed only after successful teleport.
 2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and the corrected warp success message.
-3. `/team enderchest` and `/team ec` — put an item in the chest, close it, reopen it, and verify the item remains.
-4. Verify command and GUI paths do not double-charge.
+3. Verify command and GUI paths do not double-charge.
 
 ## Important parity decisions
 
