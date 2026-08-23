@@ -6,16 +6,15 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityPose;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.TeamS2CPacket;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Formatting;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -48,10 +47,14 @@ public final class GlowManager {
                 server.execute(() -> refreshAll(server)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 glowingCache.remove(handler.player.getUuid()));
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
-                newPlayer.getServer().execute(() -> refreshAll(newPlayer.getServer())));
-        ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) ->
-                player.getServer().execute(() -> refreshAll(player.getServer())));
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+            ServerWorld world = (ServerWorld) newPlayer.getEntityWorld();
+            world.getServer().execute(() -> refreshAll(world.getServer()));
+        });
+        ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
+            ServerWorld world = (ServerWorld) player.getEntityWorld();
+            world.getServer().execute(() -> refreshAll(world.getServer()));
+        });
         ServerTickEvents.END_SERVER_TICK.register(this::tick);
     }
 
@@ -61,7 +64,7 @@ public final class GlowManager {
         if (tickCounter % interval == 0) refreshAll(server);
     }
 
-    public void updateGlowForTeam(MinecraftServer server, Team ignored) {
+    public void updateGlowForTeam(MinecraftServer server, eu.kotori.justTeams.team.Team ignored) {
         refreshAll(server);
     }
 
@@ -89,7 +92,7 @@ public final class GlowManager {
             return;
         }
 
-        Team team = JustTeamsFabric.teams().getTeam(target.getUuid());
+        eu.kotori.justTeams.team.Team team = JustTeamsFabric.teams().getTeam(target.getUuid());
         boolean visible = team != null
                 && team.isGlowEnabled()
                 && team.isMember(receiver.getUuid())
@@ -124,7 +127,8 @@ public final class GlowManager {
         Formatting previous = receiverCache.remove(targetUuid);
         if (previous == null) return;
 
-        ServerPlayerEntity target = receiver.getServer().getPlayerManager().getPlayer(targetUuid);
+        ServerWorld world = (ServerWorld) receiver.getEntityWorld();
+        ServerPlayerEntity target = world.getServer().getPlayerManager().getPlayer(targetUuid);
         if (target != null) {
             sendMetadataPacket(target, receiver, false);
             sendTeamRemove(previous, target, receiver);
@@ -143,26 +147,17 @@ public final class GlowManager {
     }
 
     private void sendMetadataPacket(ServerPlayerEntity target, ServerPlayerEntity receiver, boolean glowing) {
-        byte flags = 0;
-        if (target.isOnFire()) flags |= 0x01;
-        if (target.isSneaking()) flags |= 0x02;
-        if (target.isSprinting()) flags |= 0x08;
-        if (target.isSwimming()) flags |= 0x10;
-        if (target.isInvisible()) flags |= 0x20;
-        if (glowing || target.isGlowing()) flags |= 0x40;
-        if (target.getPose() == EntityPose.FALL_FLYING) flags |= (byte) 0x80;
+        byte flags = target.getDataTracker().get(Entity.FLAGS);
+        if (glowing) {
+            flags |= 0x40;
+        } else {
+            flags &= (byte) ~0x40;
+        }
 
         EntityTrackerUpdateS2CPacket packet = new EntityTrackerUpdateS2CPacket(
                 target.getId(),
-                List.of(net.minecraft.entity.data.DataTracker.SerializedEntry.of(EntityAccessor.FLAGS, flags))
+                List.of(net.minecraft.entity.data.DataTracker.SerializedEntry.of(Entity.FLAGS, flags))
         );
         receiver.networkHandler.sendPacket(packet);
-    }
-
-    /** Accessor kept isolated so the packet implementation has one version-sensitive location. */
-    private static final class EntityAccessor extends Entity {
-        private static final net.minecraft.entity.data.TrackedData<Byte> FLAGS = Entity.FLAGS;
-
-        private EntityAccessor() { super(null, null); }
     }
 }
