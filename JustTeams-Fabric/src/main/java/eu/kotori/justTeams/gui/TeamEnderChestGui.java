@@ -93,7 +93,8 @@ public final class TeamEnderChestGui {
         if (enderChest == null) return;
         save();
         enderChest.setSaveCallback(null);
-        team.setEnderChest(null);
+        // Keep the persisted inventory attached to the team so the next /team ec
+        // reuses the saved contents instead of creating a new empty inventory.
     }
 
     private static void save() {
