@@ -107,29 +107,33 @@ The Home GUI's **set home** action separately charges `sethome` before changing 
 
 The Home GUI does not charge the teleport a second time; the centralized controller owns that charge.
 
-### Main Team GUI Ender Chest
+The direct `/team home set` command now also charges `sethome` before changing the stored location.
 
-The main Team GUI's Ender Chest entry point now charges `enderchest` before opening the shared chest.
+### Ender Chest
 
-The direct `/team enderchest` command still requires its own command-path cost wiring; no speculative replacement of the compact command source was made.
+`TeamEnderChestGui.open(...)` now charges `enderchest` before opening the shared team Ender Chest. This is the central feature entry point, so `/team enderchest`, `/team ec`, and GUI access converge on the same charge path instead of duplicating charges.
 
-### Warp creation GUI
+### Warp creation
 
-The Fabric Warp GUI's `set new warp` path now charges `setwarp` before creating the warp, matching the verified 2.5.3 command's feature-cost check before `setTeamWarp()`.
+The Fabric Warp GUI's `set new warp` path charges `setwarp` before creating the warp.
+
+The direct `/team warp set <name>` command now also charges `setwarp` before creating the warp.
+
+Both match the verified 2.5.3 command/GUI feature-cost ordering: charge before the underlying creation method continues.
 
 ## Reference observations
 
-The verified 2.5.3 `FeatureRestrictionManager` performs feature economy withdrawal before the feature method continues. It is generic across feature names rather than being a warp-only mechanism. fileciteturn352file0
+The verified 2.5.3 `FeatureRestrictionManager` performs feature economy withdrawal before the feature method continues. It is generic across feature names rather than being a warp-only mechanism.
 
-The verified 2.5.3 command paths explicitly charge `sethome`, `home`, `enderchest`, `setwarp`, and `warp` before invoking their feature methods. fileciteturn370file0 fileciteturn371file0 fileciteturn372file0
+The verified 2.5.3 command paths explicitly charge `sethome`, `home`, `enderchest`, `setwarp`, and `warp` before invoking their feature methods.
 
-The 2.5.3 TeamGUI also contains an apparent double-charge path for the `warps` button: it calls `canAffordAndPay(player, "warp")` before opening the warp GUI, and the individual warp item calls it again before teleporting. This is recorded as a reference observation rather than intentionally reproduced because it appears to be an upstream GUI bug rather than a meaningful feature requirement. fileciteturn336file0 fileciteturn341file0
+The 2.5.3 TeamGUI also contains an apparent double-charge path for the `warps` button: it calls `canAffordAndPay(player, "warp")` before opening the warp GUI, and the individual warp item calls it again before teleporting. The current Fabric GUI does **not** intentionally reproduce that apparent double-charge quirk; it charges at the actual warp-use point. This remains a documented parity exception pending a deliberate decision that the upstream behavior is intentional rather than an apparent GUI bug.
 
 ## Known remaining economy work
 
-- Add the verified feature-cost behavior to the remaining direct command paths where they exist in the Fabric port (`sethome`, `enderchest`, and any future implemented paid features), without creating duplicate charges where a centralized controller already owns the charge.
 - Decide whether Fabric's per-warp `TeamWarp.cost` should remain as a deliberate extension or be replaced by the 2.5.3 global `feature-costs.warp` concept. No destructive change has been made yet.
 - Review `bank-withdraw` and `rename` only if/when those corresponding Fabric feature paths are actually implemented; do not create dead commands merely to populate the cost table.
+- Perform a final audit for any additional actual GUI or command entry point that performs a paid feature without passing through the centralized cost path. Avoid claiming repository-wide absence unless the search/index supports it.
 
 ## Build status
 
