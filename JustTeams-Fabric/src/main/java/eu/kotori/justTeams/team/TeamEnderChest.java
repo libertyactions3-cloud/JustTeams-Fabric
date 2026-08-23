@@ -4,9 +4,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.registry.RegistryWrapper;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -44,24 +43,21 @@ public final class TeamEnderChest extends SimpleInventory {
         if (!loading && saveCallback != null) saveCallback.run();
     }
 
-    /** Serializes occupied slots using the 1.21.11 ItemStack CODEC. */
-    public NbtList toNbtList() {
+    /** Serializes occupied slots using the 1.21.11 ItemStack NBT API and live registries. */
+    public NbtList toNbtList(RegistryWrapper.WrapperLookup registries) {
         NbtList list = new NbtList();
         for (int slot = 0; slot < size(); slot++) {
             ItemStack stack = getStack(slot);
             if (stack.isEmpty()) continue;
-            NbtElement encoded = ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, stack)
-                    .result()
-                    .orElse(null);
-            if (!(encoded instanceof NbtCompound entry)) continue;
+            NbtCompound entry = stack.toNbt(registries);
             entry.putInt("Slot", slot);
             list.add(entry);
         }
         return list;
     }
 
-    /** Restores occupied slots from the serialized item-stack list. */
-    public void readNbtList(NbtList list) {
+    /** Restores occupied slots from serialized item-stack NBT. */
+    public void readNbtList(NbtList list, RegistryWrapper.WrapperLookup registries) {
         loading = true;
         try {
             clear();
@@ -69,9 +65,9 @@ public final class TeamEnderChest extends SimpleInventory {
                 NbtCompound entry = list.getCompoundOrEmpty(i);
                 int slot = entry.getInt("Slot", -1);
                 if (slot < 0 || slot >= size()) continue;
-                ItemStack.CODEC.parse(NbtOps.INSTANCE, entry)
-                        .result()
-                        .ifPresent(stack -> setStack(slot, stack));
+                NbtCompound stackNbt = entry.copy();
+                stackNbt.remove("Slot");
+                setStack(slot, ItemStack.fromNbt(registries, stackNbt));
             }
         } finally {
             loading = false;
