@@ -13,43 +13,88 @@ BUILD SUCCESSFUL in 1m 41s
 
 The two Loom `Cannot remap modifiers...` messages remained during configuration but did not fail the build.
 
-## Current state
+## Runtime results
 
-Compilation/package verification: **PASS**
+### `/team home set`
 
-Full in-game runtime verification: **PENDING**
+PASS.
 
-## Runtime test scope
+The user started with 64 Deepslate Emerald Ore and ended with:
 
-Test only the features covered by the current item-economy/parity work:
+```text
+62 Deepslate Emerald Ore
+6 Emerald Blocks
+8 Emeralds
+```
 
-1. `/team home set`
-   - confirm configured `sethome` cost is charged;
-   - confirm insufficient currency prevents changing the home.
+That is exactly 100 item-currency units spent, matching the configured `sethome = 100` cost.
 
-2. `/team home`
-   - confirm configured `home` cost is charged once;
-   - confirm cooldown/warmup behavior still works.
+The team home was stored correctly.
 
-3. `/team warp set <name>`
-   - confirm configured `setwarp` cost is charged before creation;
-   - confirm insufficient currency prevents creation.
+### `/team home`
 
-4. `/team warp <name>`
-   - confirm the existing per-warp `TeamWarp.cost` is charged once;
-   - confirm insufficient currency prevents the warp;
-   - confirm payment ordering matches the documented parity decision.
+Teleport destination: PASS.
 
-5. `/team enderchest` and `/team ec`
-   - confirm configured `enderchest` cost is charged once;
-   - confirm insufficient currency prevents opening.
+Payment timing: FAILED relative to the requested behavior. The feature currently charged before the teleport completed.
 
-6. Team GUI equivalents for home, warp creation/use, and Ender Chest
-   - confirm command and GUI paths do not double-charge.
+Required behavior now:
 
-7. Team bank withdrawal
-   - confirm withdrawal is governed by member/bypass permission only;
-   - confirm the configured `bank-withdraw` value does not charge the player.
+```text
+check cooldown / affordability
+    ↓
+start warmup
+    ↓
+successful teleport
+    ↓
+withdraw item currency
+    ↓
+success message
+```
+
+### Warp use
+
+Teleport destination: PASS.
+
+The runtime test exposed a message-parity bug: warp use displayed the home success message:
+
+```text
+You have been successfully teleported to your team home.
+```
+
+The current fix makes the success message depend on the teleport type:
+
+```text
+home → You have been successfully teleported to your team home.
+warp → You have been successfully teleported to your team warp.
+```
+
+Warp payment is now deferred until the actual teleport returns success. Both command and GUI paths use the same `TeamTeleportManager.requestWarp(..., cost)` path.
+
+### Team Ender Chest
+
+`/team enderchest` and `/team ec` correctly open the same feature.
+
+Runtime persistence: FAILED.
+
+Items placed in the team Ender Chest disappeared after closing the GUI.
+
+The verified 2.5.3 reference explicitly serializes the shared Ender Chest inventory and saves it when the chest is released/closed. The Fabric implementation had an NBT serialization path, but it encoded `ItemStack` without the live registry lookup required by the 1.21.11 ItemStack NBT API. The fix now uses `ItemStack.toNbt(RegistryWrapper.WrapperLookup)` and `ItemStack.fromNbt(...)` with the server's registry manager supplied to `TeamStorage`.
+
+## Targeted fixes committed
+
+- `FeatureCostManager` now supports non-mutating affordability checks plus explicit amount charges.
+- `TeamTeleportManager` only withdraws teleport currency after `ServerPlayerEntity.teleport(...)` reports success and uses a distinct home/warp success message.
+- `/team warp` command and Warp GUI no longer withdraw the warp cost before password/warmup/teleport; both pass the per-warp cost into `TeamTeleportManager`.
+- Team Ender Chest persistence now uses the pinned 1.21.11 registry-aware ItemStack NBT API.
+
+## Remaining runtime verification
+
+After pulling the latest `main` changes, rerun the focused tests:
+
+1. `/team home` — verify currency is unchanged during warmup/cancellation and is removed only after successful teleport.
+2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and the corrected warp success message.
+3. `/team enderchest` and `/team ec` — put an item in the chest, close it, reopen it, and verify the item remains.
+4. Verify command and GUI paths do not double-charge.
 
 ## Important parity decisions
 
