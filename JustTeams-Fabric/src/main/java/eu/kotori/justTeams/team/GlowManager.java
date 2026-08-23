@@ -147,7 +147,7 @@ public final class GlowManager {
     }
 
     private void sendMetadataPacket(ServerPlayerEntity target, ServerPlayerEntity receiver, boolean glowing) {
-        byte flags = target.getDataTracker().get(Entity.FLAGS);
+        byte flags = target.getDataTracker().get(EntityAccessor.flags());
         if (glowing) {
             flags |= 0x40;
         } else {
@@ -156,8 +156,19 @@ public final class GlowManager {
 
         EntityTrackerUpdateS2CPacket packet = new EntityTrackerUpdateS2CPacket(
                 target.getId(),
-                List.of(net.minecraft.entity.data.DataTracker.SerializedEntry.of(Entity.FLAGS, flags))
+                List.of(net.minecraft.entity.data.DataTracker.SerializedEntry.of(EntityAccessor.flags(), flags))
         );
         receiver.networkHandler.sendPacket(packet);
+    }
+
+    /** Exposes Entity.FLAGS from a subclass context without instantiating an Entity. */
+    private abstract static class EntityAccessor extends Entity {
+        private EntityAccessor() {
+            super(null, null);
+        }
+
+        private static net.minecraft.entity.data.TrackedData<Byte> flags() {
+            return FLAGS;
+        }
     }
 }
