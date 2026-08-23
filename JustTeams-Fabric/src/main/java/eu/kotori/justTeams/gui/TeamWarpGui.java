@@ -1,7 +1,6 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
-import eu.kotori.justTeams.economy.EconomyTransactionResult;
 import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
@@ -86,26 +85,6 @@ public final class TeamWarpGui {
             player.sendMessage(Text.literal("Unable to save the team warp."), true);
             JustTeamsFabric.LOGGER.error("Failed to create team warp {}", name, exception);
         }
-    }
-
-    private static boolean chargeWarp(ServerPlayerEntity player, double cost) {
-        if (cost <= 0.0D) return true;
-        if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
-            player.sendMessage(Text.literal("This warp has an invalid item-economy cost."), true);
-            return false;
-        }
-
-        EconomyTransactionResult result = JustTeamsFabric.economy().withdraw(player, cost);
-        if (result.successful()) return true;
-
-        switch (result.reason()) {
-            case INSUFFICIENT_FUNDS -> player.sendMessage(
-                    Text.literal("You do not have enough Emeralds to use this warp (cost: "
-                            + JustTeamsFabric.economy().format(cost) + ")."), true);
-            case UNAVAILABLE -> player.sendMessage(Text.literal("The item economy is unavailable."), true);
-            default -> player.sendMessage(Text.literal("Unable to pay for this warp."), true);
-        }
-        return false;
     }
 
     private static final class Handler extends ScreenHandler {
@@ -206,9 +185,6 @@ public final class TeamWarpGui {
                 return;
             }
 
-            // 2.5.3 charges the player before TeamManager performs password/cooldown checks.
-            if (!chargeWarp(player, warp.getCost())) return;
-
             if (!warp.getPassword().isEmpty()) {
                 TeamStringInputGui.open(player, "Warp Password", "Enter password", value -> {
                     if (!warp.getPassword().equals(value)) {
@@ -225,7 +201,8 @@ public final class TeamWarpGui {
 
         private void requestTeleport(ServerPlayerEntity player, TeamWarp warp) {
             JustTeamsFabric.teleports().requestWarp(player,
-                    new TeamLocation(warp.getWorld(), warp.getX(), warp.getY(), warp.getZ(), warp.getYaw(), warp.getPitch()));
+                    new TeamLocation(warp.getWorld(), warp.getX(), warp.getY(), warp.getZ(), warp.getYaw(), warp.getPitch()),
+                    warp.getCost());
         }
 
         private static String formatCost(double cost) {
