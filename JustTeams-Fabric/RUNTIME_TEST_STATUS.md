@@ -13,6 +13,8 @@ BUILD SUCCESSFUL in 1m 41s
 
 The two Loom `Cannot remap modifiers...` messages remained during configuration but did not fail the build.
 
+The source has changed since that successful build, so the current `main` state requires another clean build before current compile verification is claimed.
+
 ## Runtime results
 
 ### `/team home set`
@@ -40,7 +42,7 @@ Payment timing: previously FAILED relative to the requested behavior. The target
 Required behavior now:
 
 ```text
-check cooldown / affordability
+check validity / cooldown
     ↓
 start warmup
     ↓
@@ -48,7 +50,7 @@ successful teleport
     ↓
 withdraw item currency
     ↓
-success message
+home success message
 ```
 
 Runtime verification of the corrected payment timing is still pending.
@@ -57,20 +59,20 @@ Runtime verification of the corrected payment timing is still pending.
 
 Teleport destination: PASS.
 
-The runtime test exposed a message-parity bug: warp use displayed the home success message:
-
-```text
-You have been successfully teleported to your team home.
-```
-
-The targeted fix now makes the success message depend on teleport type:
+The runtime test originally exposed the wrong home success message. The targeted fix now uses:
 
 ```text
 home → You have been successfully teleported to your team home.
 warp → You have been successfully teleported to your team warp.
 ```
 
-Warp payment is now intended to occur only after successful teleport. Runtime verification of the corrected payment timing/message is still pending.
+The user has now confirmed `/team warp <name> [password]` displays:
+
+```text
+You have successfully teleported to your team warp.
+```
+
+Warp payment is intended to occur only after successful teleport. Runtime verification of the corrected payment timing remains pending.
 
 ### Team Ender Chest
 
@@ -80,22 +82,65 @@ Persistence: PASS.
 
 The user confirmed that items placed in `/team ec` remain after closing and reopening it.
 
-The final fix was deliberately aligned with the already-working TeamBank persistence pattern: both inventories use the project's compatible `ItemStack.CODEC` + `NbtOps` serialization path, while the Ender Chest remains attached to the team after release so it can be reused on the next open.
+The final fix was aligned with the already-working TeamBank persistence pattern: both inventories use the project's compatible `ItemStack.CODEC` + `NbtOps` serialization path, while the Ender Chest remains attached to the team after release so it can be reused on the next open.
+
+### Warp password creation / management
+
+GUI creation: IMPLEMENTED.
+
+The Warp GUI already prompts for an optional password during warp creation using the existing `TeamStringInputGui`.
+
+Warp management GUI: IMPLEMENTED.
+
+The warp management GUI can set/remove the password through its password input control.
+
+Command creation: IMPLEMENTED in the latest source.
+
+The command now supports:
+
+```text
+/team warp set <name>
+/team warp set <name> <password>
+```
+
+The optional password is attached to the existing Brigadier command tree with a final greedy-string argument and persisted through `TeamWarp`.
+
+### `/team` team-creation GUI
+
+The previous GUI creation flow used chat input and the user reported that typing the team name in chat did not register.
+
+The current GUI creation flow now uses the existing server-side `TeamStringInputGui` for both:
+
+```text
+team name
+team tag
+```
+
+This keeps team creation inside the already-working GUI text-input path and avoids changing unrelated chat behavior.
+
+Runtime verification of the new creation GUI flow is still pending.
 
 ## Targeted fixes committed
 
 - `FeatureCostManager` supports non-mutating affordability checks plus explicit amount charges.
 - `TeamTeleportManager` defers teleport currency withdrawal until successful teleport and uses distinct home/warp success messages.
-- `/team warp` command and Warp GUI no longer withdraw the warp cost before password/warmup/teleport; both pass the per-warp cost into the teleport path.
+- `/team warp` command and Warp GUI pass the per-warp cost into the teleport path rather than withdrawing before warmup/teleport.
 - Team Ender Chest persistence uses the same compatible ItemStack codec/NBT approach as TeamBank and preserves the team's Ender Chest instance across close/reopen.
+- Team main GUI no longer double-charges the Ender Chest feature.
+- `/team warp set <name> [password]` now supports an optional password.
+- Warp GUI creation and management support optional password entry.
+- `/team` team-creation GUI now uses the existing anvil-style text input for name/tag entry.
 
-## Remaining runtime verification
+## Remaining focused runtime verification
 
-After pulling the latest `main` changes, run only the focused remaining tests:
+After pulling the latest `main` changes and successfully building, run only:
 
 1. `/team home` — verify currency is unchanged during warmup/cancellation and is removed only after successful teleport.
-2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and the corrected warp success message.
-3. Verify command and GUI paths do not double-charge.
+2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and corrected warp success message.
+3. `/team warp set <name> <password>` — verify the password persists and `/team warp <name> <password>` works.
+4. Warp GUI → create a password-protected warp — verify the password persists and can be used.
+5. `/team` → Create Team GUI — verify entering the name and tag through the GUI creates the team successfully.
+6. Verify command and GUI paths do not double-charge.
 
 ## Important parity decisions
 
