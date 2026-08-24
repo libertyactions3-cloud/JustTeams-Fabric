@@ -2,6 +2,7 @@ package eu.kotori.justTeams;
 
 import eu.kotori.justTeams.chat.TeamChatEvents;
 import eu.kotori.justTeams.commands.TeamCommand;
+import eu.kotori.justTeams.commands.TeamOwnershipCommandExtensions;
 import eu.kotori.justTeams.commands.TeamWarpCommandExtensions;
 import eu.kotori.justTeams.config.JustTeamsConfig;
 import eu.kotori.justTeams.economy.EconomyProvider;
@@ -60,6 +61,7 @@ public final class JustTeamsFabric implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             TeamCommand.register(dispatcher);
             TeamWarpCommandExtensions.register(dispatcher);
+            TeamOwnershipCommandExtensions.register(dispatcher);
         });
         ChatInputEvents.register();
         TeamChatEvents.register();
