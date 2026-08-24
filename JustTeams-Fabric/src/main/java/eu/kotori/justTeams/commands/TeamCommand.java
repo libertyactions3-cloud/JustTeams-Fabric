@@ -6,6 +6,7 @@ import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.chat.TeamChatManager;
 import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.gui.JoinRequestGui;
+import eu.kotori.justTeams.gui.TeamBankGui;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.gui.TeamGuiManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
@@ -35,6 +36,7 @@ public final class TeamCommand {
             .then(CommandManager.literal("disband").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
             .then(CommandManager.literal("pvp").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
             .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> toggleGlow(c.getSource()))))
+            .then(CommandManager.literal("bank").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
             .then(CommandManager.literal("enderchest").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
             .then(CommandManager.literal("ec").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
             .then(CommandManager.literal("home").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))).then(CommandManager.literal("set").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> setHome(c.getSource())))).then(CommandManager.literal("clear").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> clearHome(c.getSource())))))
@@ -44,12 +46,13 @@ public final class TeamCommand {
             .then(CommandManager.literal("deny").then(CommandManager.argument("team",StringArgumentType.word()).executes(c -> run(c.getSource(),JustTeamsPermissions.COMMAND_DENY,()->denyInvite(c.getSource(),StringArgumentType.getString(c,"team"))))))
             .then(CommandManager.literal("join").then(CommandManager.argument("team",StringArgumentType.word()).executes(c -> run(c.getSource(),JustTeamsPermissions.COMMAND_JOIN,()->requestJoin(c.getSource(),StringArgumentType.getString(c,"team"))))))
             .then(CommandManager.literal("unjoin").then(CommandManager.argument("team",StringArgumentType.word()).executes(c -> run(c.getSource(),JustTeamsPermissions.COMMAND_UNJOIN,()->cancelJoinRequest(c.getSource(),StringArgumentType.getString(c,"team"))))))
-            .then(CommandManager.literal("requests").executes(c -> run(c.getSource(),JustTeamsPermissions.COMMAND_REQUESTS,()->openRequests(c.getSource()))))
-            .then(CommandManager.literal("chat").executes(c -> run(c.getSource(),JustTeamsPermissions.COMMAND_CHAT,()->toggleChat(c.getSource())))));
+            .then(CommandManager.literal("requests").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS,()->openRequests(c.getSource()))))
+            .then(CommandManager.literal("chat").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT,()->toggleChat(c.getSource())))));
     }
     @FunctionalInterface private interface CommandAction { int run() throws Exception; }
     private static int run(ServerCommandSource source,String permission,CommandAction action){try{if(source.getEntity() instanceof ServerPlayerEntity p&&!JustTeamsFabric.permissions().has(p,permission)){source.sendError(Text.literal("You do not have permission to use this command."));return 0;}return action.run();}catch(Exception e){source.sendError(Text.literal(e.getMessage()==null?"Command failed.":e.getMessage()));JustTeamsFabric.LOGGER.error("JustTeams command failed",e);return 0;}}
     private static int openGui(ServerCommandSource s)throws Exception{TeamGuiManager.openMain(s.getPlayerOrThrow());return 1;}
+    private static int openBank(ServerCommandSource s)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=requireTeam(s,p);TeamBankGui.open(p,t);return 1;}
     private static int openEnderChest(ServerCommandSource s)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=JustTeamsFabric.teams().getTeam(p.getUuid());if(t==null){s.sendError(Text.literal("You are not in a team."));return 0;}TeamEnderChestGui.open(p,t);return 1;}
     private static int toggleChat(ServerCommandSource s)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=JustTeamsFabric.teams().getTeam(p.getUuid());if(t==null){s.sendError(Text.literal("You are not in a team."));return 0;}boolean enabled=TeamChatManager.toggle(p);s.sendFeedback(()->Text.literal(enabled?"Team chat enabled. Your chat messages will only be sent to team members.":"Team chat disabled. Your chat messages are public again."),false);return 1;}
     private static int create(ServerCommandSource s,String name,String tag)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();if(name.length()>16||tag.length()>4){s.sendError(Text.literal("Team name must be 16 characters or fewer and tag 4 characters or fewer."));return 0;}try{Team t=JustTeamsFabric.teams().createTeam(name,tag,p.getUuid(),true,false,false);JustTeamsFabric.storage().save(JustTeamsFabric.teams());s.sendFeedback(()->Text.literal("Created team "+t.getName()+" ["+t.getTag()+"]"),false);return 1;}catch(IllegalStateException e){s.sendError(Text.literal(e.getMessage()));return 0;}}
