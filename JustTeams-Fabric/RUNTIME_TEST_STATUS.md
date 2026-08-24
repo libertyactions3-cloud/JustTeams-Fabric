@@ -150,9 +150,21 @@ TeamStringInputGui.onClosed()
 server.execute(cancelled)
 ```
 
-The callback now runs after the current close operation has completed, preventing re-entrant screen-close recursion. This uses the pinned 1.21.11 `ServerPlayerEntity#getEntityWorld()` → `ServerWorld#getServer()` path and `MinecraftServer` executor behavior.
+The callback now runs after the current close operation has completed, preventing re-entrant screen-close recursion.
 
-Runtime verification of the corrected team-creation GUI is still pending.
+#### Retest result
+
+PASS.
+
+The user retested the team-creation GUI with the invalid 5-character tag scenario and reported that it now works without the server crash. This confirms the recursive close/reopen failure is resolved at runtime.
+
+### Exact current source-verification state
+
+The latest source still requires a clean build after the `TeamStringInputGui` recursion fix. Do not claim the current revision is compile-verified until the user reruns:
+
+```powershell
+./gradlew clean build --refresh-dependencies
+```
 
 ## Targeted fixes committed
 
@@ -174,8 +186,7 @@ After pulling the latest `main` changes and successfully building, run only:
 2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and corrected warp success message.
 3. `/team warp set <name> <password>` — verify the password persists and `/team warp <name> <password>` works.
 4. Warp GUI → create a password-protected warp — verify the password persists and can be used.
-5. `/team` → Create Team GUI — verify an invalid tag such as 5 characters cancels safely without crashing, and valid name/tag entry creates the team successfully.
-6. Verify command and GUI paths do not double-charge.
+5. Verify command and GUI paths do not double-charge.
 
 ## Important parity decisions
 
