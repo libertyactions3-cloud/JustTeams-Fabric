@@ -26,6 +26,7 @@ public final class TeamWarpCommandExtensions {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         registerWarpPassword(dispatcher);
         registerMemberManagement(dispatcher);
+        TeamMetadataCommandExtensions.register(dispatcher);
     }
 
     private static void registerWarpPassword(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -80,12 +81,10 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("You are not in a team."));
                 return 0;
             }
-
             if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_SETWARP)) {
                 source.sendError(Text.literal("You do not have permission to create team warps."));
                 return 0;
             }
-
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null || !member.canSetHome()) {
                 source.sendError(Text.literal("You do not have permission to create team warps."));
@@ -104,26 +103,15 @@ public final class TeamWarpCommandExtensions {
                 return 0;
             }
             if (!FeatureCostManager.charge(player, "setwarp")) return 0;
-
             TeamLocation location = TeamLocation.fromPlayer(player);
-            TeamWarp warp = new TeamWarp(
-                    name,
-                    player.getUuid(),
-                    location.getDimension(),
-                    location.getX(),
-                    location.getY(),
-                    location.getZ(),
-                    location.getYaw(),
-                    location.getPitch());
+            TeamWarp warp = new TeamWarp(name, player.getUuid(), location.getDimension(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             warp.setPassword(password);
             team.addWarp(warp);
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             source.sendFeedback(() -> Text.literal("Team warp '" + name + "' created."), false);
             return 1;
         } catch (Exception exception) {
-            source.sendError(Text.literal(exception.getMessage() == null
-                    ? "Unable to create the team warp."
-                    : exception.getMessage()));
+            source.sendError(Text.literal(exception.getMessage() == null ? "Unable to create the team warp." : exception.getMessage()));
             JustTeamsFabric.LOGGER.error("Failed to create team warp {}", name, exception);
             return 0;
         }
@@ -137,33 +125,27 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("You do not have permission to use this command."));
                 return 0;
             }
-
             TeamPlayer actorMember = team.getMember(actor.getUuid());
             PlayerConfigEntry targetEntry = resolveTarget(source, targetName);
             if (targetEntry == null) {
                 source.sendError(Text.literal("Player not found."));
                 return 0;
             }
-
-            if (actorMember == null || !actorMember.canKickPlayer(team.getMember(targetEntry.id()))) {
-                source.sendError(Text.literal("You do not have permission to kick that player."));
-                return 0;
-            }
-
             TeamPlayer target = team.getMember(targetEntry.id());
             if (target == null) {
                 source.sendError(Text.literal("That player is not in your team."));
                 return 0;
             }
-
+            if (actorMember == null || !actorMember.canKickPlayer(target)) {
+                source.sendError(Text.literal("You do not have permission to kick that player."));
+                return 0;
+            }
             JustTeamsFabric.teams().removeMember(team, target.getPlayerUuid());
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             TeamNotificationManager.notifyKick(actor.getServer(), team, actor.getUuid(), target.getPlayerUuid());
             return 1;
         } catch (Exception exception) {
-            source.sendError(Text.literal(exception.getMessage() == null
-                    ? "Unable to kick that player."
-                    : exception.getMessage()));
+            source.sendError(Text.literal(exception.getMessage() == null ? "Unable to kick that player." : exception.getMessage()));
             JustTeamsFabric.LOGGER.error("Failed to kick team member {}", targetName, exception);
             return 0;
         }
@@ -181,7 +163,6 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("Only the team owner can promote players."));
                 return 0;
             }
-
             PlayerConfigEntry targetEntry = resolveTarget(source, targetName);
             if (targetEntry == null) {
                 source.sendError(Text.literal("Player not found."));
@@ -200,16 +181,13 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("You cannot promote the team owner."));
                 return 0;
             }
-
             setCoOwnerPermissions(target);
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             refreshGlow(actor, target);
             notifyRoleChange(actor, team, target, true);
             return 1;
         } catch (Exception exception) {
-            source.sendError(Text.literal(exception.getMessage() == null
-                    ? "Unable to promote that player."
-                    : exception.getMessage()));
+            source.sendError(Text.literal(exception.getMessage() == null ? "Unable to promote that player." : exception.getMessage()));
             JustTeamsFabric.LOGGER.error("Failed to promote team member {}", targetName, exception);
             return 0;
         }
@@ -227,7 +205,6 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("Only the team owner can demote players."));
                 return 0;
             }
-
             PlayerConfigEntry targetEntry = resolveTarget(source, targetName);
             if (targetEntry == null) {
                 source.sendError(Text.literal("Player not found."));
@@ -246,16 +223,13 @@ public final class TeamWarpCommandExtensions {
                 source.sendError(Text.literal("You cannot demote the team owner."));
                 return 0;
             }
-
             setMemberPermissions(target);
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             refreshGlow(actor, target);
             notifyRoleChange(actor, team, target, false);
             return 1;
         } catch (Exception exception) {
-            source.sendError(Text.literal(exception.getMessage() == null
-                    ? "Unable to demote that player."
-                    : exception.getMessage()));
+            source.sendError(Text.literal(exception.getMessage() == null ? "Unable to demote that player." : exception.getMessage()));
             JustTeamsFabric.LOGGER.error("Failed to demote team member {}", targetName, exception);
             return 0;
         }
@@ -275,55 +249,30 @@ public final class TeamWarpCommandExtensions {
 
     private static void setCoOwnerPermissions(TeamPlayer target) {
         target.setRole(TeamRole.CO_OWNER);
-        target.setCanWithdraw(true);
-        target.setCanUseEnderChest(true);
-        target.setCanSetHome(true);
-        target.setCanUseHome(true);
-        target.setCanEditMembers(true);
-        target.setCanEditCoOwners(false);
-        target.setCanKickMembers(true);
-        target.setCanPromoteMembers(false);
-        target.setCanDemoteMembers(false);
+        target.setCanWithdraw(true); target.setCanUseEnderChest(true); target.setCanSetHome(true); target.setCanUseHome(true);
+        target.setCanEditMembers(true); target.setCanEditCoOwners(false); target.setCanKickMembers(true); target.setCanPromoteMembers(false); target.setCanDemoteMembers(false);
     }
 
     private static void setMemberPermissions(TeamPlayer target) {
         target.setRole(TeamRole.MEMBER);
-        target.setCanWithdraw(false);
-        target.setCanUseEnderChest(true);
-        target.setCanSetHome(false);
-        target.setCanUseHome(true);
-        target.setCanEditMembers(false);
-        target.setCanEditCoOwners(false);
-        target.setCanKickMembers(false);
-        target.setCanPromoteMembers(false);
-        target.setCanDemoteMembers(false);
+        target.setCanWithdraw(false); target.setCanUseEnderChest(true); target.setCanSetHome(false); target.setCanUseHome(true);
+        target.setCanEditMembers(false); target.setCanEditCoOwners(false); target.setCanKickMembers(false); target.setCanPromoteMembers(false); target.setCanDemoteMembers(false);
     }
 
     private static void refreshGlow(ServerPlayerEntity actor, TeamPlayer target) {
-        ServerPlayerEntity online = actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid());
-        if (online != null) JustTeamsFabric.glow().refreshAll(actor.getServer());
+        if (actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid()) != null) JustTeamsFabric.glow().refreshAll(actor.getServer());
     }
 
     private static void notifyRoleChange(ServerPlayerEntity actor, Team team, TeamPlayer target, boolean promoted) {
-        String targetName = actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid()) != null
-                ? actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid()).getName().getString()
-                : target.getPlayerUuid().toString();
-        Text actorMessage = Text.literal(promoted
-                ? "You promoted " + targetName + " to co-owner."
-                : "You demoted " + targetName + " to member.");
-        actor.sendMessage(actorMessage, false);
-        Text broadcast = Text.literal(promoted
-                ? targetName + " is now a team co-owner."
-                : targetName + " is now a team member.");
+        ServerPlayerEntity targetPlayer = actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid());
+        String targetName = targetPlayer != null ? targetPlayer.getName().getString() : target.getPlayerUuid().toString();
+        actor.sendMessage(Text.literal(promoted ? "You promoted " + targetName + " to co-owner." : "You demoted " + targetName + " to member."), false);
         for (TeamPlayer member : team.getMembers()) {
             ServerPlayerEntity player = actor.getServer().getPlayerManager().getPlayer(member.getPlayerUuid());
-            if (player != null && !player.getUuid().equals(actor.getUuid())) player.sendMessage(broadcast, false);
+            if (player != null && !player.getUuid().equals(actor.getUuid())) {
+                player.sendMessage(Text.literal(promoted ? targetName + " is now a team co-owner." : targetName + " is now a team member."), false);
+            }
         }
-        ServerPlayerEntity targetPlayer = actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid());
-        if (targetPlayer != null) {
-            targetPlayer.sendMessage(Text.literal(promoted
-                    ? "You were promoted to co-owner of " + team.getName() + "."
-                    : "You were demoted to member of " + team.getName() + "."), false);
-        }
+        if (targetPlayer != null) targetPlayer.sendMessage(Text.literal(promoted ? "You were promoted to co-owner of " + team.getName() + "." : "You were demoted to member of " + team.getName() + "."), false);
     }
 }
