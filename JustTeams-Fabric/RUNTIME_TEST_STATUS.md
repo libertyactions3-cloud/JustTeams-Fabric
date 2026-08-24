@@ -1,19 +1,25 @@
 # Runtime Test Status
 
-## Round 10 build checkpoint
+## Final current verification checkpoint
 
-The user ran the canonical clean build locally on 2026-08-23:
+The user ran the canonical clean build locally on 2026-08-24:
 
 ```text
 ./gradlew clean build --refresh-dependencies
 
-BUILD SUCCESSFUL in 1m 41s
+BUILD SUCCESSFUL in 1m 46s
 8 actionable tasks: 8 executed
 ```
 
-The two Loom `Cannot remap modifiers...` messages remained during configuration but did not fail the build.
+The two Loom configuration messages:
 
-The source has changed since that successful build, so the current `main` state requires another clean build before current compile verification is claimed.
+```text
+Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
+```
+
+remained during configuration but did not fail the build. They are not currently treated as build failures.
+
+This is the clean-build verification for the latest source revision after the GUI/password/TeamStringInputGui changes.
 
 ## Runtime results
 
@@ -152,9 +158,9 @@ PASS.
 
 The user confirmed the remaining command/GUI paths do not double-charge for the tested features.
 
-## Focused runtime verification status
+## Final focused verification status
 
-All currently requested runtime checks are PASS:
+All currently requested runtime and compile checks are PASS:
 
 ```text
 /team home payment timing             ✅
@@ -167,14 +173,7 @@ Warp password use                     ✅
 /team GUI team creation               ✅
 invalid-tag retry without crash       ✅
 command/GUI double-charge checks      ✅
-```
-
-## Exact current source-verification state
-
-The latest source still requires a clean build after the latest GUI/password/TeamStringInputGui changes. Do not claim the current revision is compile-verified until the user reruns:
-
-```powershell
-./gradlew clean build --refresh-dependencies
+latest clean Gradle build             ✅
 ```
 
 ## Targeted fixes committed
@@ -191,13 +190,7 @@ The latest source still requires a clean build after the latest GUI/password/Tea
 
 ## Remaining action
 
-Run one fresh clean build on the latest `main` revision:
-
-```powershell
-./gradlew clean build --refresh-dependencies
-```
-
-If that succeeds, the current focused runtime/compile verification checkpoint is complete unless a new runtime defect is discovered.
+There is no remaining build or runtime action for the current focused feature set. Continue with a new feature only when that feature becomes the active scope.
 
 ## Important parity decisions
 
