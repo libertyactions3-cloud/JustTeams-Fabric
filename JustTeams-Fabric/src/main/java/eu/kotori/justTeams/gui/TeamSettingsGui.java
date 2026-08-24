@@ -68,33 +68,35 @@ public final class TeamSettingsGui {
             switch (slot) {
                 case 11 -> ChatInputManager.begin(serverPlayer,
                         "Enter the new team tag (1-4 characters, or type cancel):", input -> {
-                            String value = input.trim();
-                            if (value.isEmpty() || value.length() > 4 || value.contains(" ")) {
-                                serverPlayer.sendMessage(Text.literal("Invalid team tag. Use 1-4 characters with no spaces."), false);
-                                return;
+                            try {
+                                JustTeamsFabric.teams().setTag(serverPlayer.getUuid(), input);
+                                save();
+                                serverPlayer.sendMessage(Text.literal("Team tag updated."), false);
+                                refresh();
+                            } catch (IllegalArgumentException | IllegalStateException exception) {
+                                serverPlayer.sendMessage(Text.literal(exception.getMessage()), false);
                             }
-                            team.setTag(value);
-                            save();
-                            serverPlayer.sendMessage(Text.literal("Team tag updated."), false);
-                            refresh();
                         });
                 case 13 -> ChatInputManager.begin(serverPlayer,
                         "Enter the new team description (1-256 characters, or type cancel):", input -> {
-                            String value = input.trim();
-                            if (value.isEmpty() || value.length() > 256) {
-                                serverPlayer.sendMessage(Text.literal("Invalid description. Use 1-256 characters."), false);
-                                return;
+                            try {
+                                JustTeamsFabric.teams().setDescription(serverPlayer.getUuid(), input);
+                                save();
+                                serverPlayer.sendMessage(Text.literal("Team description updated."), false);
+                                refresh();
+                            } catch (IllegalArgumentException | IllegalStateException exception) {
+                                serverPlayer.sendMessage(Text.literal(exception.getMessage()), false);
                             }
-                            team.setDescription(value);
-                            save();
-                            serverPlayer.sendMessage(Text.literal("Team description updated."), false);
-                            refresh();
                         });
                 case 15 -> {
-                    team.setPublic(!team.isPublic());
-                    save();
-                    refresh();
-                    serverPlayer.sendMessage(Text.literal("Team is now " + (team.isPublic() ? "public" : "private") + "."), false);
+                    try {
+                        boolean enabled = JustTeamsFabric.teams().togglePublic(serverPlayer.getUuid());
+                        save();
+                        refresh();
+                        serverPlayer.sendMessage(Text.literal("Team is now " + (enabled ? "public" : "private") + "."), false);
+                    } catch (IllegalStateException exception) {
+                        serverPlayer.sendMessage(Text.literal(exception.getMessage()), false);
+                    }
                 }
                 case 22 -> TeamGuiManager.openMain(serverPlayer);
                 default -> { }
@@ -125,7 +127,6 @@ public final class TeamSettingsGui {
             if (lore.length > 0) {
                 java.util.List<Text> lines = java.util.Arrays.stream(lore)
                         .map(Text::literal)
-                        .map(text -> (Text) text)
                         .toList();
                 stack.set(net.minecraft.component.DataComponentTypes.LORE, new net.minecraft.component.type.LoreComponent(lines));
             }
