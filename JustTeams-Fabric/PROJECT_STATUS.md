@@ -100,21 +100,28 @@ Final build command:
 
 # CURRENT RESUME POINT — RUNTIME / GUI PARITY FOR CURRENT FEATURE
 
-The current workstream is now the **runtime completion of the item-economy/teleport/GUI feature paths just implemented**.
+The current workstream is the **runtime completion of the item-economy/teleport/GUI feature paths just implemented**.
 
 Current verified runtime results:
 
 ```text
 /team home set                 PASS
 /team home destination         PASS
+/team home payment timing      PASS
 /team warp destination         PASS
+/team warp payment timing      PASS
 /team warp success message     PASS
 /team enderchest /team ec      PASS
+warp password creation/use    PASS
+Warp GUI password creation/use PASS
+team creation GUI              PASS
+invalid-tag retry              PASS
+command/GUI double-charge      PASS
 ```
 
-The user required teleport currency to be removed only after the teleport succeeds. The Fabric teleport path was changed accordingly and still needs focused runtime verification after the latest source changes.
+The user has confirmed that all remaining focused runtime tests work as intended.
 
-Current GUI/command targets:
+Current GUI/command paths covered:
 
 ```text
 /team warp set <name> [password]
@@ -250,7 +257,7 @@ withdraw item currency
 home success message
 ```
 
-The user specifically requires the currency removal to happen only after successful teleport. This must be preserved.
+The user runtime-tested the corrected payment timing and confirmed it works as intended.
 
 ## Set home
 
@@ -290,15 +297,17 @@ The persistent team Ender Chest is retained on the `Team` object after normal re
 
 Both command and GUI creation charge `setwarp` before creating the warp.
 
-The GUI already supports an optional password and password editing through `TeamStringInputGui`.
+The GUI supports an optional password and password editing through `TeamStringInputGui`.
 
-The command now additionally supports:
+The command supports:
 
 ```text
 /team warp set <name> [password]
 ```
 
-The optional command password is implemented by `TeamWarpCommandExtensions`, which adds a `greedyString` password argument to the existing `/team warp set <name>` node and stores it on `TeamWarp`.
+The optional command password is implemented by `TeamWarpCommandExtensions`, which adds a final `greedyString` password argument to the existing `/team warp set <name>` node and stores it on `TeamWarp`.
+
+The user has runtime-tested password-protected warp creation/use successfully.
 
 ## Warp use
 
@@ -324,7 +333,7 @@ The user has confirmed the command message:
 You have successfully teleported to your team warp.
 ```
 
-The earlier incorrect home success message is fixed.
+The user also confirmed the corrected post-success payment timing works.
 
 ---
 
@@ -343,7 +352,27 @@ team tag
 
 This avoids depending on the fragile chat interception path for this feature while remaining server-side and client-compatible.
 
-The normal team creation validation and persistence are unchanged.
+### Invalid-tag crash fix
+
+The GUI previously had a re-entrant close/open recursion:
+
+```text
+NoTeamGui.open()
+    ↓
+TeamStringInputGui.onClosed()
+    ↓
+cancelled.run()
+    ↓
+NoTeamGui.open()
+    ↓
+closeHandledScreen()
+    ↓
+...
+```
+
+`TeamStringInputGui.onClosed()` now defers the cancellation callback through the server executor so the current screen-close operation completes before another GUI is opened.
+
+The user runtime-tested the invalid 5-character tag scenario and confirmed it now cancels/retries safely without a server crash.
 
 ---
 
@@ -443,18 +472,14 @@ BUILD SUCCESSFUL
 8 actionable tasks: 8 executed
 ```
 
-The following source changes were made after that build, so **another clean build is required before declaring the current source verified**.
+Source changes were made after that build, so **another clean build is still required before declaring the current source compile-verified**.
 
-After the current command/GUI changes:
+The runtime phase for the current scoped feature is complete and passing.
+
+Next required verification:
 
 ```text
 ./gradlew clean build --refresh-dependencies
-        ↓
-runtime test /team home
-runtime test /team warp <name> [password]
-runtime test Warp GUI password creation/use
-runtime test /team ec
-runtime test /team GUI team creation
 ```
 
 The two Loom messages:
@@ -465,7 +490,7 @@ Cannot remap modifiers because it does not exist in any of the targets [] or the
 
 have appeared during configuration but have not caused the user's successful builds to fail. They are not the current compile/runtime issue unless a later build shows otherwise.
 
-If runtime testing exposes a failure, fix only that verified feature path and rerun the clean build.
+If the next build fails, fix only the verified failing feature path and rerun the clean build.
 
 Do not begin an unrelated repository-wide audit.
 
