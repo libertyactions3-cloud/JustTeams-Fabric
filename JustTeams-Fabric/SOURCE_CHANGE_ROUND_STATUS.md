@@ -14,14 +14,14 @@ The following do **not** consume a round:
 - Gradle builds
 - runtime testing
 
-One scoped source-change implementation round counts as one round, even when multiple files under `src/` are changed together.
+One scoped source-change implementation round counts as one round, even when multiple files under `src/` or multiple corrective commits are required for the same scoped feature group.
 
 ## Current cycle
 
 ```text
-Source-change rounds completed: 7 / 10
-Current round: Round 7
-Next source-change round: Round 8
+Source-change rounds completed: 8 / 10
+Current round: Round 8
+Next source-change round: Round 9
 ```
 
 ### Round 1
@@ -59,5 +59,14 @@ f804b61e74085050b6709251d5d0fbde4a83415b
 abb49bbc802683576ad1c1099552c11515b63937
 ```
 Scope: 2.5.3-style ownership transfer with a confirmation GUI, `/team transfer <player>`, owner/member permission transitions, persistence, glow refresh, notifications, and command registration.
+
+### Round 8
+Source commits:
+```text
+57ffbf74c910e3b08a08bcb1a3ed882fac67e61a
+346fe87c3d864c6cd2c96a2a5b290a3a51f6c383
+abd58a235e370fb72eea0de1d61efd58d705f0e3
+```
+Scope: 2.5.3-style player kill/death statistics tracking using Fabric's `AFTER_DEATH` and `AFTER_KILLED_OTHER_ENTITY` events, including same-team kill exclusion and persistence of the updated stats. The corrective listener commit and initializer registration are part of the same scoped Round 8 feature group.
 
 The final clean build is reserved for Round 10 unless an earlier build is required to resolve a blocking compile issue.
