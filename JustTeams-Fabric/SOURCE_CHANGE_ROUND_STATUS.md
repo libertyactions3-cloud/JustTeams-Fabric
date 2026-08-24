@@ -19,9 +19,9 @@ One scoped source-change implementation round counts as one round, even when mul
 ## Current cycle
 
 ```text
-Source-change rounds completed: 8 / 10
-Current round: Round 8
-Next source-change round: Round 9
+Source-change rounds completed: 9 / 10
+Current round: Round 9
+Next source-change round: Round 10
 ```
 
 ### Round 1
@@ -69,4 +69,14 @@ abd58a235e370fb72eea0de1d61efd58d705f0e3
 ```
 Scope: 2.5.3-style player kill/death statistics tracking using Fabric's `AFTER_DEATH` and `AFTER_KILLED_OTHER_ENTITY` events, including same-team kill exclusion and persistence of the updated stats. The corrective listener commit and initializer registration are part of the same scoped Round 8 feature group.
 
-The final clean build is reserved for Round 10 unless an earlier build is required to resolve a blocking compile issue.
+### Round 9
+Source commits:
+```text
+842e7045fa4648bd83b2f408bb07458ce0b97160
+45d0880506b546469c38b03756c5830c8cbaf007
+6e39430998a102fa66b530145399d055a79a4eeb
+```
+Scope: 2.5.3-style `/team top` two-stage leaderboard UI with kills, balance, and member-count categories, ranked team entries, and back navigation.
+
+### Round 10
+Reserved for final verification and any compile fixes required by the final source state. The clean build remains the final build gate.
