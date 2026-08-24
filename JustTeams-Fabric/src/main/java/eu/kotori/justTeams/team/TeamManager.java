@@ -66,6 +66,42 @@ public final class TeamManager {
         return enabled;
     }
 
+    public String setTag(UUID playerUuid, String value) {
+        Team team = requireElevatedTeam(playerUuid);
+        String tag = value == null ? "" : value.trim();
+        if (tag.length() < 1 || tag.length() > 4 || !tag.matches("[A-Za-z0-9]+")) {
+            throw new IllegalArgumentException("Team tag must be 1-4 letters or numbers with no spaces.");
+        }
+        team.setTag(tag);
+        return tag;
+    }
+
+    public String setDescription(UUID playerUuid, String value) {
+        Team team = requireElevatedTeam(playerUuid);
+        String description = value == null ? "" : value.trim();
+        if (description.length() < 1 || description.length() > 256) {
+            throw new IllegalArgumentException("Team description must be 1-256 characters.");
+        }
+        team.setDescription(description);
+        return description;
+    }
+
+    public boolean togglePublic(UUID playerUuid) {
+        Team team = requireElevatedTeam(playerUuid);
+        boolean enabled = !team.isPublic();
+        team.setPublic(enabled);
+        return enabled;
+    }
+
+    private Team requireElevatedTeam(UUID playerUuid) {
+        Team team = getTeam(playerUuid);
+        if (team == null) throw new IllegalStateException("You are not in a team.");
+        if (!team.hasElevatedPermissions(playerUuid)) {
+            throw new IllegalStateException("Only the team owner or co-owner can change team settings.");
+        }
+        return team;
+    }
+
     public Collection<Team> getTeams() { return new ArrayList<>(teams.values()); }
     public int size() { return teams.size(); }
     public void clear() { teams.clear(); playerTeams.clear(); nextId = 1; }
