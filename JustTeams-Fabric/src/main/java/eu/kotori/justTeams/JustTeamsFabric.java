@@ -8,6 +8,7 @@ import eu.kotori.justTeams.config.JustTeamsConfig;
 import eu.kotori.justTeams.economy.EconomyProvider;
 import eu.kotori.justTeams.economy.ItemEconomyProvider;
 import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
+import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.LuckPermsPermissionService;
 import eu.kotori.justTeams.permission.PermissionService;
@@ -66,6 +67,7 @@ public final class JustTeamsFabric implements ModInitializer {
         ChatInputEvents.register();
         TeamChatEvents.register();
         TeamFriendlyFire.register();
+        TeamStatsEvents.register();
         LOGGER.info("JustTeams Fabric core initialized");
     }
 
