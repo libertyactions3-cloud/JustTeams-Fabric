@@ -37,9 +37,9 @@ The team home was stored correctly.
 
 Teleport destination: PASS.
 
-Payment timing: previously FAILED relative to the requested behavior. The targeted fix now defers the withdrawal until the teleport succeeds.
+Payment timing: PASS after the targeted fix. The user confirmed the post-success payment behavior works as intended.
 
-Required behavior now:
+Required behavior:
 
 ```text
 check validity / cooldown
@@ -53,8 +53,6 @@ withdraw item currency
 home success message
 ```
 
-Runtime verification of the corrected payment timing is still pending.
-
 ### Warp use
 
 Teleport destination: PASS.
@@ -66,13 +64,9 @@ home → You have been successfully teleported to your team home.
 warp → You have been successfully teleported to your team warp.
 ```
 
-The user has now confirmed `/team warp <name> [password]` displays:
+The user confirmed `/team warp <name> [password]` works and displays the intended warp success message.
 
-```text
-You have successfully teleported to your team warp.
-```
-
-Warp payment is intended to occur only after successful teleport. Runtime verification of the corrected payment timing remains pending.
+Warp payment timing: PASS after the targeted fix. The user confirmed the post-success payment behavior works as intended.
 
 ### Team Ender Chest
 
@@ -86,17 +80,17 @@ The final fix was aligned with the already-working TeamBank persistence pattern:
 
 ### Warp password creation / management
 
-GUI creation: IMPLEMENTED.
+GUI creation: PASS.
 
-The Warp GUI already prompts for an optional password during warp creation using the existing `TeamStringInputGui`.
+The Warp GUI prompts for an optional password during warp creation using the existing `TeamStringInputGui`.
 
-Warp management GUI: IMPLEMENTED.
+Warp management GUI: PASS.
 
 The warp management GUI can set/remove the password through its password input control.
 
-Command creation: IMPLEMENTED in the latest source.
+Command creation: PASS.
 
-The command now supports:
+The command supports:
 
 ```text
 /team warp set <name>
@@ -105,24 +99,24 @@ The command now supports:
 
 The optional password is attached to the existing Brigadier command tree with a final greedy-string argument and persisted through `TeamWarp`.
 
+The user confirmed password-protected warp creation and use work.
+
 ### `/team` team-creation GUI
 
-The previous GUI creation flow used chat input and the user reported that typing the team name in chat did not register.
-
-The current GUI creation flow now uses the existing server-side `TeamStringInputGui` for both:
+The current GUI creation flow uses the existing server-side `TeamStringInputGui` for both:
 
 ```text
 team name
 team tag
 ```
 
-This keeps team creation inside the already-working GUI text-input path and avoids changing unrelated chat behavior.
+The user confirmed the invalid 5-character tag retry no longer crashes the server and that the team-creation GUI works as intended.
 
-#### Crash discovered during runtime testing
+#### Crash discovered and fixed during runtime testing
 
 The user reported a server `StackOverflowError` while cancelling/restarting the team-creation anvil input after an invalid 5-character tag.
 
-The relevant recursion is:
+The recursion was:
 
 ```text
 NoTeamGui.open()
@@ -140,7 +134,7 @@ TeamStringInputGui.onClosed()
 ...
 ```
 
-Cause: `ScreenHandler.onClosed()` is invoked as part of server-side screen closing, and the cancellation callback was reopening another handled screen synchronously from inside `onClosed()`.
+Cause: `ScreenHandler.onClosed()` was reopening another handled screen synchronously from its cancellation callback.
 
 Targeted fix:
 
@@ -150,17 +144,34 @@ TeamStringInputGui.onClosed()
 server.execute(cancelled)
 ```
 
-The callback now runs after the current close operation has completed, preventing re-entrant screen-close recursion.
+The user retested the invalid-tag scenario and confirmed the crash is resolved.
 
-#### Retest result
+### Double-charge verification
 
 PASS.
 
-The user retested the team-creation GUI with the invalid 5-character tag scenario and reported that it now works without the server crash. This confirms the recursive close/reopen failure is resolved at runtime.
+The user confirmed the remaining command/GUI paths do not double-charge for the tested features.
 
-### Exact current source-verification state
+## Focused runtime verification status
 
-The latest source still requires a clean build after the `TeamStringInputGui` recursion fix. Do not claim the current revision is compile-verified until the user reruns:
+All currently requested runtime checks are PASS:
+
+```text
+/team home payment timing             ✅
+/team warp payment timing             ✅
+warp success message                  ✅
+/team warp set <name> <password>     ✅
+Warp GUI password creation            ✅
+Warp password use                     ✅
+/team ec persistence                  ✅
+/team GUI team creation               ✅
+invalid-tag retry without crash       ✅
+command/GUI double-charge checks      ✅
+```
+
+## Exact current source-verification state
+
+The latest source still requires a clean build after the latest GUI/password/TeamStringInputGui changes. Do not claim the current revision is compile-verified until the user reruns:
 
 ```powershell
 ./gradlew clean build --refresh-dependencies
@@ -175,18 +186,18 @@ The latest source still requires a clean build after the `TeamStringInputGui` re
 - Team main GUI no longer double-charges the Ender Chest feature.
 - `/team warp set <name> [password]` now supports an optional password.
 - Warp GUI creation and management support optional password entry.
-- `/team` team-creation GUI now uses the existing anvil-style text input for name/tag entry.
-- `TeamStringInputGui` now defers cancellation callbacks through the server executor to prevent recursive handled-screen reopening.
+- `/team` team-creation GUI uses the existing anvil-style text input for name/tag entry.
+- `TeamStringInputGui` defers cancellation callbacks through the server executor to prevent recursive handled-screen reopening.
 
-## Remaining focused runtime verification
+## Remaining action
 
-After pulling the latest `main` changes and successfully building, run only:
+Run one fresh clean build on the latest `main` revision:
 
-1. `/team home` — verify currency is unchanged during warmup/cancellation and is removed only after successful teleport.
-2. `/team warp <name>` and Warp GUI — verify the same post-success payment behavior and corrected warp success message.
-3. `/team warp set <name> <password>` — verify the password persists and `/team warp <name> <password>` works.
-4. Warp GUI → create a password-protected warp — verify the password persists and can be used.
-5. Verify command and GUI paths do not double-charge.
+```powershell
+./gradlew clean build --refresh-dependencies
+```
+
+If that succeeds, the current focused runtime/compile verification checkpoint is complete unless a new runtime defect is discovered.
 
 ## Important parity decisions
 
@@ -196,7 +207,7 @@ Do not create a rename feature solely from the `rename = 500` configuration entr
 
 ## Build protocol
 
-If runtime testing exposes a failure, fix only the verified failing feature path and rerun:
+If a new build or runtime test exposes a failure, fix only the verified failing feature path and rerun:
 
 ```powershell
 ./gradlew clean build --refresh-dependencies
