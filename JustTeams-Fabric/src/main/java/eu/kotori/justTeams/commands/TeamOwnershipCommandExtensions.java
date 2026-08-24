@@ -61,11 +61,10 @@ public final class TeamOwnershipCommandExtensions {
                 return 0;
             }
 
-            String targetDisplayName = targetEntry.name();
             TeamConfirmationGui.open(
                     actor,
                     "Transfer Ownership",
-                    "Transfer ownership to " + targetDisplayName + "?",
+                    "Transfer ownership to " + targetName + "?",
                     () -> applyTransfer(actor, team, target),
                     () -> actor.sendMessage(Text.literal("Ownership transfer cancelled."), false));
             return 1;
