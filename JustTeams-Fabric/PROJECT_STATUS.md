@@ -112,14 +112,15 @@ Current verified runtime results:
 /team warp payment timing      PASS
 /team warp success message     PASS
 /team enderchest /team ec      PASS
-warp password creation/use    PASS
+warp password creation/use     PASS
 Warp GUI password creation/use PASS
 team creation GUI              PASS
 invalid-tag retry              PASS
 command/GUI double-charge      PASS
+latest clean Gradle build      PASS
 ```
 
-The user has confirmed that all remaining focused runtime tests work as intended.
+The user has confirmed that all remaining focused runtime tests work as intended, and the latest local clean build completed successfully.
 
 Current GUI/command paths covered:
 
@@ -464,22 +465,12 @@ Do not claim that syntax was verified merely because a public Yarn page appears 
 
 # ROUND 10 / BUILD + RUNTIME PROTOCOL
 
-A previous local clean build succeeded on an earlier source state:
+The latest local clean build succeeded on 2026-08-24:
 
 ```text
 ./gradlew clean build --refresh-dependencies
-BUILD SUCCESSFUL
+BUILD SUCCESSFUL in 1m 46s
 8 actionable tasks: 8 executed
-```
-
-Source changes were made after that build, so **another clean build is still required before declaring the current source compile-verified**.
-
-The runtime phase for the current scoped feature is complete and passing.
-
-Next required verification:
-
-```text
-./gradlew clean build --refresh-dependencies
 ```
 
 The two Loom messages:
@@ -488,9 +479,11 @@ The two Loom messages:
 Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
 ```
 
-have appeared during configuration but have not caused the user's successful builds to fail. They are not the current compile/runtime issue unless a later build shows otherwise.
+appeared during configuration but did not prevent `build` from succeeding. They are not currently treated as build failures.
 
-If the next build fails, fix only the verified failing feature path and rerun the clean build.
+The current scoped runtime and compile verification are complete.
+
+If a future build or runtime test exposes a failure, fix only the verified failing feature path and rerun the clean build.
 
 Do not begin an unrelated repository-wide audit.
 
