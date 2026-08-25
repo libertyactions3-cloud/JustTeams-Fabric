@@ -5,7 +5,9 @@ import eu.kotori.justTeams.chat.TeamChatManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -29,19 +31,32 @@ public final class TeamGuiManager {
 
     private static void handleMainClick(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu) {
         if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE) return;
+
+        var header = menu.getMenuInventory().getStack(4);
+        if (header.getItem() == Items.SOUL_LANTERN) {
+            if (slot == 49) TeamInPlaceGui.returnToMain(menu);
+            else if (player instanceof ServerPlayerEntity serverPlayer) TeamInPlaceGui.handleJoinRequestClick(menu, serverPlayer, team, slot, button);
+            return;
+        }
+        if (header.getItem() == Items.COMPASS) {
+            if (slot == 49) TeamInPlaceGui.returnToMain(menu);
+            else if (player instanceof ServerPlayerEntity serverPlayer) TeamInPlaceGui.handleWarpClick(menu, serverPlayer, team, slot, button);
+            return;
+        }
+
         int memberIndex = memberIndexForSlot(slot);
         if (memberIndex >= 0 && memberIndex < team.getMembers().size()) { MemberManagementGui.open(player, team, team.getMembers().get(memberIndex)); return; }
         switch (slot) {
             case 45 -> togglePvp(player, team, menu);
             case 53 -> leaveOrDisband(player, team);
-            case 49 -> { team.cycleSortType(); save(); menu.refresh(); }
+            case 49 -> { team.cycleSortType(); save(); TeamInPlaceGui.updateMainSortItem(menu, team); }
             case 52 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamSettingsGui.open(player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access team settings."), true); }
-            case 8 -> { if (team.hasElevatedPermissions(player.getUuid())) JoinRequestGui.open(player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access join requests."), true); }
+            case 8 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamInPlaceGui.enterJoinRequests(menu, player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access join requests."), true); }
             case 46 -> TeamEnderChestGui.open(player, team);
             case 47 -> TeamHomeGui.open(player, team);
             case 48 -> { }
             case 50 -> { if (player instanceof ServerPlayerEntity serverPlayer && JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK)) TeamBankGui.open(player, team); else player.sendMessage(Text.literal("You do not have permission to use the team bank."), true); }
-            case 7 -> TeamWarpGui.open(player, team);
+            case 7 -> TeamInPlaceGui.enterWarps(menu, player, team);
             default -> { }
         }
     }
