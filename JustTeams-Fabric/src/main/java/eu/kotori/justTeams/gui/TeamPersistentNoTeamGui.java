@@ -68,6 +68,20 @@ public final class TeamPersistentNoTeamGui {
         openOrReuse(player, View.LEADERBOARD_CATEGORIES, null);
     }
 
+    public static void openLeaderboard(ServerPlayerEntity player,
+                                       TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType type) {
+        if (JustTeamsFabric.teams().isInTeam(player.getUuid())) {
+            TeamGuiManager.openPersistentLeaderboard(player, TeamPersistentLeaderboardGui.View.RANKED, type);
+            return;
+        }
+        LeaderboardType localType = switch (type) {
+            case KILLS -> LeaderboardType.KILLS;
+            case BALANCE -> LeaderboardType.BALANCE;
+            case MEMBERS -> LeaderboardType.MEMBERS;
+        };
+        openOrReuse(player, View.LEADERBOARD_RANKED, localType);
+    }
+
     private static void openOrReuse(ServerPlayerEntity player, View view, LeaderboardType type) {
         if (player.currentScreenHandler instanceof Handler handler && handler.viewerUuid.equals(player.getUuid())) {
             handler.render(view, type);
@@ -97,6 +111,7 @@ public final class TeamPersistentNoTeamGui {
             for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
                 addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
             for (int col = 0; col < 9; col++) addSlot(new Slot(inventory, col, 8 + col * 18, 198));
+            render(view, leaderboardType);
         }
 
         private void render(View next, LeaderboardType type) {
@@ -271,11 +286,8 @@ public final class TeamPersistentNoTeamGui {
         }
 
         private void save() {
-            try {
-                JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            } catch (IOException exception) {
-                JustTeamsFabric.LOGGER.error("Failed to save team invitation change", exception);
-            }
+            try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); }
+            catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save team invitation change", exception); }
         }
 
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
