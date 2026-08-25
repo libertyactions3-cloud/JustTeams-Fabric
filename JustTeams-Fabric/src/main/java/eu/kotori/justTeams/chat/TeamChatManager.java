@@ -8,9 +8,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Tracks players who have enabled JustTeams team-chat mode. */
+/** Tracks players who have enabled JustTeams team-chat modes. */
 public final class TeamChatManager {
     private static final Set<UUID> ENABLED = ConcurrentHashMap.newKeySet();
+    private static final Set<UUID> SPY_ENABLED = ConcurrentHashMap.newKeySet();
 
     private TeamChatManager() {
     }
@@ -28,6 +29,21 @@ public final class TeamChatManager {
 
     public static void disable(UUID playerUuid) {
         ENABLED.remove(playerUuid);
+    }
+
+    public static boolean isSpyEnabled(UUID playerUuid) {
+        return SPY_ENABLED.contains(playerUuid);
+    }
+
+    public static boolean toggleSpy(ServerPlayerEntity player) {
+        UUID uuid = player.getUuid();
+        if (SPY_ENABLED.remove(uuid)) return false;
+        SPY_ENABLED.add(uuid);
+        return true;
+    }
+
+    public static void disableSpy(UUID playerUuid) {
+        SPY_ENABLED.remove(playerUuid);
     }
 
     public static Team getActiveTeam(ServerPlayerEntity player) {
