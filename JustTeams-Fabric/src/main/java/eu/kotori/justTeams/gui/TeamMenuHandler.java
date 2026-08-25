@@ -1,8 +1,11 @@
 package eu.kotori.justTeams.gui;
 
+import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRole;
+import eu.kotori.justTeams.team.TeamSortType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
@@ -76,14 +79,44 @@ public final class TeamMenuHandler extends ScreenHandler {
             menuInventory.setStack(MEMBER_SLOTS[i], createMemberHead(viewer, members.get(i)));
         }
 
-        menuInventory.setStack(8, namedGradient(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs"));
-        menuInventory.setStack(7, namedGradient(Items.COMPASS, "ᴛᴇᴀᴍ ᴡᴀʀᴘs"));
+        boolean elevated = team.hasElevatedPermissions(viewer.getUuid());
+        boolean bankEnabled = JustTeamsFabric.config().isBankEnabled();
+        boolean bankPermission = viewer instanceof ServerPlayerEntity serverPlayer
+                && JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK);
 
-        ItemStack bank = namedGradient(Items.SUNFLOWER, "ᴛᴇᴀᴍ ʙᴀɴᴋ");
-        bank.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                composeLine("Balance: ", String.format("%.2f", team.getBalance()), Formatting.GRAY, Formatting.WHITE),
+        if (elevated) {
+            menuInventory.setStack(8, itemWithLore(namedGradient(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs"), List.of(
+                    plainLine("View pending requests to join your team.", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to view requests.", Formatting.YELLOW))));
+        } else {
+            menuInventory.setStack(8, itemWithLore(namedColored(Items.LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs", Formatting.RED, true), List.of(
+                    plainLine("Only the owner or co-owners can access this.", Formatting.RED))));
+        }
+
+        menuInventory.setStack(7, itemWithLore(namedGradient(Items.COMPASS, "ᴛᴇᴀᴍ ᴡᴀʀᴘs"), List.of(
+                plainLine("Manage your team's warps.", Formatting.GRAY),
                 plainLine("", Formatting.GRAY),
-                plainLine("Click to manage the bank.", Formatting.YELLOW))));
+                plainLine("Click to view warps.", Formatting.YELLOW))));
+
+        ItemStack bank;
+        if (!bankEnabled || !bankPermission) {
+            bank = namedColored(Items.GRAY_DYE, "ᴛᴇᴀᴍ ʙᴀɴᴋ ⨯ DISABLED", Formatting.DARK_GRAY, true);
+            bank.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine(!bankEnabled
+                            ? "This feature is disabled in the config."
+                            : "You do not have permission to use the team bank.", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine(!bankEnabled
+                            ? "Enable bank.enabled: true in justteams.properties."
+                            : "Ask an administrator for the command.bank permission.", Formatting.DARK_GRAY))));
+        } else {
+            bank = namedGradient(Items.SUNFLOWER, "ᴛᴇᴀᴍ ʙᴀɴᴋ");
+            bank.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    composeLine("Balance: ", String.format("%.2f", team.getBalance()), Formatting.GRAY, Formatting.WHITE),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to manage the bank.", Formatting.YELLOW))));
+        }
         menuInventory.setStack(50, bank);
 
         ItemStack home = namedGradient(Items.ENDER_PEARL, "ᴛᴇᴀᴍ ʜᴏᴍᴇ");
@@ -98,25 +131,51 @@ public final class TeamMenuHandler extends ScreenHandler {
                         plainLine("Home not set.", Formatting.RED))));
         menuInventory.setStack(47, home);
 
-        ItemStack enderChest = namedGradient(Items.ENDER_CHEST, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ");
-        enderChest.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                plainLine("A shared inventory for your team.", Formatting.GRAY),
-                plainLine("", Formatting.GRAY),
-                plainLine("Click to open the ender chest.", Formatting.YELLOW))));
+        boolean enderEnabled = JustTeamsFabric.config().isEnderChestEnabled();
+        TeamPlayer viewerMember = team.getMember(viewer.getUuid());
+        boolean enderPermission = viewerMember != null
+                && (viewerMember.canUseEnderChest() || (viewer instanceof ServerPlayerEntity serverPlayer
+                && JustTeamsFabric.permissions().has(serverPlayer, "justteams.bypass.enderchest.use")));
+        ItemStack enderChest;
+        if (!enderEnabled || !enderPermission) {
+            enderChest = namedColored(Items.GRAY_DYE, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ ⨯ LOCKED", Formatting.DARK_GRAY, true);
+            enderChest.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine(!enderPermission
+                            ? "You do not have permission for the ender chest."
+                            : "The team ender chest is disabled in the config.", Formatting.GRAY),
+                    plainLine(!enderPermission
+                            ? "Ask an Owner/Co-Owner to grant you access."
+                            : "", Formatting.GRAY),
+                    plainLine("Or this feature is disabled in config.", Formatting.DARK_GRAY))));
+        } else {
+            enderChest = namedGradient(Items.ENDER_CHEST, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ");
+            enderChest.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("A shared inventory for your team.", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to open the ender chest.", Formatting.YELLOW))));
+        }
         menuInventory.setStack(46, enderChest);
 
+        TeamSortType currentSort = team.getCurrentSortType();
         ItemStack sort = namedGradient(Items.HOPPER, "sᴏʀᴛ ᴍᴇᴍʙᴇʀs");
         sort.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 plainLine("Click to change the sorting.", Formatting.GRAY),
                 plainLine("", Formatting.GRAY),
-                sortLine("Join Date", true),
-                sortLine("Alphabetical", false),
-                sortLine("Online Status", false))));
+                sortLine("Join Date", currentSort == TeamSortType.JOIN_DATE),
+                sortLine("Alphabetical", currentSort == TeamSortType.ALPHABETICAL),
+                sortLine("Online Status", currentSort == TeamSortType.ONLINE_STATUS))));
         menuInventory.setStack(49, sort);
 
-        ItemStack settings = namedGradient(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs");
-        settings.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                plainLine("Click to manage team settings.", Formatting.YELLOW))));
+        ItemStack settings;
+        if (elevated) {
+            settings = namedGradient(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs");
+            settings.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to manage team settings.", Formatting.YELLOW))));
+        } else {
+            settings = namedColored(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs", Formatting.RED, true);
+            settings.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Only the owner or co-owners can access this.", Formatting.RED))));
+        }
         menuInventory.setStack(52, settings);
 
         ItemStack pvp = namedGradient(Items.DIAMOND_SWORD, "ᴘᴠᴘ sᴛᴀᴛᴜs");
@@ -186,7 +245,7 @@ public final class TeamMenuHandler extends ScreenHandler {
         } else {
             name.append(Text.literal(playerName).setStyle(Style.EMPTY
                     .withColor(0x808080)
-                    .withItalic(false)));
+                    .withItalic(false));
         }
         head.set(DataComponentTypes.CUSTOM_NAME, name);
 
@@ -248,6 +307,11 @@ public final class TeamMenuHandler extends ScreenHandler {
         return Text.literal(text)
                 .formatted(color)
                 .styled(style -> style.withItalic(false));
+    }
+
+    private static ItemStack itemWithLore(ItemStack stack, List<Text> lines) {
+        stack.set(DataComponentTypes.LORE, new LoreComponent(lines));
+        return stack;
     }
 
     private static ItemStack namedPlain(Item item, String name) {
