@@ -61,8 +61,7 @@ public final class TeamNotificationManager {
 
     private static void playSuccessSound(ServerPlayerEntity player) {
         if (!eu.kotori.justTeams.JustTeamsFabric.config().isSoundsEnabled()) return;
-        player.playSoundToPlayer(resolveSound(eu.kotori.justTeams.JustTeamsFabric.config().getSuccessSound()),
-                net.minecraft.sound.SoundCategory.PLAYERS, 1.0F, 1.0F);
+        player.playSound(resolveSound(eu.kotori.justTeams.JustTeamsFabric.config().getSuccessSound()), 1.0F, 1.0F);
     }
 
     private static SoundEvent resolveSound(String configured) {
