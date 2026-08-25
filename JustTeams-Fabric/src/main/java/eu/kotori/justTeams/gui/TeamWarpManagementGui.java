@@ -29,6 +29,11 @@ public final class TeamWarpManagementGui {
     private TeamWarpManagementGui() {}
 
     public static void open(ServerPlayerEntity player, Team team, TeamWarp warp) {
+        if (player.currentScreenHandler instanceof TeamMenuHandler menu && team.isMember(player.getUuid())) {
+            TeamPersistentWarpManagementGui.open(menu, player, team, warp);
+            return;
+        }
+
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player.getUuid(), team, warp),
                 Text.literal("Warp: " + warp.getName())
@@ -141,9 +146,9 @@ public final class TeamWarpManagementGui {
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewerUuid) && team.hasElevatedPermissions(viewerUuid); }
 
         private static String formatCost(double cost) { return cost == Math.rint(cost) ? Long.toString((long) cost) : Double.toString(cost); }
-        private static ItemStack named(Item item, String name) {
+        private static ItemStack named(net.minecraft.item.Item item, String name) {
             ItemStack stack = new ItemStack(item);
-            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name));
+            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(net.minecraft.text.Style.EMPTY.withItalic(false)));
             return stack;
         }
 
