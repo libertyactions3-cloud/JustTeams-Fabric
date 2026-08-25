@@ -1,6 +1,7 @@
 package eu.kotori.justTeams;
 
 import eu.kotori.justTeams.chat.TeamChatEvents;
+import eu.kotori.justTeams.commands.TeamBlacklistCommandExtension;
 import eu.kotori.justTeams.commands.TeamCommand;
 import eu.kotori.justTeams.commands.TeamCreationCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
@@ -77,6 +78,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamMessageCommandExtension.register(dispatcher);
             TeamChatSpyCommandExtension.register(dispatcher);
             TeamInvitesCommandExtension.register(dispatcher);
+            TeamBlacklistCommandExtension.register(dispatcher);
         });
         ChatInputEvents.register();
         TeamChatEvents.register();
