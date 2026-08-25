@@ -18,12 +18,14 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +38,7 @@ public final class TeamBlacklistGui {
             27, 28, 29, 30, 31, 32, 33, 34, 35,
             36, 37, 38, 39, 40, 41, 42, 43, 44
     };
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC);
 
     private TeamBlacklistGui() {}
 
@@ -52,7 +55,7 @@ public final class TeamBlacklistGui {
         }
         serverPlayer.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, serverPlayer, team),
-                Text.literal("ᴛᴇᴀᴍ ʙʟᴀᴄᴋʟɪsᴛ")));
+                Text.literal("ᴛᴇᴀᴍ ʙʟᴀᴄᴋʟɪsᴛ").setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static final class Handler extends ScreenHandler {
@@ -75,28 +78,32 @@ public final class TeamBlacklistGui {
 
         private void populate() {
             for (int slot = 0; slot < 54; slot++) {
-                menu.setStack(slot, named(Items.GRAY_STAINED_GLASS_PANE, " "));
+                menu.setStack(slot, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
             }
             menu.setStack(4, headerItem());
-            menu.setStack(49, named(Items.ARROW, "ʙᴀᴄᴋ"));
 
             entries.clear();
             entries.addAll(team.getBlacklist());
-            if (entries.isEmpty()) {
-                menu.setStack(22, named(Items.PAPER, "No Blacklisted Players"));
-                return;
-            }
-
             for (int i = 0; i < PLAYER_SLOTS.length && i < entries.size(); i++) {
                 menu.setStack(PLAYER_SLOTS[i], playerItem(entries.get(i)));
             }
+
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to the main menu.", Formatting.YELLOW)
+            )));
+            menu.setStack(49, back);
         }
 
         private ItemStack headerItem() {
-            ItemStack stack = named(Items.BARRIER, "ᴛᴇᴀᴍ ʙʟᴀᴄᴋʟɪsᴛ");
+            ItemStack stack = new ItemStack(Items.BARRIER);
+            stack.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ᴛᴇᴀᴍ ʙʟᴀᴄᴋʟɪsᴛ").setStyle(Style.EMPTY.withColor(Formatting.WHITE).withBold(true).withItalic(false)));
             stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                    Text.literal("Players who cannot join this team").formatted(Formatting.GRAY),
-                    Text.literal("Click on a player head to remove them").formatted(Formatting.GRAY)
+                    plainLine("Players who cannot join this team", Formatting.GRAY),
+                    plainLine("Click on a player head to remove them", Formatting.GRAY)
             )));
             return stack;
         }
@@ -104,16 +111,13 @@ public final class TeamBlacklistGui {
         private ItemStack playerItem(BlacklistedPlayer entry) {
             ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
             stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(entry.getPlayerUuid()));
-            String name = entry.getPlayerName();
-            Text display = Text.literal(name).setStyle(Text.literal(name).getStyle().withItalic(false).withBold(true).withColor(Formatting.RED));
-            stack.set(DataComponentTypes.CUSTOM_NAME, display);
+            stack.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal(entry.getPlayerName()).setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
             stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                    Text.literal("Blacklisted by: ").formatted(Formatting.GRAY)
-                            .append(Text.literal(entry.getBlacklistedByName()).formatted(Formatting.WHITE)),
-                    Text.literal("Date: ").formatted(Formatting.GRAY)
-                            .append(Text.literal(formatTimeAgo(entry.getBlacklistedAt())).formatted(Formatting.WHITE)),
-                    Text.empty(),
-                    Text.literal("Click to remove from blacklist").formatted(Formatting.YELLOW)
+                    composeLine("Blacklisted by: ", entry.getBlacklistedByName(), Formatting.GRAY, Formatting.WHITE),
+                    composeLine("Date: ", formatDate(entry.getBlacklistedAt()), Formatting.GRAY, Formatting.WHITE),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to remove from blacklist", Formatting.YELLOW)
             )));
             return stack;
         }
@@ -152,22 +156,25 @@ public final class TeamBlacklistGui {
             return -1;
         }
 
-        private static String formatTimeAgo(Instant instant) {
-            Duration duration = Duration.between(instant, Instant.now());
-            if (duration.toDays() > 0) return duration.toDays() + (duration.toDays() == 1 ? " day ago" : " days ago");
-            if (duration.toHours() > 0) return duration.toHours() + (duration.toHours() == 1 ? " hour ago" : " hours ago");
-            if (duration.toMinutes() > 0) return duration.toMinutes() + (duration.toMinutes() == 1 ? " minute ago" : " minutes ago");
-            return "Just now";
+        private static String formatDate(Instant instant) {
+            return instant == null ? "Unknown" : DATE_FORMAT.format(instant);
         }
 
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewer.getUuid()) && team.hasElevatedPermissions(player.getUuid()); }
 
-        private static ItemStack named(net.minecraft.item.Item item, String name) {
+        private static ItemStack namedPlain(net.minecraft.item.Item item, String name) {
             ItemStack stack = new ItemStack(item);
-            stack.set(DataComponentTypes.CUSTOM_NAME,
-                    Text.literal(name).setStyle(Text.literal(name).getStyle().withItalic(false)));
+            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
             return stack;
+        }
+
+        private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
+            return plainLine(prefix, prefixColor).append(plainLine(value, valueColor));
+        }
+
+        private static MutableText plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
         }
 
         private static final class MenuSlot extends Slot {
