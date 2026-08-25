@@ -31,6 +31,7 @@ public final class Team {
     private final List<TeamPlayer> members = new ArrayList<>();
     private final List<UUID> joinRequests = new ArrayList<>();
     private final List<UUID> invites = new ArrayList<>();
+    private final List<BlacklistedPlayer> blacklist = new ArrayList<>();
     private TeamSortType currentSortType = TeamSortType.JOIN_DATE;
     private final TeamBank bank;
     private TeamEnderChest enderChest;
@@ -96,6 +97,7 @@ public final class Team {
     public List<TeamPlayer> getMembers() { return members; }
     public List<UUID> getJoinRequests() { return joinRequests; }
     public List<UUID> getInvites() { return invites; }
+    public List<BlacklistedPlayer> getBlacklist() { return blacklist; }
     public void addMember(TeamPlayer player) { if (!isMember(player.getPlayerUuid())) members.add(player); }
     public void removeMember(UUID playerUuid) { members.removeIf(member -> member.getPlayerUuid().equals(playerUuid)); }
     public boolean isMember(UUID playerUuid) { return members.stream().anyMatch(member -> member.getPlayerUuid().equals(playerUuid)); }
@@ -103,12 +105,27 @@ public final class Team {
     public TeamPlayer getMember(UUID playerUuid) { return members.stream().filter(member -> member.getPlayerUuid().equals(playerUuid)).findFirst().orElse(null); }
     public List<TeamPlayer> getCoOwners() { return members.stream().filter(member -> member.getRole() == TeamRole.CO_OWNER).toList(); }
     public boolean hasElevatedPermissions(UUID playerUuid) { TeamPlayer member = getMember(playerUuid); return member != null && (member.getRole() == TeamRole.OWNER || member.getRole() == TeamRole.CO_OWNER); }
-    public void addJoinRequest(UUID playerUuid) { if (!joinRequests.contains(playerUuid)) joinRequests.add(playerUuid); }
+    public void addJoinRequest(UUID playerUuid) {
+        if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team.");
+        if (!joinRequests.contains(playerUuid)) joinRequests.add(playerUuid);
+    }
     public void removeJoinRequest(UUID playerUuid) { joinRequests.remove(playerUuid); }
-    public void addInvite(UUID playerUuid) { if (!invites.contains(playerUuid)) invites.add(playerUuid); }
+    public void addInvite(UUID playerUuid) {
+        if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team.");
+        if (!invites.contains(playerUuid)) invites.add(playerUuid);
+    }
     public void removeInvite(UUID playerUuid) { invites.remove(playerUuid); }
     public boolean hasInvite(UUID playerUuid) { return invites.contains(playerUuid); }
     public boolean hasJoinRequest(UUID playerUuid) { return joinRequests.contains(playerUuid); }
+    public boolean isBlacklisted(UUID playerUuid) { return blacklist.stream().anyMatch(entry -> entry.getPlayerUuid().equals(playerUuid)); }
+    public BlacklistedPlayer getBlacklistedPlayer(UUID playerUuid) { return blacklist.stream().filter(entry -> entry.getPlayerUuid().equals(playerUuid)).findFirst().orElse(null); }
+    public void addBlacklistEntry(BlacklistedPlayer entry) {
+        blacklist.removeIf(existing -> existing.getPlayerUuid().equals(entry.getPlayerUuid()));
+        blacklist.add(entry);
+        joinRequests.remove(entry.getPlayerUuid());
+        invites.remove(entry.getPlayerUuid());
+    }
+    public boolean removeBlacklistEntry(UUID playerUuid) { return blacklist.removeIf(entry -> entry.getPlayerUuid().equals(playerUuid)); }
     public TeamSortType getCurrentSortType() { return currentSortType; }
     public void setSortType(TeamSortType sortType) { currentSortType = sortType; }
     public void cycleSortType() { currentSortType = switch (currentSortType) { case JOIN_DATE -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.ONLINE_STATUS; case ONLINE_STATUS -> TeamSortType.JOIN_DATE; }; }
