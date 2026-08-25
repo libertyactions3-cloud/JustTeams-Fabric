@@ -2,6 +2,8 @@ package eu.kotori.justTeams.team;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 
 import java.util.UUID;
@@ -18,7 +20,10 @@ public final class TeamNotificationManager {
 
     public static void notifyLeave(MinecraftServer server, Team team, UUID playerUuid) {
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerUuid);
-        if (player != null) player.sendMessage(Text.literal("You left " + team.getName() + "."), false);
+        if (player != null) {
+            player.sendMessage(Text.literal("You left " + team.getName() + "."), false);
+            playSuccessSound(player);
+        }
         broadcastExcept(server, team, Text.literal(playerName(server, playerUuid) + " has left the team."), playerUuid);
     }
 
@@ -29,6 +34,7 @@ public final class TeamNotificationManager {
         if (kicker != null) {
             String targetName = target != null ? target.getName().getString() : playerName(server, targetUuid);
             kicker.sendMessage(Text.literal("You have kicked " + targetName + " from the team."), false);
+            playSuccessSound(kicker);
         }
 
         broadcastExcept(server, team, Text.literal(playerName(server, targetUuid) + " has left the team."), kickerUuid, targetUuid);
@@ -46,8 +52,26 @@ public final class TeamNotificationManager {
         }
 
         ServerPlayerEntity owner = server.getPlayerManager().getPlayer(ownerUuid);
-        if (owner != null) owner.sendMessage(Text.literal("You have successfully disbanded your team."), false);
+        if (owner != null) {
+            owner.sendMessage(Text.literal("You have successfully disbanded your team."), false);
+            playSuccessSound(owner);
+        }
         broadcastExcept(server, team, Text.literal("The team " + team.getName() + " has been disbanded."), ownerUuid);
+    }
+
+    private static void playSuccessSound(ServerPlayerEntity player) {
+        if (!eu.kotori.justTeams.JustTeamsFabric.config().isSoundsEnabled()) return;
+        player.playSoundToPlayer(resolveSound(eu.kotori.justTeams.JustTeamsFabric.config().getSuccessSound()),
+                net.minecraft.sound.SoundCategory.PLAYERS, 1.0F, 1.0F);
+    }
+
+    private static SoundEvent resolveSound(String configured) {
+        return switch (configured.toUpperCase()) {
+            case "BLOCK_NOTE_BLOCK_PLING" -> SoundEvents.BLOCK_NOTE_BLOCK_PLING.value();
+            case "BLOCK_NOTE_BLOCK_BASS" -> SoundEvents.BLOCK_NOTE_BLOCK_BASS.value();
+            case "BLOCK_BEACON_ACTIVATE" -> SoundEvents.BLOCK_BEACON_ACTIVATE;
+            default -> SoundEvents.BLOCK_NOTE_BLOCK_PLING.value();
+        };
     }
 
     private static void broadcastExcept(MinecraftServer server, Team team, Text message, UUID... excludedUuids) {
