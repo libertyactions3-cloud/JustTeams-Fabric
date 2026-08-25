@@ -38,16 +38,12 @@ public final class TeamManager {
     }
 
     public Team getTeam(int id) { return teams.get(id); }
-
-    public Team getTeam(UUID playerUuid) {
-        Integer id = playerTeams.get(playerUuid);
-        return id == null ? null : teams.get(id);
-    }
-
+    public Team getTeam(UUID playerUuid) { Integer id = playerTeams.get(playerUuid); return id == null ? null : teams.get(id); }
     public boolean isInTeam(UUID playerUuid) { return playerTeams.containsKey(playerUuid); }
 
     public void addMember(Team team, TeamPlayer player) {
         if (isInTeam(player.getPlayerUuid())) throw new IllegalStateException("Player already belongs to a team");
+        if (team.isBlacklisted(player.getPlayerUuid())) throw new IllegalStateException("That player is blacklisted from this team.");
         team.addMember(player);
         playerTeams.put(player.getPlayerUuid(), team.getId());
     }
