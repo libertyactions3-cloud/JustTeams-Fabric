@@ -19,10 +19,10 @@ One scoped source-change implementation round counts as one round, even when mul
 ## Current cycle
 
 ```text
-Source-change rounds completed: 9 / 10
-Current round: Round 10 (active/pending)
-Round 10 source corrections: in progress after a failing clean build
-Final build gate: not yet passed
+Source-change rounds completed: 10 / 10
+Current round: Round 11 (active)
+Round 10 final build gate: PASSED
+Next source-change round: Round 12
 ```
 
 ### Round 1
@@ -80,14 +80,25 @@ Source commits:
 Scope: 2.5.3-style `/team top` two-stage leaderboard UI with kills, balance, and member-count categories, ranked team entries, and back navigation.
 
 ### Round 10
-Final verification round.
+Scope: final compilation compatibility corrections plus GUI presentation fixes required by the pinned Minecraft 1.21.11/Yarn/Fabric API surface.
 
-The first clean build of the Round 9 source state failed with 16 compile errors. Round 10 is therefore active and contains the corrective source changes for the pinned Minecraft 1.21.11/Yarn/Fabric API surface, including:
+The final clean build completed successfully:
+```text
+BUILD SUCCESSFUL
+8 actionable tasks: 8 executed
+```
 
-- `ServerPlayerEntity.getEntityWorld().getServer()` in place of unavailable `getServer()` calls.
-- `MinecraftServer.getApiServices().nameToIdCache().findByName(...)` in place of unavailable `MinecraftServer.getUserCache()`.
-- server-side handled-screen closure through `ServerPlayerEntity`.
-- `ScreenHandler` slot construction performed inside the handler subclass constructor because `addSlot` is protected.
-- `TeamSettingsGui` text generic typing and Fabric storage reference correction.
+### Round 11
+Source commit:
+```text
+b8c346326605e91a452efec364b66aac3c67ad8a
+```
+Scope: correct the main Team GUI member/head geometry to the supplied 2.5.3 layout:
+- top-row border slots `0–8` use the glass-pane fill
+- bottom-row border slots `45–53` use the glass-pane fill
+- members begin at slot `9` (second row, left)
+- member heads occupy slots `9–44`
+- leader is first in the member sequence
+- warp and join-request buttons continue to override slots `7` and `8`
 
-The **next clean build is the final build gate**. Round 10 is not marked passed until it returns `BUILD SUCCESSFUL`.
+Round 11 requires another build before it is considered compile-verified.
