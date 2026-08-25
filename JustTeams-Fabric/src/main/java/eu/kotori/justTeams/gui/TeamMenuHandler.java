@@ -145,7 +145,9 @@ public final class TeamMenuHandler extends ScreenHandler {
         TeamPlayer owner = team.getMember(team.getOwnerUuid());
         List<TeamPlayer> remaining = new ArrayList<>(team.getMembers());
         remaining.removeIf(member -> member.getPlayerUuid().equals(team.getOwnerUuid()));
-        remaining.sort(Comparator.comparing(TeamPlayer::getJoinDate));
+        remaining.sort(Comparator.comparing(TeamPlayer::getJoinDate,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+
         List<TeamPlayer> result = new ArrayList<>();
         if (owner != null) result.add(owner);
         result.addAll(remaining);
@@ -158,9 +160,11 @@ public final class TeamMenuHandler extends ScreenHandler {
 
         MinecraftServer server = viewer instanceof ServerPlayerEntity serverPlayer
                 ? serverPlayer.getEntityWorld().getServer() : null;
-        ServerPlayerEntity online = server == null ? null : server.getPlayerManager().getPlayer(member.getPlayerUuid());
+        ServerPlayerEntity online = server == null ? null
+                : server.getPlayerManager().getPlayer(member.getPlayerUuid());
         boolean isOnline = online != null;
-        String playerName = isOnline ? online.getName().getString() : member.getPlayerUuid().toString().substring(0, 8);
+        String playerName = isOnline ? online.getName().getString()
+                : member.getPlayerUuid().toString().substring(0, 8);
 
         MutableText name = Text.empty();
         int statusColor = isOnline ? 0x00FF00 : 0xFF4444;
@@ -178,7 +182,7 @@ public final class TeamMenuHandler extends ScreenHandler {
         } else {
             name.append(Text.literal(playerName).setStyle(Style.EMPTY
                     .withColor(0x808080)
-                    .withItalic(false));
+                    .withItalic(false)));
         }
         head.set(DataComponentTypes.CUSTOM_NAME, name);
 
@@ -237,7 +241,9 @@ public final class TeamMenuHandler extends ScreenHandler {
     }
 
     private static MutableText plainLine(String text, Formatting color) {
-        return Text.literal(text).formatted(color).styled(style -> style.withItalic(false));
+        return Text.literal(text)
+                .formatted(color)
+                .styled(style -> style.withItalic(false));
     }
 
     private static ItemStack namedGradient(Item item, String name) {
