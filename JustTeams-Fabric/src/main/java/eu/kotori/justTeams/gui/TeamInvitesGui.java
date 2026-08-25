@@ -116,7 +116,7 @@ public final class TeamInvitesGui {
                 return;
             }
             if (slot == 53) {
-                player.closeHandledScreen();
+                ((ServerPlayerEntity) player).closeHandledScreen();
                 return;
             }
 
