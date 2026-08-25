@@ -115,7 +115,7 @@ public final class TeamSettingsGui {
 
         private void save() {
             try {
-                JustTeamsFabric.storage().save(JustTeams.teams());
+                JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             } catch (IOException e) {
                 JustTeamsFabric.LOGGER.error("Failed to save team settings", e);
             }
