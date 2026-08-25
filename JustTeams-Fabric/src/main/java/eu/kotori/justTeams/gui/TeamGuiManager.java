@@ -138,7 +138,9 @@ public final class TeamGuiManager {
 
         int memberIndex = memberIndexForSlot(slot);
         if (memberIndex >= 0 && memberIndex < team.getMembers().size()) {
-            TeamInPlaceMemberGui.enter(menu, player, team, team.getMembers().get(memberIndex), slot);
+            TeamPlayer target = team.getMembers().get(memberIndex);
+            if (target.getPlayerUuid().equals(player.getUuid())) return;
+            TeamInPlaceMemberGui.enter(menu, player, team, target, slot);
             return;
         }
         switch (slot) {
