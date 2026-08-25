@@ -2,7 +2,6 @@ package eu.kotori.justTeams.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
@@ -24,10 +23,8 @@ public final class TeamWarpPasswordPromptCommandExtension {
         if (team == null) return;
         CommandNode<ServerCommandSource> warp = team.getChild("warp");
         if (warp == null) return;
-        CommandNode<ServerCommandSource> name = warp.getChild("name");
-        if (name == null) return;
 
-        name.addChild(CommandManager.argument("name", StringArgumentType.word())
+        warp.addChild(CommandManager.argument("name", StringArgumentType.word())
                 .executes(context -> executeWithoutPassword(
                         context.getSource(),
                         StringArgumentType.getString(context, "name")))
@@ -56,7 +53,6 @@ public final class TeamWarpPasswordPromptCommandExtension {
                 source.sendError(Text.literal("You do not have permission to use team warps."));
                 return 0;
             }
-            if (JustTeamsFabric.teleports().checkWarpCooldown(player)) return 0;
 
             if (warp.getPassword().isEmpty()) {
                 return requestTeleport(player, warp);
