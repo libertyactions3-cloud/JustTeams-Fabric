@@ -27,46 +27,56 @@ BUILD SUCCESSFUL
 
 That cycle covered `/team info`, team creation defaults/validation, protected warp password prompting, disband inventory cleanup, lifecycle success sounds, `/teammsg`, chat-spy, invite-list GUI, blacklist/unblacklist, `/team settings`, and `/guild`/`/clan`/`/party` aliases.
 
-## Current GUI presentation cycle
+## Previous GUI presentation cycle
 
 ```text
 Source-change rounds completed: 10 / 10
 Current round: Round 10 — Confirmation submenu presentation (source-complete)
-Next cycle: runtime/compile verification, then further GUI parity as needed
 ```
 
-### Round 1 — Main `/team` menu item lore/presentation
-Source commit: `4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d`
+That cycle covered the main `/team` menu, Join Requests, Team Warps, Team Settings, Leaderboards, Member Management, Blacklist, Pending Invites, No-Team menu, and Confirmation GUI presentation/lore.
 
-### Round 2 — Join Requests submenu presentation
-Source commit: `f882b5dca1aacde6aa88a2d856a6694bb12e9f02`
+## Current GUI interaction / persistent-screen cycle
 
-### Round 3 — Team Warps submenu presentation
-Source commit: `8c94a76f504efa1c15cf9cba23e1a7303a359fa4`
+This is a **new 10-round source-change cycle** focused specifically on the user's requirement that `/team` submenu navigation reuse the same 54-slot inventory rather than opening another chest GUI and resetting mouse position.
 
-### Round 4 — Team Settings submenu presentation
-Source commit: `5cf0a72e0645a6f9db718f063d22442e6c32b314`
+```text
+Source-change rounds completed: 6 / 10
+Current round: Round 6 — persistent member management + corrected member-head slot mapping
+Final build gate: after Round 10
+```
 
-### Round 5 — Leaderboard Category/View presentation
-Source commit: `449442ea97b0e66786d4ea456ada7f8845debed7`
+### Round 1 — In-place Join Requests + Team Warps foundation
 
-### Round 6 — Member Management presentation
-Source commit: `e21197a18b75f591aee3a925bffb7b375acdc74c`
+The main `/team` inventory now replaces its contents in-place for Join Requests and Warps. The in-place views use glass only in the top and bottom rows and return to the original menu snapshot without creating a new chest screen.
 
-### Round 7 — Blacklist presentation
-Source commit: `dc62876844879aa473ab0f0b933901879785ebdf`
+### Round 2 — In-place Team Settings + dynamic sort/PvP state
 
-### Round 8 — Pending Invites presentation
-Source commit: `0af94413e300e8e67dd165c364e3e8dc3760de96`
+Team Settings now replaces the current menu items in-place. Tag/description chat input returns to the same view. Sorting and PvP item state are updated directly in the existing inventory instead of reopening it.
 
-### Round 9 — No-Team menu presentation
-Source commit: `37fa9ae80b8ce89a245a8a8fc7e37c6188a8eaf5`
+### Round 3 — In-place Member Management
 
-### Round 10 — Confirmation submenu presentation
-Source commit: `0b0a1d6151979535101127a7c491215c18954a7f`
+Member heads now start at slots `9–44` as required, with leader first. Clicking a member opens the management items in-place and promote/demote/permission/kick actions stay within the same 54-slot screen.
 
-The GUI presentation cycle intentionally did not redesign Fabric-specific bank or warp-management architecture. The item-backed bank remains a Fabric-specific presentation, and the warp-management screen has no direct 2.5.3 counterpart.
+### Round 4 — Main Team Home action
 
-## Next work
+The main Team Home item now performs the home teleport directly instead of opening the separate Team Home chest management GUI. Setting/clearing the home remains a separate management surface.
 
-Run the requested clean build to verify all ten GUI presentation rounds together, then perform focused runtime checks of the affected submenus.
+### Round 5 — corrective source integration
+
+The persistent-screen implementation was synchronized across its renderer/manager source so the new in-place views share the same menu state and mouse position.
+
+### Round 6 — current source state
+
+Member-management persistence and the corrected `9–44` member-head click mapping are now committed. Bank and Ender Chest remain the two special item-inventory surfaces whose underlying storage slots must not be replaced by decorative submenu items without preserving their real inventory semantics.
+
+## Remaining rounds in this cycle
+
+```text
+Round 7 — Bank handling / storage semantics
+Round 8 — Ender Chest handling / storage semantics
+Round 9 — remaining in-place GUI parity and navigation cleanup
+Round 10 — final source verification + handoff/build gate
+```
+
+The final clean build for this cycle will be run by the user at Round 10, as established by the workflow.
