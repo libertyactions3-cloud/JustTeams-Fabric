@@ -82,7 +82,7 @@ public final class TeamGuiManager {
             if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) {
                 TeamPersistentNoTeamGui.openLeaderboardCategories(player);
             } else {
-                TeamPersistentNoTeamGui.openLeaderboardCategories(player);
+                TeamPersistentNoTeamGui.openLeaderboard(player, type);
             }
             return;
         }
