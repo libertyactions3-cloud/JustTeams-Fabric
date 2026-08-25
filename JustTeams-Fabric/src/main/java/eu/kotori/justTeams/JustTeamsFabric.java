@@ -7,6 +7,7 @@ import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
 import eu.kotori.justTeams.commands.TeamLeaderboardCommandExtensions;
 import eu.kotori.justTeams.commands.TeamOwnershipCommandExtensions;
 import eu.kotori.justTeams.commands.TeamWarpCommandExtensions;
+import eu.kotori.justTeams.commands.TeamWarpPasswordPromptCommandExtension;
 import eu.kotori.justTeams.config.JustTeamsConfig;
 import eu.kotori.justTeams.economy.EconomyProvider;
 import eu.kotori.justTeams.economy.ItemEconomyProvider;
@@ -67,6 +68,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamCreationCommandExtensions.register(dispatcher);
             TeamInfoCommandExtensions.register(dispatcher);
             TeamWarpCommandExtensions.register(dispatcher);
+            TeamWarpPasswordPromptCommandExtension.register(dispatcher);
             TeamOwnershipCommandExtensions.register(dispatcher);
             TeamLeaderboardCommandExtensions.register(dispatcher);
         });
