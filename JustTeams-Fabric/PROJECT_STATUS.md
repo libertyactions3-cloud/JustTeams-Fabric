@@ -98,40 +98,99 @@ Final build command:
 
 ---
 
-# CURRENT RESUME POINT — RUNTIME / GUI PARITY FOR CURRENT FEATURE
+# CURRENT RESUME POINT — MAIN `/team` GUI PRESENTATION PARITY
 
-The current workstream is the **runtime completion of the item-economy/teleport/GUI feature paths just implemented**.
+The previous core-parity source cycle is complete: all 10 rounds were implemented, followed by the user's local clean build.
 
-Current verified runtime results:
-
-```text
-/team home set                 PASS
-/team home destination         PASS
-/team home payment timing      PASS
-/team warp destination         PASS
-/team warp payment timing      PASS
-/team warp success message     PASS
-/team enderchest /team ec      PASS
-warp password creation/use     PASS
-Warp GUI password creation/use PASS
-team creation GUI              PASS
-invalid-tag retry              PASS
-command/GUI double-charge      PASS
-latest clean Gradle build      PASS
-```
-
-The user has confirmed that all remaining focused runtime tests work as intended, and the latest local clean build completed successfully.
-
-Current GUI/command paths covered:
+Latest verified local build:
 
 ```text
-/team warp set <name> [password]
-Warp GUI → create warp → optional password
-Warp GUI → manage warp → password editing
-/team ec /team enderchest
-Team main GUI → Ender Chest
-/team GUI → create team
+./gradlew clean build --refresh-dependencies
+BUILD SUCCESSFUL in 2m
+8 actionable tasks: 8 executed
 ```
+
+The two recurring Loom messages:
+
+```text
+Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
+```
+
+appear during configuration but did not prevent the build from succeeding. They are not currently treated as build failures.
+
+The current workstream is now the **main `/team` inventory GUI presentation/lore parity pass** based directly on the verified 2.5.3 `gui.yml`.
+
+Current GUI presentation source change:
+
+```text
+TeamMenuHandler.java
+commit: 4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d
+```
+
+It adds/aligns:
+
+```text
+slot 7  Team Warps lore
+slot 8  Join Requests lore + owner/co-owner locked state
+slot 45 PvP status lore
+slot 46 Team Ender Chest lore + locked state
+slot 47 Team Home set/not-set lore
+slot 49 Sort Members dynamic status lore
+slot 50 Team Bank dynamic balance lore + disabled/permission state
+slot 52 Team Settings lore + owner/co-owner locked state
+slot 53 Leave/Disband lore
+```
+
+Member heads already have role/joined/server lore, and the established layout remains:
+
+```text
+0–8    glass/top border, with Warps at 7 and Join Requests at 8
+9–44   member heads, leader first
+45     PvP
+46     Ender Chest
+47     Home
+48     blank
+49     Sort
+50     Bank
+51     blank
+52     Settings
+53     Leave/Disband
+```
+
+Custom item names/lore explicitly disable italics, matching the intended 2.5.3 presentation.
+
+The current GUI click/action routing in `TeamGuiManager` was intentionally not redesigned during this presentation pass.
+
+## GUI presentation round counter
+
+```text
+GUI presentation rounds completed: 1 / 10
+Current round: Round 1 — main /team menu lore/presentation (source-complete)
+Next round: Round 2 — Join Requests GUI presentation
+```
+
+The GUI presentation cycle is separate from the completed core-parity cycle. Its rounds still count only when `src/` changes.
+
+---
+
+# CORE PARITY CYCLE — COMPLETED
+
+The preceding 10-round source cycle completed:
+
+```text
+1  /team info parity
+2  team creation defaults + validation
+3  protected warp password prompt
+4  disband lifecycle inventory cleanup
+5  lifecycle notification success sounds
+6  /teammsg
+7  chat-spy
+8  /team invites GUI
+9  blacklist/unblacklist
+10 /team settings + /guild /clan /party aliases
+```
+
+The user's local final build passed after the source corrections required for 1.21.11/Yarn compatibility.
 
 ---
 
@@ -199,8 +258,6 @@ Deepslate Emerald Ore is not returned as change.
 
 Failed withdrawals must not mutate the player's inventory.
 
-The provider is intended for the pinned 1.21.11/Yarn/Fabric environment and must continue to be checked against the actual local Gradle compile.
-
 ---
 
 # FEATURE-COST LAYER
@@ -221,159 +278,31 @@ rename          500
 
 These are item-currency units, not Vault money.
 
-Configuration keys:
-
-```text
-feature-costs.enabled
-feature-costs.sethome
-feature-costs.home
-feature-costs.enderchest
-feature-costs.setwarp
-feature-costs.warp
-feature-costs.bank-withdraw
-feature-costs.rename
-```
-
-Fractional feature costs are rejected because the configured item currency is discrete.
-
 ---
 
 # VERIFIED PAID-FEATURE INTEGRATIONS
 
-## Home teleport
-
-`TeamTeleportManager.requestHome(...)` owns the `home` feature charge, covering both `/team home` and Home GUI use without double charging.
-
-Required current runtime behavior:
-
-```text
-check validity / cooldown
-    ↓
-warmup
-    ↓
-successful teleport
-    ↓
-withdraw item currency
-    ↓
-home success message
-```
-
-The user runtime-tested the corrected payment timing and confirmed it works as intended.
-
-## Set home
-
-Both known entry points charge `sethome` before changing the stored location:
+The user has runtime-tested the major item-economy/teleport paths and confirmed:
 
 ```text
 /team home set
-Home GUI → Set Home
-```
-
-The user's runtime test confirmed a 100-unit charge exactly:
-
-```text
-64 Deepslate Emerald Ore
-→ 62 Deepslate Emerald Ore
-   6 Emerald Blocks
-   8 Emeralds
-```
-
-The destination was stored correctly.
-
-## Team Ender Chest
-
-`TeamEnderChestGui.open(...)` owns the `enderchest` feature charge, so these callers converge on one charge boundary:
-
-```text
-/team enderchest
-/team ec
-Team main GUI → Ender Chest
-```
-
-Do not add another caller-side charge.
-
-The persistent team Ender Chest is retained on the `Team` object after normal release so the next open reuses the saved inventory. The user has runtime-tested `/team ec` and confirmed persistence works.
-
-## Warp creation
-
-Both command and GUI creation charge `setwarp` before creating the warp.
-
-The GUI supports an optional password and password editing through `TeamStringInputGui`.
-
-The command supports:
-
-```text
+/team home
+/team warp
 /team warp set <name> [password]
+Warp GUI password creation/use
+/team ec
+/team enderchest
 ```
 
-The optional command password is implemented by `TeamWarpCommandExtensions`, which adds a final `greedyString` password argument to the existing `/team warp set <name>` node and stores it on `TeamWarp`.
-
-The user has runtime-tested password-protected warp creation/use successfully.
-
-## Warp use
-
-The command and GUI both pass the per-warp `TeamWarp.cost` into `TeamTeleportManager.requestWarp(...)`.
-
-Required current runtime behavior:
-
-```text
-validate warp/password/cooldown
-    ↓
-warmup
-    ↓
-successful teleport
-    ↓
-withdraw TeamWarp.cost
-    ↓
-warp success message
-```
-
-The user has confirmed the command message:
-
-```text
-You have successfully teleported to your team warp.
-```
-
-The user also confirmed the corrected post-success payment timing works.
+The user also confirmed that the corrected payment timing only charges after successful teleportation.
 
 ---
 
 # GUI TEAM CREATION
 
-The `/team` GUI for players without a team previously used a chat-input session for team name/tag entry.
+The `/team` no-team GUI uses `TeamStringInputGui` for the team name and tag inputs.
 
-The user reported that typing the team name in chat did not register.
-
-The current implementation intentionally uses the already-working `TeamStringInputGui` anvil text input for both:
-
-```text
-team name
-team tag
-```
-
-This avoids depending on the fragile chat interception path for this feature while remaining server-side and client-compatible.
-
-### Invalid-tag crash fix
-
-The GUI previously had a re-entrant close/open recursion:
-
-```text
-NoTeamGui.open()
-    ↓
-TeamStringInputGui.onClosed()
-    ↓
-cancelled.run()
-    ↓
-NoTeamGui.open()
-    ↓
-closeHandledScreen()
-    ↓
-...
-```
-
-`TeamStringInputGui.onClosed()` now defers the cancellation callback through the server executor so the current screen-close operation completes before another GUI is opened.
-
-The user runtime-tested the invalid 5-character tag scenario and confirmed it now cancels/retries safely without a server crash.
+The user runtime-tested the previous invalid-tag close/open recursion fix and confirmed that cancellation/retry no longer crashes the server.
 
 ---
 
@@ -385,65 +314,15 @@ The shipped 2.5.3 configuration contains:
 feature_costs.economy.bank_withdraw = 10.0
 ```
 
-However, the actual verified 2.5.3 bank-withdraw path does **not** call:
+However, the actual bank-withdraw operation does not call `canAffordAndPay(player, "bank_withdraw")`.
 
-```text
-canAffordAndPay(player, "bank_withdraw")
-```
-
-The actual reference withdrawal sequence is:
-
-```text
-permission check
-    ↓
-amount validation
-    ↓
-team balance check
-    ↓
-remove amount from team balance
-    ↓
-deposit amount into player's Vault balance
-```
-
-Fabric must not invent a charge for it.
-
-Current Fabric bank withdrawal is authorization/inventory mechanics only:
-
-```text
-BYPASS_BANK_WITHDRAW
-       OR
-member.canWithdraw()
-```
-
-Do **not** add `FeatureCostManager.charge(player, "bank-withdraw")` to the bank withdrawal predicate.
+Fabric must not invent a feature charge for bank withdrawal.
 
 ---
 
 # TEAMWARP.COST — DELIBERATE FABRIC EXTENSION
 
-2.5.3 uses a global:
-
-```text
-feature_costs.economy.warp = 75
-```
-
-Fabric already has persistent `TeamWarp.cost` and its GUI allows per-warp configuration.
-
-Current decision: **keep `TeamWarp.cost`**. Do not replace persisted per-warp costs with the global 75-unit value unless the user explicitly chooses strict global-cost parity.
-
----
-
-# RENAME COST — NOT A CURRENT IMPLEMENTATION TARGET
-
-The reference has:
-
-```text
-rename = 500
-```
-
-Do not create a rename feature solely because this configuration entry exists.
-
-Only investigate it when rename itself becomes the current feature being traced.
+Fabric intentionally keeps persistent per-warp `TeamWarp.cost` rather than replacing it with the global 2.5.3 numeric warp cost.
 
 ---
 
@@ -459,34 +338,6 @@ Whenever new code is about to be written:
 5. Treat the user's actual compiler/runtime result as authoritative over generic API documentation.
 ```
 
-Do not claim that syntax was verified merely because a public Yarn page appears to contain a similarly named method. The exact project compile path matters.
-
----
-
-# ROUND 10 / BUILD + RUNTIME PROTOCOL
-
-The latest local clean build succeeded on 2026-08-24:
-
-```text
-./gradlew clean build --refresh-dependencies
-BUILD SUCCESSFUL in 1m 46s
-8 actionable tasks: 8 executed
-```
-
-The two Loom messages:
-
-```text
-Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
-```
-
-appeared during configuration but did not prevent `build` from succeeding. They are not currently treated as build failures.
-
-The current scoped runtime and compile verification are complete.
-
-If a future build or runtime test exposes a failure, fix only the verified failing feature path and rerun the clean build.
-
-Do not begin an unrelated repository-wide audit.
-
 ---
 
 # HANDOFF / SEARCH PROTOCOL
@@ -495,10 +346,10 @@ When a repository-wide search is required:
 
 1. Use the GitHub repository search when it is actually available and reliable.
 2. If the connector cannot perform a reliable repository-wide search, do not claim repository-wide absence from a narrow result.
-3. Use the user's supplied repository search results as authoritative evidence when they directly show the relevant call path.
-4. For feature work, prefer exact source tracing over broad architectural redesign.
+3. Use directly supplied repository search results as authoritative evidence when they show the relevant call path.
+4. Prefer exact source tracing over broad architectural redesign.
 
-When a feature is being audited, the required round output is:
+Feature work should always follow:
 
 ```text
 exact verified 2.5.3 behavior
@@ -512,10 +363,10 @@ implementation decision
 local compile/runtime verification
 ```
 
-Nothing outside that feature path should be investigated unless it blocks the current feature.
+Nothing outside the current feature should be investigated unless it blocks that feature.
 
 ---
 
 # HISTORICAL NOTE
 
-Earlier completed rounds included the Fabric setup, permissions, team chat, glow, membership lifecycle, Ender Chest, teleport, and item-economy foundation. Their detailed history may exist in older project `.md` handoff/audit files, but this file is the current operational source of truth for continuation behavior, pinned toolchain/API verification, and current status.
+Earlier completed work includes the Fabric setup, permissions, team chat, glow, membership lifecycle, Ender Chest, teleport, item economy, stats, leaderboards, ownership transfer, and core command/GUI parity. Older `.md` audit files may contain the detailed history, but this file is the current operational source of truth for continuation behavior, pinned toolchain/API verification, and current status.
