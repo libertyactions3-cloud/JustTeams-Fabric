@@ -34,9 +34,10 @@ import java.util.UUID;
 /** Server-side 54-slot Team GUI matching the requested Fabric layout and the 2.5.3 presentation. */
 public final class TeamMenuHandler extends ScreenHandler {
     private static final int[] MEMBER_SLOTS = {
-            37, 38, 39, 40, 41, 42, 43,
-            28, 29, 30, 31, 32, 33, 34,
-            19, 20, 21, 22, 23, 24, 25
+            9, 10, 11, 12, 13, 14, 15, 16, 17,
+            18, 19, 20, 21, 22, 23, 24, 25, 26,
+            27, 28, 29, 30, 31, 32, 33, 34, 35,
+            36, 37, 38, 39, 40, 41, 42, 43, 44
     };
     private static final int PRIMARY_START = 0x4C9DDE;
     private static final int PRIMARY_END = 0x4C96D2;
@@ -65,7 +66,10 @@ public final class TeamMenuHandler extends ScreenHandler {
     }
 
     private void populate(PlayerEntity viewer) {
-        for (int i = 0; i < menuInventory.size(); i++) menuInventory.setStack(i, ItemStack.EMPTY);
+        ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
+        for (int slot = 0; slot < 9; slot++) menuInventory.setStack(slot, filler.copy());
+        for (int slot = 45; slot < 54; slot++) menuInventory.setStack(slot, filler.copy());
+        for (int slot = 9; slot < 45; slot++) menuInventory.setStack(slot, ItemStack.EMPTY);
 
         List<TeamPlayer> members = orderedMembers();
         for (int i = 0; i < MEMBER_SLOTS.length && i < members.size(); i++) {
@@ -244,6 +248,12 @@ public final class TeamMenuHandler extends ScreenHandler {
         return Text.literal(text)
                 .formatted(color)
                 .styled(style -> style.withItalic(false));
+    }
+
+    private static ItemStack namedPlain(Item item, String name) {
+        ItemStack stack = new ItemStack(item);
+        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).styled(style -> style.withItalic(false)));
+        return stack;
     }
 
     private static ItemStack namedGradient(Item item, String name) {
