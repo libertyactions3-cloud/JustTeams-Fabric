@@ -1,5 +1,7 @@
 package eu.kotori.justTeams.gui;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -12,8 +14,11 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
+import java.util.List;
 import java.util.Objects;
 
 /** Small confirmation GUI used for destructive or ownership-changing team actions. */
@@ -27,7 +32,7 @@ public final class TeamConfirmationGui {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(
                         syncId, inventory, player, title, question, confirm, cancel),
-                Text.literal(title)));
+                Text.literal(title).setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static final class Handler extends ScreenHandler {
@@ -44,7 +49,7 @@ public final class TeamConfirmationGui {
             this.confirm = confirm;
             this.cancel = cancel;
 
-            fill(title, question);
+            fill();
             for (int i = 0; i < 27; i++) {
                 addSlot(new MenuSlot(menu, i, 8 + (i % 9) * 18, 18 + (i / 9) * 18));
             }
@@ -58,14 +63,26 @@ public final class TeamConfirmationGui {
             }
         }
 
-        private void fill(String title, String question) {
+        private void fill() {
             for (int i = 0; i < 27; i++) {
-                menu.setStack(i, named(Items.GRAY_STAINED_GLASS_PANE, " "));
+                menu.setStack(i, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
             }
-            menu.setStack(4, named(Items.PAPER, question));
-            menu.setStack(11, named(Items.LIME_DYE, "Confirm"));
-            menu.setStack(15, named(Items.RED_DYE, "Cancel"));
-            menu.setStack(22, named(Items.BARRIER, title));
+
+            ItemStack confirmItem = new ItemStack(Items.GREEN_WOOL);
+            confirmItem.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("CONFIRM").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withBold(true).withItalic(false)));
+            confirmItem.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("This action cannot be undone.", Formatting.GRAY)
+            )));
+            menu.setStack(11, confirmItem);
+
+            ItemStack cancelItem = new ItemStack(Items.RED_WOOL);
+            cancelItem.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("CANCEL").setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
+            cancelItem.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Return to the previous menu.", Formatting.GRAY)
+            )));
+            menu.setStack(15, cancelItem);
         }
 
         @Override
@@ -76,7 +93,7 @@ public final class TeamConfirmationGui {
             }
             if (slot == 11) {
                 complete(confirm);
-            } else if (slot == 15 || slot == 22) {
+            } else if (slot == 15) {
                 complete(cancel);
             }
         }
@@ -115,10 +132,15 @@ public final class TeamConfirmationGui {
             }
         }
 
-        private static ItemStack named(net.minecraft.item.Item item, String name) {
+        private static ItemStack namedPlain(net.minecraft.item.Item item, String name) {
             ItemStack stack = new ItemStack(item);
-            stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, Text.literal(name));
+            stack.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
             return stack;
+        }
+
+        private static Text plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
         }
 
         private static final class MenuSlot extends Slot {
