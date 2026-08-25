@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.team.Team;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
@@ -13,7 +14,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import eu.kotori.justTeams.team.Team;
 
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +28,7 @@ public final class TeamPersistentLeaderboardGui {
 
     private static final WeakHashMap<TeamMenuHandler, View> OPEN = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, TeamPersistentLeaderboardGuiType> TYPES = new WeakHashMap<>();
+    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> MAIN_SNAPSHOTS = new WeakHashMap<>();
 
     public enum TeamPersistentLeaderboardGuiType { KILLS, BALANCE, MEMBERS }
 
@@ -36,6 +37,7 @@ public final class TeamPersistentLeaderboardGui {
     public static boolean isOpen(TeamMenuHandler menu) { return OPEN.containsKey(menu); }
 
     public static void openCategories(TeamMenuHandler menu) {
+        snapshotMain(menu);
         OPEN.put(menu, View.CATEGORIES);
         Inventory inventory = menu.getMenuInventory();
         clear(inventory);
@@ -48,6 +50,7 @@ public final class TeamPersistentLeaderboardGui {
     }
 
     public static void openLeaderboard(TeamMenuHandler menu, TeamPersistentLeaderboardGuiType type) {
+        snapshotMain(menu);
         OPEN.put(menu, View.RANKED);
         TYPES.put(menu, type);
         Inventory inventory = menu.getMenuInventory();
@@ -84,6 +87,7 @@ public final class TeamPersistentLeaderboardGui {
     public static void close(TeamMenuHandler menu) {
         OPEN.remove(menu);
         TYPES.remove(menu);
+        MAIN_SNAPSHOTS.remove(menu);
     }
 
     public static void handle(TeamMenuHandler menu, ServerPlayerEntity player, Team team, int slot) {
@@ -94,7 +98,7 @@ public final class TeamPersistentLeaderboardGui {
                 case 11 -> openLeaderboard(menu, TeamPersistentLeaderboardGuiType.KILLS);
                 case 13 -> openLeaderboard(menu, TeamPersistentLeaderboardGuiType.BALANCE);
                 case 15 -> openLeaderboard(menu, TeamPersistentLeaderboardGuiType.MEMBERS);
-                case 22 -> { close(menu); TeamInPlaceGui.returnToMain(menu); }
+                case 22 -> returnToMain(menu);
                 default -> { }
             }
         } else if (view == View.RANKED && slot == 49) {
@@ -141,6 +145,24 @@ public final class TeamPersistentLeaderboardGui {
         ItemStack stack = new ItemStack(item);
         stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name, true));
         return stack;
+    }
+
+    private static void snapshotMain(TeamMenuHandler menu) {
+        if (MAIN_SNAPSHOTS.containsKey(menu)) return;
+        ItemStack[] snapshot = new ItemStack[54];
+        for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
+        MAIN_SNAPSHOTS.put(menu, snapshot);
+    }
+
+    private static void returnToMain(TeamMenuHandler menu) {
+        ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu);
+        if (snapshot != null) {
+            Inventory inventory = menu.getMenuInventory();
+            for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
+        }
+        close(menu);
+        TeamInPlaceGui.returnToMain(menu);
+        menu.sendContentUpdates();
     }
 
     private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
