@@ -30,11 +30,18 @@ BUILD SUCCESSFUL
 
 ```text
 Source-change rounds completed: 1 / 10
-Current round: Round 1 (active/pending build)
+Current round: Round 1 completed at source level
 Next source-change round: Round 2
 ```
 
 ### Round 1 — `/team info` parity
+Source commits:
+```text
+e310482830b891ed0eae32902a7922c7e8f5b1a2
+92d8470e5017c7bb4b611bf0dbd3f38b691def21
+99e8af793f6baf3d0437cd447b44b6b15e28f181
+```
+
 Scope: replace the minimal Fabric `/team info` output with the verified 2.5.3 information surface:
 - team name
 - tag
@@ -48,7 +55,9 @@ Scope: replace the minimal Fabric `/team info` output with the verified 2.5.3 in
 - member names
 - footer
 
-Implementation uses Fabric's 1.21.11 `NameToIdCache` for offline member-name resolution and retains the existing Fabric item-backed economy rather than inventing a Vault-style numeric bank balance.
+Implementation uses Fabric's 1.21.11 `NameToIdCache` for offline member-name resolution and retains the existing Fabric item-backed economy rather than inventing a Vault-style numeric bank balance. The command registration is wired through `TeamInfoCommandExtensions`.
+
+The source implementation is complete, but it still requires a clean build and in-game verification before the round is considered fully verified.
 
 ### Round 2 — Team creation defaults + validation parity
 Port the verified 2.5.3 default PVP/public/glow behavior and the user-facing name/tag validation rules into the existing Fabric configuration and creation path.
