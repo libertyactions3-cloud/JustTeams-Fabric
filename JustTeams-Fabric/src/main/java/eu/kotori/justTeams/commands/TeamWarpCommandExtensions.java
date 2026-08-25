@@ -142,7 +142,7 @@ public final class TeamWarpCommandExtensions {
             }
             JustTeamsFabric.teams().removeMember(team, target.getPlayerUuid());
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            TeamNotificationManager.notifyKick(actor.getServer(), team, actor.getUuid(), target.getPlayerUuid());
+            TeamNotificationManager.notifyKick(actor.getEntityWorld().getServer(), team, actor.getUuid(), target.getPlayerUuid());
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to kick that player." : exception.getMessage()));
@@ -244,7 +244,7 @@ public final class TeamWarpCommandExtensions {
     private static PlayerConfigEntry resolveTarget(ServerCommandSource source, String targetName) {
         ServerPlayerEntity online = source.getServer().getPlayerManager().getPlayer(targetName);
         if (online != null) return new PlayerConfigEntry(online.getUuid(), online.getName().getString());
-        return source.getServer().getUserCache().findByName(targetName).orElse(null);
+        return source.getServer().getApiServices().nameToIdCache().findByName(targetName).orElse(null);
     }
 
     private static void setCoOwnerPermissions(TeamPlayer target) {
@@ -260,15 +260,17 @@ public final class TeamWarpCommandExtensions {
     }
 
     private static void refreshGlow(ServerPlayerEntity actor, TeamPlayer target) {
-        if (actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid()) != null) JustTeamsFabric.glow().refreshAll(actor.getServer());
+        var server = actor.getEntityWorld().getServer();
+        if (server.getPlayerManager().getPlayer(target.getPlayerUuid()) != null) JustTeamsFabric.glow().refreshAll(server);
     }
 
     private static void notifyRoleChange(ServerPlayerEntity actor, Team team, TeamPlayer target, boolean promoted) {
-        ServerPlayerEntity targetPlayer = actor.getServer().getPlayerManager().getPlayer(target.getPlayerUuid());
+        var server = actor.getEntityWorld().getServer();
+        ServerPlayerEntity targetPlayer = server.getPlayerManager().getPlayer(target.getPlayerUuid());
         String targetName = targetPlayer != null ? targetPlayer.getName().getString() : target.getPlayerUuid().toString();
         actor.sendMessage(Text.literal(promoted ? "You promoted " + targetName + " to co-owner." : "You demoted " + targetName + " to member."), false);
         for (TeamPlayer member : team.getMembers()) {
-            ServerPlayerEntity player = actor.getServer().getPlayerManager().getPlayer(member.getPlayerUuid());
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(member.getPlayerUuid());
             if (player != null && !player.getUuid().equals(actor.getUuid())) {
                 player.sendMessage(Text.literal(promoted ? targetName + " is now a team co-owner." : targetName + " is now a team member."), false);
             }
