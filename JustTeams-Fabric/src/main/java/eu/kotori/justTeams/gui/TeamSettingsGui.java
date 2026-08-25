@@ -115,7 +115,7 @@ public final class TeamSettingsGui {
 
         private void save() {
             try {
-                JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+                JustTeamsFabric.storage().save(JustTeams.teams());
             } catch (IOException e) {
                 JustTeamsFabric.LOGGER.error("Failed to save team settings", e);
             }
@@ -126,7 +126,7 @@ public final class TeamSettingsGui {
             stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, Text.literal(name));
             if (lore.length > 0) {
                 java.util.List<Text> lines = java.util.Arrays.stream(lore)
-                        .map(Text::literal)
+                        .<Text>map(Text::literal)
                         .toList();
                 stack.set(net.minecraft.component.DataComponentTypes.LORE, new net.minecraft.component.type.LoreComponent(lines));
             }
