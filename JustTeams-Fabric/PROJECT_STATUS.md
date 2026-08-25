@@ -42,19 +42,11 @@ Resolved Fabric Loom during the user's local build: 1.15.5
 
 # USER WORKFLOW RULES — CURRENT
 
-These rules override older/general workflow assumptions in this document.
-
 ## Continue on every message
 
-Treat **every user message** as permission to continue the project.
-
-The word **`Continue`** is only a reminder to continue. It is not a request to pause, wait, ask for confirmation, or stop repository activity.
+Treat every user message as permission to continue the project. `Continue` is only a reminder to continue.
 
 ## Stay scoped to the current feature
-
-The goal is **not** to audit the entire Fabric project at once.
-
-For the current feature:
 
 ```text
 exact verified 2.5.3 behavior
@@ -64,33 +56,13 @@ identify Fabric pieces actually missing
 implement only those pieces
 ```
 
-Do not investigate unrelated subsystems merely because a bug or architectural improvement is noticed.
-
-Unrelated issues may be recorded briefly as `Later`, but must not be investigated further unless they directly block or affect the current feature.
-
-Do not redesign broader architecture merely because a cleaner design is possible.
-
-When command and GUI paths implement the same feature, make them converge on the same underlying behavior where necessary for parity, but do not use that as a reason to redesign unrelated systems.
-
-## Audit/design before implementation
-
-Do **not** change repository Java/source code while we are still establishing behavior or designing the missing pieces unless the user explicitly says we are moving into implementation.
-
-Small documentation/status updates are allowed when they record verified evidence or workflow decisions.
-
-Prefer the **smallest correct implementation** that reproduces verified 2.5.3 behavior.
-
-Never create behavior solely because a configuration key, permission, setter, or similarly named class exists.
+Do not redesign unrelated architecture. Record unrelated issues only as Later.
 
 ## Repository activity / 10-round workflow
 
-Continue doing repository activity in the established rounds before the final build checkpoint.
+A round counts only when something under `src/` changes. Documentation, searching, auditing, builds, and runtime tests do not consume rounds.
 
-Rounds are evidence-driven. Do not invent work merely to fill a round.
-
-Do not run the final clean build before Round 10 unless a meaningful testing decision explicitly requires it.
-
-Final build command:
+The user's canonical verification build is:
 
 ```powershell
 ./gradlew clean build --refresh-dependencies
@@ -98,50 +70,45 @@ Final build command:
 
 ---
 
-# CURRENT RESUME POINT — MAIN `/team` GUI PRESENTATION PARITY
+# CURRENT RESUME POINT — GUI PRESENTATION / LORE PARITY
 
-The previous core-parity source cycle is complete: all 10 rounds were implemented, followed by the user's local clean build.
+The previous core-parity cycle completed 10 source rounds and was followed by a successful local clean build.
 
-Latest verified local build:
-
-```text
-./gradlew clean build --refresh-dependencies
-BUILD SUCCESSFUL in 2m
-8 actionable tasks: 8 executed
-```
-
-The two recurring Loom messages:
+The current GUI presentation cycle has now also completed **10 / 10 source-change rounds**. It was based directly on the supplied 2.5.3 `gui.yml` plus the corresponding Java GUI classes.
 
 ```text
-Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
+Round 1  Main /team menu                    ✅
+Round 2  Join Requests                      ✅
+Round 3  Team Warps                         ✅
+Round 4  Team Settings                      ✅
+Round 5  Leaderboard Category/View          ✅
+Round 6  Member Management                  ✅
+Round 7  Blacklist                           ✅
+Round 8  Pending Invites                    ✅
+Round 9  No-Team menu                       ✅
+Round 10 Confirmation GUI                   ✅
 ```
 
-appear during configuration but did not prevent the build from succeeding. They are not currently treated as build failures.
-
-The current workstream is now the **main `/team` inventory GUI presentation/lore parity pass** based directly on the verified 2.5.3 `gui.yml`.
-
-Current GUI presentation source change:
+### GUI presentation source commits
 
 ```text
-TeamMenuHandler.java
-commit: 4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d
+R1  4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d
+R2  f882b5dca1aacde6aa88a2d856a6694bb12e9f02
+R3  8c94a76f504efa1c15cf9cba23e1a7303a359fa4
+R4  5cf0a72e0645a6f9db718f063d22442e6c32b314
+R5  449442ea97b0e66786d4ea456ada7f8845debed7
+R6  e21197a18b75f591aee3a925bffb7b375acdc74c
+R7  dc62876844879aa473ab0f0b933901879785ebdf
+R8  0af94413e300e8e67dd165c364e3e8dc3760de96
+R9  37fa9ae80b8ce89a245a8a8fc7e37c6188a8eaf5
+R10 0b0a1d6151979535101127a7c491215c18954a7f
 ```
 
-It adds/aligns:
+## Presentation decisions
 
-```text
-slot 7  Team Warps lore
-slot 8  Join Requests lore + owner/co-owner locked state
-slot 45 PvP status lore
-slot 46 Team Ender Chest lore + locked state
-slot 47 Team Home set/not-set lore
-slot 49 Sort Members dynamic status lore
-slot 50 Team Bank dynamic balance lore + disabled/permission state
-slot 52 Team Settings lore + owner/co-owner locked state
-slot 53 Leave/Disband lore
-```
+All custom GUI item names and lore explicitly disable italics unless 2.5.3 explicitly requests italic formatting.
 
-Member heads already have role/joined/server lore, and the established layout remains:
+The main `/team` menu retains the user's required geometry:
 
 ```text
 0–8    glass/top border, with Warps at 7 and Join Requests at 8
@@ -157,19 +124,15 @@ Member heads already have role/joined/server lore, and the established layout re
 53     Leave/Disband
 ```
 
-Custom item names/lore explicitly disable italics, matching the intended 2.5.3 presentation.
+### Intentional Fabric-specific GUI differences
 
-The current GUI click/action routing in `TeamGuiManager` was intentionally not redesigned during this presentation pass.
+`TeamBankGui` remains an item-backed team-owned currency inventory. The 2.5.3 BankGUI is a numeric Vault-money menu, so its deposit/balance/withdraw presentation was not transplanted onto the Fabric bank.
 
-## GUI presentation round counter
+`TeamWarpManagementGui` is a Fabric-specific management screen. The supplied 2.5.3 GUI set has no standalone warp-management GUI, so its extra controls were not falsely attributed to the reference.
 
-```text
-GUI presentation rounds completed: 1 / 10
-Current round: Round 1 — main /team menu lore/presentation (source-complete)
-Next round: Round 2 — Join Requests GUI presentation
-```
+## Verification status
 
-The GUI presentation cycle is separate from the completed core-parity cycle. Its rounds still count only when `src/` changes.
+The 10 GUI rounds are source-complete. The next step is the user's local clean build, followed by focused runtime checks of the affected menus. Do not claim the presentation cycle is runtime-verified until that build and testing occur.
 
 ---
 
@@ -178,53 +141,27 @@ The GUI presentation cycle is separate from the completed core-parity cycle. Its
 The preceding 10-round source cycle completed:
 
 ```text
-1  /team info parity
-2  team creation defaults + validation
-3  protected warp password prompt
-4  disband lifecycle inventory cleanup
-5  lifecycle notification success sounds
-6  /teammsg
-7  chat-spy
-8  /team invites GUI
-9  blacklist/unblacklist
-10 /team settings + /guild /clan /party aliases
+/team info
+team creation defaults + validation
+protected warp password prompt
+disband inventory cleanup
+lifecycle success sounds
+/teammsg
+chat-spy
+/team invites
+blacklist/unblacklist
+/team settings + /guild /clan /party aliases
 ```
 
-The user's local final build passed after the source corrections required for 1.21.11/Yarn compatibility.
+The user then ran the canonical clean build successfully.
 
 ---
 
 # ITEM ECONOMY / FEATURE COSTS
 
-The current workstream uses an internal item economy instead of requiring an external economy plugin/mod.
+The current workstream uses an internal item economy.
 
-Existing abstraction:
-
-```text
-EconomyProvider
-    ├── getCurrencyName()
-    ├── isAvailable()
-    ├── getBalance(player)
-    ├── withdraw(player, amount)
-    └── deposit(player, amount)
-```
-
-`EconomyTransactionResult` supports:
-
-```text
-SUCCESS
-INSUFFICIENT_FUNDS
-UNAVAILABLE
-INVALID_AMOUNT
-```
-
-A concrete `ItemEconomyProvider` is wired through:
-
-```java
-JustTeamsFabric.economy()
-```
-
-## Currency denominations
+Currency denominations:
 
 ```text
 Emerald               = 1
@@ -244,27 +181,7 @@ ItemEconomyProvider
 
 Do not merge these concepts.
 
-## Item-economy semantics
-
-The provider follows the supplied server Skript's established denomination behavior, including its change rules.
-
-Change is returned as:
-
-```text
-Emerald Blocks + Emeralds
-```
-
-Deepslate Emerald Ore is not returned as change.
-
-Failed withdrawals must not mutate the player's inventory.
-
----
-
-# FEATURE-COST LAYER
-
-`FeatureCostManager` is the generic feature-level charge boundary backed by the item economy.
-
-Configured defaults:
+Configured feature costs remain:
 
 ```text
 sethome        100
@@ -276,13 +193,13 @@ bank-withdraw    10
 rename          500
 ```
 
-These are item-currency units, not Vault money.
+The `bank-withdraw` entry is intentionally not charged because the verified 2.5.3 bank withdrawal path does not call its generic feature-cost mechanism.
 
 ---
 
-# VERIFIED PAID-FEATURE INTEGRATIONS
+# VERIFIED RUNTIME FEATURES
 
-The user has runtime-tested the major item-economy/teleport paths and confirmed:
+The user has confirmed successful runtime behavior for the major current feature paths, including:
 
 ```text
 /team home set
@@ -292,81 +209,27 @@ The user has runtime-tested the major item-economy/teleport paths and confirmed:
 Warp GUI password creation/use
 /team ec
 /team enderchest
+team creation GUI
+invalid-tag retry
+payment timing after successful teleport
+/team info
+/team top
+/team top kills
+/team top balance
+/team top members
 ```
-
-The user also confirmed that the corrected payment timing only charges after successful teleportation.
-
----
-
-# GUI TEAM CREATION
-
-The `/team` no-team GUI uses `TeamStringInputGui` for the team name and tag inputs.
-
-The user runtime-tested the previous invalid-tag close/open recursion fix and confirmed that cancellation/retry no longer crashes the server.
-
----
-
-# BANK-WITHDRAW — VERIFIED 2.5.3 PARITY DECISION
-
-The shipped 2.5.3 configuration contains:
-
-```text
-feature_costs.economy.bank_withdraw = 10.0
-```
-
-However, the actual bank-withdraw operation does not call `canAffordAndPay(player, "bank_withdraw")`.
-
-Fabric must not invent a feature charge for bank withdrawal.
-
----
-
-# TEAMWARP.COST — DELIBERATE FABRIC EXTENSION
-
-Fabric intentionally keeps persistent per-warp `TeamWarp.cost` rather than replacing it with the global 2.5.3 numeric warp cost.
 
 ---
 
 # PINNED API / SYNTAX VERIFICATION RULE
 
-Whenever new code is about to be written:
+Whenever new Java/Fabric code is written:
 
 ```text
-1. Read the current pinned Gradle/Minecraft/Yarn/Fabric settings.
-2. Verify the exact API/signature/syntax on current web documentation for those versions.
+1. Read the pinned Gradle/Minecraft/Yarn/Fabric settings.
+2. Verify the exact API/signature/syntax on current web documentation.
 3. Implement the smallest scoped change.
-4. Run the user's canonical Gradle build locally before claiming compile success.
-5. Treat the user's actual compiler/runtime result as authoritative over generic API documentation.
+4. Let the user's local Gradle build be the final compile authority.
 ```
 
----
-
-# HANDOFF / SEARCH PROTOCOL
-
-When a repository-wide search is required:
-
-1. Use the GitHub repository search when it is actually available and reliable.
-2. If the connector cannot perform a reliable repository-wide search, do not claim repository-wide absence from a narrow result.
-3. Use directly supplied repository search results as authoritative evidence when they show the relevant call path.
-4. Prefer exact source tracing over broad architectural redesign.
-
-Feature work should always follow:
-
-```text
-exact verified 2.5.3 behavior
-        ↓
-current Fabric behavior
-        ↓
-missing Fabric pieces
-        ↓
-implementation decision
-        ↓
-local compile/runtime verification
-```
-
-Nothing outside the current feature should be investigated unless it blocks that feature.
-
----
-
-# HISTORICAL NOTE
-
-Earlier completed work includes the Fabric setup, permissions, team chat, glow, membership lifecycle, Ender Chest, teleport, item economy, stats, leaderboards, ownership transfer, and core command/GUI parity. Older `.md` audit files may contain the detailed history, but this file is the current operational source of truth for continuation behavior, pinned toolchain/API verification, and current status.
+Do not claim compile success before the user's actual build confirms it.
