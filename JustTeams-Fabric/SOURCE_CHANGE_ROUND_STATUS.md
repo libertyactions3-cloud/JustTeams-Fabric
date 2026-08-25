@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 9 / 10
-Current round: Round 9 (active/pending build and runtime verification)
-Next source-change round: Round 10
+Source-change rounds completed: 10 / 10
+Current round: Round 10 (source-complete; final build pending)
+Next cycle: GUI presentation/lore parity pass
 ```
 
 ### Round 1 — `/team info` parity
@@ -186,11 +186,35 @@ Scope: reproduce the verified 2.5.3 blacklist feature locally:
 Round 9 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 10 — Remaining core command surfaces
-Audit and implement the missing `/team settings` command and command aliases (`/guild`, `/clan`, `/party`) if they remain the only core command-surface gaps after Rounds 1–9. Then run the requested final `./gradlew clean build --refresh-dependencies`.
+Source commits:
+```text
+3b988981833e6e04376b2260f11eaf1f67fd779e
+adc9545e746fa56360d00950453d61bc3a4615ee
+21e364cc5a4e9c822137911f43816a6d3acd7b43
+```
+Scope:
+- `/team settings` opens the existing TeamSettingsGui for owner/co-owner team members.
+- `/guild`, `/clan`, `/party` redirect to the complete `/team` command tree.
+- Reference aliases `/t`, `/g`, `/c`, `/p` are also provided.
+- Brigadier redirects are used so the aliases share the existing `/team` behavior rather than duplicating the full command tree.
 
-## Deferred to a later cycle
+Round 10 source implementation is complete. The final `./gradlew clean build --refresh-dependencies` is the verification gate.
 
-The following remain outside this cycle unless they directly block a current feature:
+## Next cycle — GUI presentation/lore parity
+After the Round 10 build, perform a dedicated inventory-GUI presentation pass against 2.5.3 `gui.yml`:
+- every named GUI item gets the correct name and sufficient lore
+- custom names are explicitly non-italic unless the reference explicitly specifies italics
+- exact material and slot placement
+- dynamic state/placeholder translation
+- exact `/team` main-menu glass/member-head geometry already established
+- member heads begin at slot 9 and continue through 44
+- top/bottom unused border slots use glass panes
+
+This GUI pass is a separate source-change cycle and should not be counted against the just-completed 10 rounds.
+
+## Deferred to later cycles
+
+The following remain outside the core single-server parity cycle unless they directly block a current feature:
 - full admin subsystem
 - Redis/cross-server synchronization
 - database/migration/recovery architecture
@@ -199,5 +223,3 @@ The following remain outside this cycle unless they directly block a current fea
 - Bedrock/platform integrations
 - custom team-data API
 - other Paper-specific integrations
-
-These are intentionally not being treated as prerequisites for the core single-server Fabric feature set.
