@@ -20,8 +20,9 @@ One scoped source-change implementation round counts as one round, even when mul
 
 ```text
 Source-change rounds completed: 9 / 10
-Current round: Round 9
-Next source-change round: Round 10
+Current round: Round 10 (active/pending)
+Round 10 source corrections: in progress after a failing clean build
+Final build gate: not yet passed
 ```
 
 ### Round 1
@@ -79,4 +80,14 @@ Source commits:
 Scope: 2.5.3-style `/team top` two-stage leaderboard UI with kills, balance, and member-count categories, ranked team entries, and back navigation.
 
 ### Round 10
-Reserved for final verification and any compile fixes required by the final source state. The clean build remains the final build gate.
+Final verification round.
+
+The first clean build of the Round 9 source state failed with 16 compile errors. Round 10 is therefore active and contains the corrective source changes for the pinned Minecraft 1.21.11/Yarn/Fabric API surface, including:
+
+- `ServerPlayerEntity.getEntityWorld().getServer()` in place of unavailable `getServer()` calls.
+- `MinecraftServer.getApiServices().nameToIdCache().findByName(...)` in place of unavailable `MinecraftServer.getUserCache()`.
+- server-side handled-screen closure through `ServerPlayerEntity`.
+- `ScreenHandler` slot construction performed inside the handler subclass constructor because `addSlot` is protected.
+- `TeamSettingsGui` text generic typing and Fabric storage reference correction.
+
+The **next clean build is the final build gate**. Round 10 is not marked passed until it returns `BUILD SUCCESSFUL`.
