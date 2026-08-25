@@ -2,7 +2,8 @@ package eu.kotori.justTeams.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import eu.kotori.justTeams.JustTeamsFabric;
-import eu.kotori.justTeams.gui.TeamSettingsGui;
+import eu.kotori.justTeams.gui.TeamGuiManager;
+import eu.kotori.justTeams.gui.TeamInPlaceGui;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import net.minecraft.server.command.CommandManager;
@@ -38,7 +39,7 @@ public final class TeamSettingsCommandExtension {
                 source.sendError(Text.literal("Only the owner or co-owner can access team settings."));
                 return 0;
             }
-            TeamSettingsGui.open(player, team);
+            TeamGuiManager.openPersistentView(player, TeamInPlaceGui.View.SETTINGS);
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to open team settings." : exception.getMessage()));
