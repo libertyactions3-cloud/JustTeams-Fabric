@@ -32,6 +32,7 @@ public final class TeamGuiManager {
                 && team.isMember(player.getUuid())) {
             TeamPersistentWarpManagementGui.close(menu);
             TeamPersistentBlacklistGui.close(menu);
+            TeamPersistentLeaderboardGui.close(menu);
             TeamInPlaceGui.returnToMain(menu);
             return;
         }
@@ -62,11 +63,40 @@ public final class TeamGuiManager {
 
         TeamPersistentWarpManagementGui.close(menu);
         TeamPersistentBlacklistGui.close(menu);
+        TeamPersistentLeaderboardGui.close(menu);
         switch (view) {
             case MAIN -> TeamInPlaceGui.returnToMain(menu);
             case JOIN_REQUESTS -> TeamInPlaceGui.enterJoinRequests(menu, player, team);
             case WARPS -> TeamInPlaceGui.enterWarps(menu, player, team);
             case SETTINGS -> TeamInPlaceGui.enterSettings(menu, player, team);
+        }
+    }
+
+    public static void openPersistentLeaderboard(ServerPlayerEntity player, TeamPersistentLeaderboardGui.View view,
+                                                 TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType type) {
+        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+        if (team == null) {
+            TeamLeaderboardGui.openCategories(player);
+            return;
+        }
+
+        TeamMenuHandler menu;
+        if (player.currentScreenHandler instanceof TeamMenuHandler existing
+                && existing.getTeam().getName().equals(team.getName())
+                && team.isMember(player.getUuid())) {
+            menu = existing;
+        } else {
+            openMain(player);
+            if (!(player.currentScreenHandler instanceof TeamMenuHandler opened)) return;
+            menu = opened;
+        }
+
+        TeamPersistentWarpManagementGui.close(menu);
+        TeamPersistentBlacklistGui.close(menu);
+        if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) {
+            TeamPersistentLeaderboardGui.openCategories(menu);
+        } else {
+            TeamPersistentLeaderboardGui.openLeaderboard(menu, type);
         }
     }
 
@@ -79,6 +109,10 @@ public final class TeamGuiManager {
         }
         if (TeamPersistentBlacklistGui.isOpen(menu)) {
             if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentBlacklistGui.handle(menu, serverPlayer, team, slot);
+            return;
+        }
+        if (TeamPersistentLeaderboardGui.isOpen(menu)) {
+            if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentLeaderboardGui.handle(menu, serverPlayer, team, slot);
             return;
         }
 
