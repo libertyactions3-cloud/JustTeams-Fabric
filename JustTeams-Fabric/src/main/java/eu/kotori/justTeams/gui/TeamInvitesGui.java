@@ -18,6 +18,8 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -34,6 +36,8 @@ public final class TeamInvitesGui {
             27, 28, 29, 30, 31, 32, 33, 34, 35,
             36, 37, 38, 39, 40, 41, 42, 43, 44
     };
+    private static final int PRIMARY_START = 0x4C9D9D;
+    private static final int PRIMARY_END = 0x4C96D2;
 
     private TeamInvitesGui() {}
 
@@ -41,7 +45,7 @@ public final class TeamInvitesGui {
         if (!(player instanceof ServerPlayerEntity)) return;
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player),
-                Text.literal("ᴘᴇɴᴅɪɴɢ ɪɴᴠɪᴛᴇs")));
+                Text.literal("ᴘᴇɴᴅɪɴɢ ɪɴᴠɪᴛᴇs").setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static final class Handler extends ScreenHandler {
@@ -61,9 +65,7 @@ public final class TeamInvitesGui {
         }
 
         private void populate() {
-            for (int slot = 0; slot < 54; slot++) menu.setStack(slot, named(Items.GRAY_STAINED_GLASS_PANE, " "));
-            menu.setStack(49, named(Items.ARROW, "ʙᴀᴄᴋ"));
-            menu.setStack(53, named(Items.BARRIER, "ᴄʟᴏsᴇ"));
+            for (int slot = 0; slot < 54; slot++) menu.setStack(slot, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
 
             invites.clear();
             UUID viewerUuid = viewer.getUuid();
@@ -74,28 +76,47 @@ public final class TeamInvitesGui {
             }
 
             if (invites.isEmpty()) {
-                menu.setStack(22, named(Items.PAPER, "No Pending Invites"));
-                return;
+                ItemStack empty = new ItemStack(Items.PAPER);
+                empty.set(DataComponentTypes.CUSTOM_NAME,
+                        Text.literal("No Pending Invites").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+                empty.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                        plainLine("You don't have any pending team invitations.", Formatting.GRAY),
+                        plainLine("", Formatting.GRAY),
+                        plainLine("Team owners can invite you with", Formatting.DARK_GRAY),
+                        plainLine("/team invite <player>", Formatting.DARK_GRAY)
+                )));
+                menu.setStack(22, empty);
+            } else {
+                for (int i = 0; i < INVITE_SLOTS.length && i < invites.size(); i++) {
+                    menu.setStack(INVITE_SLOTS[i], inviteItem(invites.get(i)));
+                }
             }
 
-            for (int i = 0; i < INVITE_SLOTS.length && i < invites.size(); i++) {
-                menu.setStack(INVITE_SLOTS[i], inviteItem(invites.get(i)));
-            }
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to the main menu.", Formatting.YELLOW)
+            )));
+            menu.setStack(49, back);
+
+            ItemStack close = namedPlain(Items.BARRIER, "ᴄʟᴏsᴇ");
+            close.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ᴄʟᴏsᴇ").setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
+            close.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to close this menu.", Formatting.RED)
+            )));
+            menu.setStack(53, close);
         }
 
         private ItemStack inviteItem(Team team) {
             ItemStack stack = new ItemStack(Items.DIAMOND);
-            stack.set(DataComponentTypes.CUSTOM_NAME,
-                    Text.literal(team.getName()).formatted(Formatting.BOLD).setStyle(
-                            Text.literal(team.getName()).getStyle().withItalic(false).withBold(true)));
+            stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(team.getName(), true));
             stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                    Text.literal("Tag: ").formatted(Formatting.GRAY).append(Text.literal(team.getTag()).formatted(Formatting.WHITE)),
-                    Text.literal("Invited by: ").formatted(Formatting.GRAY).append(Text.literal(inviterName(team)).formatted(Formatting.YELLOW)),
-                    Text.literal("Members: ").formatted(Formatting.GRAY).append(Text.literal(Integer.toString(team.getMembers().size())).formatted(Formatting.WHITE)),
-                    Text.literal("Description: ").formatted(Formatting.GRAY).append(Text.literal(team.getDescription()).formatted(Formatting.WHITE)),
-                    Text.empty(),
-                    Text.literal("Left-Click to Accept").formatted(Formatting.GREEN),
-                    Text.literal("Right-Click to Deny").formatted(Formatting.RED)
+                    composeLine("Tag: ", team.getTag(), Formatting.GRAY, Formatting.WHITE),
+                    composeLine("Invited by: ", inviterName(team), Formatting.GRAY, Formatting.YELLOW),
+                    composeLine("Members: ", Integer.toString(team.getMembers().size()), Formatting.GRAY, Formatting.WHITE),
+                    composeLine("Description: ", team.getDescription(), Formatting.GRAY, Formatting.WHITE)
             )));
             return stack;
         }
@@ -169,11 +190,39 @@ public final class TeamInvitesGui {
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewer.getUuid()); }
 
-        private static ItemStack named(net.minecraft.item.Item item, String name) {
+        private static ItemStack namedPlain(net.minecraft.item.Item item, String name) {
             ItemStack stack = new ItemStack(item);
-            stack.set(DataComponentTypes.CUSTOM_NAME,
-                    Text.literal(name).setStyle(Text.literal(name).getStyle().withItalic(false)));
+            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
             return stack;
+        }
+
+        private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
+            return plainLine(prefix, prefixColor).append(plainLine(value, valueColor));
+        }
+
+        private static MutableText plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+        }
+
+        private static MutableText gradientText(String value, boolean bold) {
+            MutableText result = Text.empty();
+            if (value.isEmpty()) return result;
+            int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+            int index = 0;
+            for (int offset = 0; offset < value.length();) {
+                int codePoint = value.codePointAt(offset);
+                double t = (double) index / length;
+                int sr = (PRIMARY_START >> 16) & 0xFF, sg = (PRIMARY_START >> 8) & 0xFF, sb = PRIMARY_START & 0xFF;
+                int er = (PRIMARY_END >> 16) & 0xFF, eg = (PRIMARY_END >> 8) & 0xFF, eb = PRIMARY_END & 0xFF;
+                int r = (int) Math.round(sr + (er - sr) * t);
+                int g = (int) Math.round(sg + (eg - sg) * t);
+                int b = (int) Math.round(sb + (eb - sb) * t);
+                result.append(Text.literal(new String(Character.toChars(codePoint)))
+                        .setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(bold).withItalic(false)));
+                offset += Character.charCount(codePoint);
+                index++;
+            }
+            return result;
         }
 
         private static final class MenuSlot extends Slot {
