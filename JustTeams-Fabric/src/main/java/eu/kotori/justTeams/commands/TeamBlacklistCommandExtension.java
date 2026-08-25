@@ -19,20 +19,20 @@ public final class TeamBlacklistCommandExtension {
     private TeamBlacklistCommandExtension() {}
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.getRoot().getChild("team").addChild(CommandManager.literal("blacklist")
+        var team = dispatcher.getRoot().getChild("team");
+        if (team == null) return;
+
+        team.addChild(CommandManager.literal("blacklist")
+                .executes(context -> openGui(context.getSource()))
                 .then(CommandManager.argument("player", StringArgumentType.word())
-                        .executes(context -> blacklist(context.getSource(), StringArgumentType.getString(context, "player"), "Blacklisted by team management."))
+                        .executes(context -> blacklist(context.getSource(), StringArgumentType.getString(context, "player"), "No reason specified"))
                         .then(CommandManager.argument("reason", StringArgumentType.greedyString())
                                 .executes(context -> blacklist(context.getSource(), StringArgumentType.getString(context, "player"), StringArgumentType.getString(context, "reason")))))
                 .build());
 
-        dispatcher.getRoot().getChild("team").addChild(CommandManager.literal("unblacklist")
+        team.addChild(CommandManager.literal("unblacklist")
                 .then(CommandManager.argument("player", StringArgumentType.word())
                         .executes(context -> unblacklist(context.getSource(), StringArgumentType.getString(context, "player"))))
-                .build());
-
-        dispatcher.getRoot().getChild("team").addChild(CommandManager.literal("blacklistgui")
-                .executes(context -> openGui(context.getSource()))
                 .build());
     }
 
@@ -44,28 +44,31 @@ public final class TeamBlacklistCommandExtension {
                 return 0;
             }
             Team team = requireElevatedTeam(actor);
-            PlayerConfigEntry target = resolveTarget(source, targetName);
+            ServerPlayerEntity target = source.getServer().getPlayerManager().getPlayer(targetName);
             if (target == null) {
                 source.sendError(Text.literal("Player not found."));
                 return 0;
             }
-            if (target.id().equals(actor.getUuid())) {
+            if (target.getUuid().equals(actor.getUuid())) {
                 source.sendError(Text.literal("You cannot blacklist yourself."));
                 return 0;
             }
-            if (team.isMember(target.id())) {
+            if (team.isMember(target.getUuid())) {
                 source.sendError(Text.literal("You cannot blacklist a current team member."));
                 return 0;
             }
-            String cleanReason = reason == null || reason.isBlank() ? "Blacklisted by team management." : reason.trim();
-            team.addBlacklistEntry(new BlacklistedPlayer(
-                    target.id(), target.name(), cleanReason, actor.getUuid(), actor.getName().getString(), Instant.now()));
-            JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            ServerPlayerEntity targetPlayer = actor.getEntityWorld().getServer().getPlayerManager().getPlayer(target.id());
-            if (targetPlayer != null) {
-                targetPlayer.sendMessage(Text.literal("You have been blacklisted from joining " + team.getName() + "."), false);
+            if (team.isBlacklisted(target.getUuid())) {
+                source.sendError(Text.literal("That player is already blacklisted from your team."));
+                return 0;
             }
-            actor.sendMessage(Text.literal("Blacklisted " + target.name() + " from " + team.getName() + "."), false);
+
+            String cleanReason = reason == null || reason.isBlank() ? "No reason specified" : reason.trim();
+            team.addBlacklistEntry(new BlacklistedPlayer(
+                    target.getUuid(), target.getName().getString(), cleanReason,
+                    actor.getUuid(), actor.getName().getString(), Instant.now()));
+            JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+            target.sendMessage(Text.literal("You have been blacklisted from joining " + team.getName() + "."), false);
+            actor.sendMessage(Text.literal("Blacklisted " + target.getName().getString() + " from " + team.getName() + "."), false);
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to blacklist player." : exception.getMessage()));
@@ -81,17 +84,21 @@ public final class TeamBlacklistCommandExtension {
                 return 0;
             }
             Team team = requireElevatedTeam(actor);
-            PlayerConfigEntry target = resolveTarget(source, targetName);
+            ServerPlayerEntity target = source.getServer().getPlayerManager().getPlayer(targetName);
             if (target == null) {
                 source.sendError(Text.literal("Player not found."));
                 return 0;
             }
-            if (!team.removeBlacklistEntry(target.id())) {
+            if (target.getUuid().equals(actor.getUuid())) {
+                source.sendError(Text.literal("You cannot unblacklist yourself."));
+                return 0;
+            }
+            if (!team.removeBlacklistEntry(target.getUuid())) {
                 source.sendError(Text.literal("That player is not blacklisted from your team."));
                 return 0;
             }
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            actor.sendMessage(Text.literal("Removed " + target.name() + " from the team blacklist."), false);
+            actor.sendMessage(Text.literal("Removed " + target.getName().getString() + " from the team blacklist."), false);
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to remove blacklist entry." : exception.getMessage()));
@@ -102,7 +109,10 @@ public final class TeamBlacklistCommandExtension {
     private static int openGui(ServerCommandSource source) {
         try {
             ServerPlayerEntity player = source.getPlayerOrThrow();
-            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) return 0;
+            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) {
+                source.sendError(Text.literal("You do not have permission to use this command."));
+                return 0;
+            }
             requireElevatedTeam(player);
             TeamBlacklistGui.open(player);
             return 1;
