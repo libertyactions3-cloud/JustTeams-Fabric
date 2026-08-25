@@ -171,7 +171,7 @@ public final class TeamLeaderboardGui {
             Comparator<Team> comparator = switch (type) {
                 case KILLS -> Comparator.comparingInt(Team::getKills).reversed();
                 case BALANCE -> Comparator.comparingDouble(Team::getBalance).reversed();
-                case MEMBERS -> Comparator.comparingInt(team -> team.getMembers().size()).reversed();
+                case MEMBERS -> Comparator.comparingInt((Team team) -> team.getMembers().size()).reversed();
             };
             return comparator.thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER);
         }
