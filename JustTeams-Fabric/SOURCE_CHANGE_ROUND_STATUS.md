@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 8 / 10
-Current round: Round 8 (active/pending build and runtime verification)
-Next source-change round: Round 9
+Source-change rounds completed: 9 / 10
+Current round: Round 9 (active/pending build and runtime verification)
+Next source-change round: Round 10
 ```
 
 ### Round 1 — `/team info` parity
@@ -163,10 +163,30 @@ Scope: add `/team invites` and a 54-slot pending-invites GUI using the existing 
 Round 8 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 9 — Team blacklist
-Port blacklist/unblacklist state, persistence, command behavior, and the player-facing blacklist GUI.
+Source commits:
+```text
+8326384d6c039b696e020511cc5ba7f6ccc72803
+0d8ba9fd3e5d13509a03c0cab6c97844026e0806
+90743819fd24cf576d05d33ea9916b5a2a68a12f
+d86f15f946732d3bb71a5dc49dcec4390002e788
+d868b696fc1d8a9a021fed6d8bd3bc09992d65de
+7db864edbc034a7962d690f4a5979cfa0dd4fa3e
+a6b31f26d7dd2eb364c324aea42f913ed9397c09
+00da64b6eb484152044d50f6dec14bbbb2b65a0b
+```
+Scope: reproduce the verified 2.5.3 blacklist feature locally:
+- persistent blacklist entries containing player, reason, blacklister, and timestamp
+- `/team blacklist` opens the blacklist GUI
+- `/team blacklist <player> [reason]` adds an online player to the blacklist
+- `/team unblacklist <player>` removes an online player
+- owner/co-owner authority
+- blacklisted players cannot receive new invites or join requests and cannot be added as members
+- 54-slot GUI with glass borders, header slot 4, player entries starting at slot 9, Back slot 49, and click-to-remove player heads
+
+Round 9 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 10 — Remaining core command surfaces
-Prioritize the missing `/team settings` command and command aliases (`/guild`, `/clan`, `/party`) if they remain the only core command-surface gaps after Rounds 1–9.
+Audit and implement the missing `/team settings` command and command aliases (`/guild`, `/clan`, `/party`) if they remain the only core command-surface gaps after Rounds 1–9. Then run the requested final `./gradlew clean build --refresh-dependencies`.
 
 ## Deferred to a later cycle
 
