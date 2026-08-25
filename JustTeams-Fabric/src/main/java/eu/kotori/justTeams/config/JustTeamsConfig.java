@@ -57,7 +57,12 @@ public final class JustTeamsConfig {
         changed |= putDefault("feature-costs.bank-withdraw", "10");
         changed |= putDefault("feature-costs.rename", "500");
 
-        // 2.5.3 teleport parity defaults.
+        changed |= putDefault("team-creation.min-name-length", "3");
+        changed |= putDefault("team-creation.max-name-length", "16");
+        changed |= putDefault("team-creation.max-tag-length", "6");
+        changed |= putDefault("team-creation.default-pvp", "true");
+        changed |= putDefault("team-creation.default-public", "false");
+
         changed |= putDefault("team_home.warmup_seconds", "5");
         changed |= putDefault("team_home.cooldown_seconds", "300");
         changed |= putDefault("team_warps.warmup_seconds", "5");
@@ -105,6 +110,12 @@ public final class JustTeamsConfig {
 
     public boolean isFeatureCostsEnabled() { return Boolean.parseBoolean(properties.getProperty("feature-costs.enabled", "true")); }
     public double getFeatureCost(String feature) { return getDouble("feature-costs." + feature, 0.0D); }
+
+    public int getMinTeamNameLength() { return getInt("team-creation.min-name-length", 3, 1); }
+    public int getMaxTeamNameLength() { return getInt("team-creation.max-name-length", 16, 1); }
+    public int getMaxTeamTagLength() { return getInt("team-creation.max-tag-length", 6, 2); }
+    public boolean getDefaultTeamPvp() { return Boolean.parseBoolean(properties.getProperty("team-creation.default-pvp", "true")); }
+    public boolean getDefaultTeamPublic() { return Boolean.parseBoolean(properties.getProperty("team-creation.default-public", "false")); }
 
     public int getHomeWarmupSeconds() { return getInt("team_home.warmup_seconds", 5, 0); }
     public int getHomeCooldownSeconds() { return getInt("team_home.cooldown_seconds", 300, 0); }
