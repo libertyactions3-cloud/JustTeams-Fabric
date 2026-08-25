@@ -21,7 +21,10 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,13 +39,15 @@ public final class TeamWarpGui {
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     };
+    private static final int PRIMARY_START = 0x4C9D9D;
+    private static final int PRIMARY_END = 0x4C96D2;
 
     private TeamWarpGui() {}
 
     public static void open(PlayerEntity player, Team team) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player.getUuid(), team),
-                Text.literal("Team Warps")
+                Text.literal("ᴛᴇᴀᴍ ᴡᴀʀᴘs").setStyle(Style.EMPTY.withItalic(false))
         ));
     }
 
@@ -109,35 +114,57 @@ public final class TeamWarpGui {
         }
 
         private void populate() {
-            ItemStack filler = named(Items.GRAY_STAINED_GLASS_PANE, " ");
+            ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
             for (int i = 0; i < menuInventory.size(); i++) menuInventory.setStack(i, filler.copy());
-            menuInventory.setStack(4, named(Items.COMPASS, "ᴛᴇᴀᴍ ᴡᴀʀᴘs"));
+
+            ItemStack header = namedGradient(Items.COMPASS, "ᴛᴇᴀᴍ ᴡᴀʀᴘs");
+            menuInventory.setStack(4, header);
 
             List<TeamWarp> warps = new ArrayList<>(team.getWarps());
-            for (int i = 0; i < WARP_SLOTS.length && i < warps.size(); i++) {
-                TeamWarp warp = warps.get(i);
-                ItemStack stack = named(warp.isEnabled() ? Items.ENDER_PEARL : Items.BARRIER, warp.getName());
-                List<Text> lore = new ArrayList<>();
-                lore.add(Text.literal(warp.isEnabled() ? "Click to use this warp." : "This warp is disabled."));
-                lore.add(Text.literal("Dimension: " + warp.getWorld()));
-                if (warp.getCost() > 0.0D) lore.add(Text.literal("Cost: " + formatCost(warp.getCost())));
-                if (!warp.getPassword().isEmpty()) lore.add(Text.literal("Password: Required"));
-                if (!warp.isMembersCanUse()) lore.add(Text.literal("Members: Restricted"));
-                if (team.hasElevatedPermissions(viewerUuid)) lore.add(Text.literal("Right-click: Manage warp"));
-                stack.set(DataComponentTypes.LORE, new LoreComponent(lore));
-                menuInventory.setStack(WARP_SLOTS[i], stack);
+            if (warps.isEmpty()) {
+                ItemStack empty = new ItemStack(Items.PAPER);
+                empty.set(DataComponentTypes.CUSTOM_NAME,
+                        Text.literal("No Warps Set").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+                empty.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                        plainLine("Your team has not set any warps yet.", Formatting.GRAY),
+                        plainLine("", Formatting.GRAY),
+                        plainLine("Use /team setwarp <name> to create one.", Formatting.DARK_GRAY)
+                )));
+                menuInventory.setStack(22, empty);
+            } else {
+                for (int i = 0; i < WARP_SLOTS.length && i < warps.size(); i++) {
+                    menuInventory.setStack(WARP_SLOTS[i], createWarpItem(warps.get(i)));
+                }
             }
 
-            TeamPlayer viewer = team.getMember(viewerUuid);
-            boolean canSetWarp = viewer != null && viewer.canSetHome();
-            ItemStack setWarp = named(canSetWarp ? Items.NAME_TAG : Items.BARRIER,
-                    canSetWarp ? "sᴇᴛ ɴᴇᴡ ᴡᴀʀᴘ" : "ɴᴏ ᴘᴇʀᴍɪssɪᴏɴ");
-            setWarp.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                    Text.literal(canSetWarp ? "Create a warp at your current location." : "You cannot create team warps."),
-                    Text.literal(canSetWarp ? "Click to enter a warp name." : ""))));
-            menuInventory.setStack(45, setWarp);
-            menuInventory.setStack(49, named(Items.ARROW, "ʙᴀᴄᴋ"));
-            menuInventory.setStack(53, named(Items.BARRIER, "ᴄʟᴏsᴇ"));
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to the main menu.", Formatting.YELLOW)
+            )));
+            menuInventory.setStack(49, back);
+        }
+
+        private ItemStack createWarpItem(TeamWarp warp) {
+            boolean passwordProtected = !warp.getPassword().isEmpty();
+            ItemStack stack = new ItemStack(passwordProtected ? Items.IRON_BLOCK : Items.GOLD_BLOCK);
+            stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(warp.getName(), true));
+            String serverName = serverName(warp.getWorld());
+            MutableText protection = passwordProtected
+                    ? plainLine("Password Protected", Formatting.RED)
+                    : plainLine("Public", Formatting.GREEN);
+            stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    composeLine("Server: ", serverName, Formatting.GRAY, Formatting.WHITE),
+                    plainLine("", Formatting.GRAY),
+                    protection
+            )));
+            return stack;
+        }
+
+        private String serverName(String world) {
+            int separator = world.lastIndexOf(':');
+            return separator >= 0 && separator + 1 < world.length() ? world.substring(separator + 1) : world;
         }
 
         @Override
@@ -152,10 +179,6 @@ public final class TeamWarpGui {
 
             if (slotIndex == 49) {
                 TeamGuiManager.openMain(serverPlayer);
-                return;
-            }
-            if (slotIndex == 53) {
-                serverPlayer.closeHandledScreen();
                 return;
             }
             if (slotIndex == 45) {
@@ -205,18 +228,50 @@ public final class TeamWarpGui {
                     warp.getCost());
         }
 
-        private static String formatCost(double cost) {
-            return cost == Math.rint(cost) ? Long.toString((long) cost) : Double.toString(cost);
+        private static ItemStack namedPlain(Item item, String name) {
+            ItemStack stack = new ItemStack(item);
+            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
+            return stack;
+        }
+
+        private static ItemStack namedGradient(Item item, String name) {
+            ItemStack stack = new ItemStack(item);
+            stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name, true));
+            return stack;
+        }
+
+        private static MutableText plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+        }
+
+        private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
+            return plainLine(prefix, prefixColor).append(plainLine(value, valueColor));
+        }
+
+        private static MutableText gradientText(String value, boolean bold) {
+            MutableText result = Text.empty();
+            if (value.isEmpty()) return result;
+            int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+            int index = 0;
+            for (int offset = 0; offset < value.length();) {
+                int codePoint = value.codePointAt(offset);
+                double t = (double) index / length;
+                int sr = (PRIMARY_START >> 16) & 0xFF, sg = (PRIMARY_START >> 8) & 0xFF, sb = PRIMARY_START & 0xFF;
+                int er = (PRIMARY_END >> 16) & 0xFF, eg = (PRIMARY_END >> 8) & 0xFF, eb = PRIMARY_END & 0xFF;
+                int r = (int) Math.round(sr + (er - sr) * t);
+                int g = (int) Math.round(sg + (eg - sg) * t);
+                int b = (int) Math.round(sb + (eb - sb) * t);
+                int rgb = (r << 16) | (g << 8) | b;
+                result.append(Text.literal(new String(Character.toChars(codePoint)))
+                        .setStyle(Style.EMPTY.withColor(rgb).withBold(bold).withItalic(false)));
+                offset += Character.charCount(codePoint);
+                index++;
+            }
+            return result;
         }
 
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewerUuid) && team.isMember(viewerUuid); }
-
-        private static ItemStack named(Item item, String name) {
-            ItemStack stack = new ItemStack(item);
-            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name));
-            return stack;
-        }
 
         private static final class MenuSlot extends Slot {
             private MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); }
