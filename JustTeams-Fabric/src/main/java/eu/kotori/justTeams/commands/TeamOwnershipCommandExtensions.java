@@ -80,11 +80,12 @@ public final class TeamOwnershipCommandExtensions {
     private static PlayerConfigEntry resolveTarget(ServerCommandSource source, String targetName) {
         ServerPlayerEntity online = source.getServer().getPlayerManager().getPlayer(targetName);
         if (online != null) return new PlayerConfigEntry(online.getUuid(), online.getName().getString());
-        return source.getServer().getUserCache().findByName(targetName).orElse(null);
+        return source.getServer().getApiServices().nameToIdCache().findByName(targetName).orElse(null);
     }
 
     private static void applyTransfer(ServerPlayerEntity oldOwner, Team team, TeamPlayer target) {
-        ServerPlayerEntity onlineTarget = oldOwner.getServer().getPlayerManager().getPlayer(target.getPlayerUuid());
+        var server = oldOwner.getEntityWorld().getServer();
+        ServerPlayerEntity onlineTarget = server.getPlayerManager().getPlayer(target.getPlayerUuid());
 
         TeamPlayer oldOwnerMember = team.getMember(oldOwner.getUuid());
         if (oldOwnerMember == null || target == null || target.getPlayerUuid().equals(oldOwner.getUuid())) {
@@ -104,7 +105,7 @@ public final class TeamOwnershipCommandExtensions {
             return;
         }
 
-        JustTeamsFabric.glow().refreshAll(oldOwner.getServer());
+        JustTeamsFabric.glow().refreshAll(server);
 
         oldOwner.sendMessage(Text.literal("You transferred ownership of " + team.getName() + " to "
                 + (onlineTarget != null ? onlineTarget.getName().getString() : target.getPlayerUuid()) + "."), false);
@@ -112,7 +113,7 @@ public final class TeamOwnershipCommandExtensions {
             onlineTarget.sendMessage(Text.literal("You are now the owner of " + team.getName() + "."), false);
         }
         for (TeamPlayer member : team.getMembers()) {
-            ServerPlayerEntity player = oldOwner.getServer().getPlayerManager().getPlayer(member.getPlayerUuid());
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(member.getPlayerUuid());
             if (player != null && !player.getUuid().equals(oldOwner.getUuid())
                     && (onlineTarget == null || !player.getUuid().equals(onlineTarget.getUuid()))) {
                 player.sendMessage(Text.literal(onlineTarget != null
