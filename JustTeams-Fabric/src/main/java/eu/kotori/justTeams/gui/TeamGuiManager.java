@@ -15,7 +15,12 @@ import java.io.IOException;
 
 /** Entry point for the server-side JustTeams inventory GUI system. */
 public final class TeamGuiManager {
-    private static final int[] MEMBER_SLOTS = {19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
+    private static final int[] MEMBER_SLOTS = {
+            9,10,11,12,13,14,15,16,17,
+            18,19,20,21,22,23,24,25,26,
+            27,28,29,30,31,32,33,34,35,
+            36,37,38,39,40,41,42,43,44
+    };
 
     private TeamGuiManager() {}
 
@@ -32,6 +37,10 @@ public final class TeamGuiManager {
         if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE) return;
 
         TeamInPlaceGui.View view = TeamInPlaceGui.view(menu);
+        if (TeamInPlaceMemberGui.isOpen(menu)) {
+            TeamInPlaceMemberGui.handle(menu, player, team, slot);
+            return;
+        }
         if (view == TeamInPlaceGui.View.JOIN_REQUESTS) {
             if (slot == 49) TeamInPlaceGui.returnToMain(menu);
             else if (player instanceof ServerPlayerEntity serverPlayer) TeamInPlaceGui.handleJoinRequestClick(menu, serverPlayer, team, slot, button);
@@ -48,7 +57,10 @@ public final class TeamGuiManager {
         }
 
         int memberIndex = memberIndexForSlot(slot);
-        if (memberIndex >= 0 && memberIndex < team.getMembers().size()) { MemberManagementGui.open(player, team, team.getMembers().get(memberIndex)); return; }
+        if (memberIndex >= 0 && memberIndex < team.getMembers().size()) {
+            TeamInPlaceMemberGui.enter(menu, player, team, team.getMembers().get(memberIndex), slot);
+            return;
+        }
         switch (slot) {
             case 45 -> togglePvp(player, team, menu);
             case 53 -> leaveOrDisband(player, team);
