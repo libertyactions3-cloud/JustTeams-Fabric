@@ -41,9 +41,9 @@ That cycle covered the main `/team` menu, Join Requests, Team Warps, Team Settin
 This is a **new 10-round source-change cycle** focused specifically on the user's requirement that `/team` submenu navigation reuse the same 54-slot inventory rather than opening another chest GUI and resetting mouse position.
 
 ```text
-Source-change rounds completed: 6 / 10
-Current round: Round 6 — persistent member management + corrected member-head slot mapping
-Final build gate: after Round 10
+Source-change rounds completed: 10 / 10
+Current round: Round 10 — persistent leaderboard command/view integration (source-complete)
+Final build gate: pending user clean build
 ```
 
 ### Round 1 — In-place Join Requests + Team Warps foundation
@@ -62,21 +62,32 @@ Member heads now start at slots `9–44` as required, with leader first. Clickin
 
 The main Team Home item now performs the home teleport directly instead of opening the separate Team Home chest management GUI. Setting/clearing the home remains a separate management surface.
 
-### Round 5 — corrective source integration
+### Round 5 — Persistent `/team` handler reuse
 
-The persistent-screen implementation was synchronized across its renderer/manager source so the new in-place views share the same menu state and mouse position.
+`TeamGuiManager.openMain()` now reuses an already-open `TeamMenuHandler` instead of creating a new handled screen. Persistent view state is therefore retained when returning to `/team`.
 
-### Round 6 — current source state
+### Round 6 — Persistent command entry foundation
 
-Member-management persistence and the corrected `9–44` member-head click mapping are now committed. Bank and Ender Chest remain the two special item-inventory surfaces whose underlying storage slots must not be replaced by decorative submenu items without preserving their real inventory semantics.
+`/team settings` was moved to the persistent 54-slot handler when a team member invokes it. The same command can reuse an already-open team handler or open the handler once and render the requested view.
 
-## Remaining rounds in this cycle
+### Round 7 — Persistent warp management
 
-```text
-Round 7 — Bank handling / storage semantics
-Round 8 — Ender Chest handling / storage semantics
-Round 9 — remaining in-place GUI parity and navigation cleanup
-Round 10 — final source verification + handoff/build gate
-```
+Warp right-click management now uses the persistent team handler. Enable/disable, member-use permission, cost, password, location, remove, Back, and Close all update or navigate within the same screen.
+
+### Round 8 — Persistent blacklist management
+
+`/team blacklist` now enters the persistent team handler for team members. Blacklist entries can be removed in-place and Back restores the original `/team` layout.
+
+### Round 9 — Persistent navigation cleanup
+
+Main-menu resets now explicitly close persistent warp/blacklist state before restoring `/team`, keeping the menu-state dispatcher consistent when commands or Back actions return to the main screen.
+
+### Round 10 — Persistent leaderboard command/view integration
+
+`/team top` now reuses the persistent team handler for team members. Category selection, ranked leaderboard views, and Back all replace items within the same 54-slot inventory. Players who are not in a team retain the existing standalone leaderboard screen.
+
+## Intentional storage boundaries
+
+Team Bank and Team Ender Chest remain actual item-backed storage inventories. They are not being converted into decorative submenu items merely to force visual similarity; any future persistent handling must preserve their real insertion, withdrawal, and persistence semantics.
 
 The final clean build for this cycle will be run by the user at Round 10, as established by the workflow.
