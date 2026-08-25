@@ -31,6 +31,7 @@ public final class TeamInPlaceMemberGui {
     private static final WeakHashMap<TeamMenuHandler, ItemStack[]> MAIN_SNAPSHOTS = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, TeamPlayer> TARGETS = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, Integer> MAIN_SLOTS = new WeakHashMap<>();
+    private static final int VIEW_OFFSET = 18;
     private static final int PRIMARY_START = 0x4C9DDE;
     private static final int PRIMARY_END = 0x4C96D2;
 
@@ -53,21 +54,21 @@ public final class TeamInPlaceMemberGui {
                 composeLine("Role: ", roleName(target.getRole()), Formatting.GRAY, Formatting.WHITE),
                 composeLine("Joined: ", formatDate(target), Formatting.GRAY, Formatting.WHITE)
         )));
-        inventory.setStack(4, head);
+        inventory.setStack(VIEW_OFFSET + 4, head);
 
-        inventory.setStack(10, roleItem(target.getRole()));
-        inventory.setStack(11, actionItem(Items.LIME_DYE, "PROMOTE TO CO-OWNER", List.of(
+        inventory.setStack(VIEW_OFFSET + 10, roleItem(target.getRole()));
+        inventory.setStack(VIEW_OFFSET + 11, actionItem(Items.LIME_DYE, "PROMOTE TO CO-OWNER", List.of(
                 plainLine("Gives this player more permissions.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to promote.", Formatting.YELLOW))));
-        inventory.setStack(12, actionItem(Items.GRAY_DYE, "DEMOTE TO MEMBER", List.of(
+        inventory.setStack(VIEW_OFFSET + 12, actionItem(Items.GRAY_DYE, "DEMOTE TO MEMBER", List.of(
                 plainLine("Removes co-owner permissions.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to demote.", Formatting.YELLOW))));
-        inventory.setStack(14, actionItem(Items.RED_WOOL, "KICK MEMBER", List.of(
+        inventory.setStack(VIEW_OFFSET + 14, actionItem(Items.RED_WOOL, "KICK MEMBER", List.of(
                 plainLine("Removes this player from the team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to kick", Formatting.YELLOW))));
-        inventory.setStack(16, permissionItem(Items.GOLD_INGOT, "ʙᴀɴᴋ ᴡɪᴛʜᴅʀᴀᴡ", "Allow this member to withdraw from the team bank.", target.canWithdraw()));
-        inventory.setStack(17, permissionItem(Items.ENDER_CHEST, "ᴜsᴇ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ", "Allow this member to use the team ender chest.", target.canUseEnderChest()));
-        inventory.setStack(18, permissionItem(Items.GRASS_BLOCK, "sᴇᴛ ᴛᴇᴀᴍ ʜᴏᴍᴇ", "Allow this member to set the team home location.", target.canSetHome()));
-        inventory.setStack(19, permissionItem(Items.ENDER_PEARL, "ᴜsᴇ ᴛᴇᴀᴍ ʜᴏᴍᴇ", "Allow this member to teleport to the team home.", target.canUseHome()));
-        inventory.setStack(20, permissionItem(Items.IRON_SWORD, "ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs", "Allow this member to manage and remove team members.", target.canKickMembers()));
-        inventory.setStack(22, backItem());
+        inventory.setStack(VIEW_OFFSET + 16, permissionItem(Items.GOLD_INGOT, "ʙᴀɴᴋ ᴡɪᴛʜᴅʀᴀᴡ", "Allow this member to withdraw from the team bank.", target.canWithdraw()));
+        inventory.setStack(VIEW_OFFSET + 17, permissionItem(Items.ENDER_CHEST, "ᴜsᴇ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ", "Allow this member to use the team ender chest.", target.canUseEnderChest()));
+        inventory.setStack(VIEW_OFFSET + 18, permissionItem(Items.GRASS_BLOCK, "sᴇᴛ ᴛᴇᴀᴍ ʜᴏᴍᴇ", "Allow this member to set the team home location.", target.canSetHome()));
+        inventory.setStack(VIEW_OFFSET + 19, permissionItem(Items.ENDER_PEARL, "ᴜsᴇ ᴛᴇᴀᴍ ʜᴏᴍᴇ", "Allow this member to teleport to the team home.", target.canUseHome()));
+        inventory.setStack(VIEW_OFFSET + 20, permissionItem(Items.IRON_SWORD, "ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs", "Allow this member to manage and remove team members.", target.canKickMembers()));
+        inventory.setStack(VIEW_OFFSET + 22, backItem());
         menu.sendContentUpdates();
     }
 
@@ -78,10 +79,10 @@ public final class TeamInPlaceMemberGui {
     public static boolean handle(TeamMenuHandler menu, PlayerEntity player, Team team, int slot) {
         TeamPlayer target = TARGETS.get(menu);
         if (target == null) return false;
-        if (slot == 22) { back(menu); return true; }
+        if (slot == VIEW_OFFSET + 22) { back(menu); return true; }
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return true;
         if (!team.isOwner(player.getUuid()) || target.getPlayerUuid().equals(player.getUuid())) return true;
-        switch (slot) {
+        switch (slot - VIEW_OFFSET) {
             case 11 -> { if (target.getRole() == TeamRole.MEMBER) target.setRole(TeamRole.CO_OWNER); }
             case 12 -> { if (target.getRole() == TeamRole.CO_OWNER) target.setRole(TeamRole.MEMBER); }
             case 14 -> {
