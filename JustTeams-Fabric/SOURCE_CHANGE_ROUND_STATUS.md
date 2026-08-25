@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 2 / 10
-Current round: Round 2 (active/pending build and runtime verification)
-Next source-change round: Round 3
+Source-change rounds completed: 3 / 10
+Current round: Round 3 (active/pending build and runtime verification)
+Next source-change round: Round 4
 ```
 
 ### Round 1 — `/team info` parity
@@ -71,12 +71,21 @@ Scope: verified 2.5.3 creation behavior:
 - creation defaults read from Fabric config (`default-pvp=true`, `default-public=false`)
 - glow remains disabled by default, matching the existing Fabric/reference creation semantics
 
-Important reference discrepancy retained intentionally: the 2.5.3 `messages.yml` says tags are `2–4`, but the executable validation actually uses `ConfigManager.getMaxTagLength()` and the supplied `config.yml` sets `max_tag_length: 6`. The executable behavior therefore wins.
+Build verification:
+- `./gradlew clean build --refresh-dependencies` → `BUILD SUCCESSFUL`
 
-Round 2 requires another clean build and focused `/team create` runtime tests before it is considered verified.
+Focused `/team create` runtime verification remains pending.
 
 ### Round 3 — Protected warp password prompt parity
-When a protected warp is invoked without a password, reproduce the 2.5.3 chat-input prompt using the existing Fabric chat-input infrastructure.
+Source commits:
+```text
+223dfa1ff02812dacdea6e427a227ea3cd395cbd
+89b67f8fb2cd9a52924aa4c5f94846259667086
+38befe04763e63c20228dcc26b7ef369c3a8f9d7
+```
+Scope: when a protected warp is invoked without a password, use the existing Fabric chat-input session to prompt for the password; explicit `/team warp <name> <password>` behavior remains supported; the prompted password is revalidated before requesting the teleport.
+
+Round 3 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 4 — Disband lifecycle parity
 Close the relevant handled screens for every online team member during disband, matching the verified 2.5.3 lifecycle without changing unrelated GUI architecture.
