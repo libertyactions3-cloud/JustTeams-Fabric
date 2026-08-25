@@ -55,10 +55,13 @@ public final class TeamLeaderboardGui {
     private static void addPlayerInventory(ScreenHandler handler, PlayerInventory inventory, int yStart, int hotbarY) {
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                handler.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, yStart + row * 18));
+                ((BaseHandler) handler).addPlayerInventorySlot(
+                        new Slot(inventory, col + row * 9 + 9, 8 + col * 18, yStart + row * 18));
             }
         }
-        for (int col = 0; col < 9; col++) handler.addSlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
+        for (int col = 0; col < 9; col++) {
+            ((BaseHandler) handler).addPlayerInventorySlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
+        }
     }
 
     private static abstract class BaseHandler extends ScreenHandler {
@@ -66,7 +69,8 @@ public final class TeamLeaderboardGui {
         protected final Inventory menu;
         private final int menuSize;
 
-        BaseHandler(ScreenHandlerType<?> type, int syncId, PlayerInventory inventory, PlayerEntity viewer, int menuSize) {
+        BaseHandler(ScreenHandlerType<?> type, int syncId, PlayerInventory inventory, PlayerEntity viewer,
+                    int menuSize, int yStart, int hotbarY) {
             super(type, syncId);
             this.viewer = viewer;
             this.menu = new SimpleInventory(menuSize);
@@ -75,6 +79,19 @@ public final class TeamLeaderboardGui {
                 int columns = 9;
                 addSlot(new MenuSlot(menu, i, 8 + (i % columns) * 18, 18 + (i / columns) * 18));
             }
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 9; col++) {
+                    addPlayerInventorySlot(new Slot(inventory, col + row * 9 + 9,
+                            8 + col * 18, yStart + row * 18));
+                }
+            }
+            for (int col = 0; col < 9; col++) {
+                addPlayerInventorySlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
+            }
+        }
+
+        private void addPlayerInventorySlot(Slot slot) {
+            addSlot(slot);
         }
 
         protected boolean isMenuSlot(int slot) { return slot >= 0 && slot < menuSize; }
@@ -88,13 +105,12 @@ public final class TeamLeaderboardGui {
 
     private static final class CategoryHandler extends BaseHandler {
         CategoryHandler(int syncId, PlayerInventory inventory, PlayerEntity viewer) {
-            super(ScreenHandlerType.GENERIC_9X3, syncId, inventory, viewer, 27);
+            super(ScreenHandlerType.GENERIC_9X3, syncId, inventory, viewer, 27, 84, 142);
             fill(menu, 27);
             menu.setStack(11, named(Items.DIAMOND_SWORD, "ᴛᴏᴘ ᴋɪʟʟs"));
             menu.setStack(13, named(Items.EMERALD, "ᴛᴏᴘ ʙᴀʟᴀɴᴄᴇ"));
             menu.setStack(15, named(Items.PLAYER_HEAD, "ᴛᴏᴘ ᴍᴇᴍʙᴇʀs"));
             menu.setStack(22, named(Items.BARRIER, "ʙᴀᴄᴋ"));
-            addPlayerInventory(this, inventory, 84, 142);
         }
 
         @Override
@@ -108,8 +124,8 @@ public final class TeamLeaderboardGui {
                 TeamLeaderboardGui.openLeaderboard(player, Type.BALANCE);
             } else if (slot == 15) {
                 TeamLeaderboardGui.openLeaderboard(player, Type.MEMBERS);
-            } else if (slot == 22) {
-                player.closeHandledScreen();
+            } else if (slot == 22 && player instanceof ServerPlayerEntity serverPlayer) {
+                serverPlayer.closeHandledScreen();
                 TeamGuiManager.openMain(player);
             }
         }
@@ -120,10 +136,9 @@ public final class TeamLeaderboardGui {
         private final Type type;
 
         LeaderboardHandler(int syncId, PlayerInventory inventory, PlayerEntity viewer, Type type) {
-            super(ScreenHandlerType.GENERIC_9X6, syncId, inventory, viewer, 54);
+            super(ScreenHandlerType.GENERIC_9X6, syncId, inventory, viewer, 54, 140, 198);
             this.type = type;
             populate();
-            addPlayerInventory(this, inventory, 140, 198);
         }
 
         private void populate() {
@@ -156,9 +171,8 @@ public final class TeamLeaderboardGui {
             Comparator<Team> comparator = switch (type) {
                 case KILLS -> Comparator.comparingInt(Team::getKills).reversed();
                 case BALANCE -> Comparator.comparingDouble(Team::getBalance).reversed();
-                case MEMBERS -> Comparator.comparingInt(team -> team.getMembers().size());
+                case MEMBERS -> Comparator.comparingInt(team -> team.getMembers().size()).reversed();
             };
-            if (type == Type.MEMBERS) comparator = comparator.reversed();
             return comparator.thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER);
         }
 
