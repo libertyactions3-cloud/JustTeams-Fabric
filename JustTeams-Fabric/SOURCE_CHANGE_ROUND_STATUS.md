@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 3 / 10
-Current round: Round 3 (active/pending build and runtime verification)
-Next source-change round: Round 4
+Source-change rounds completed: 4 / 10
+Current round: Round 4 (active/pending build and runtime verification)
+Next source-change round: Round 5
 ```
 
 ### Round 1 — `/team info` parity
@@ -88,7 +88,13 @@ Scope: when a protected warp is invoked without a password, use the existing Fab
 Round 3 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 4 — Disband lifecycle parity
-Close the relevant handled screens for every online team member during disband, matching the verified 2.5.3 lifecycle without changing unrelated GUI architecture.
+Source commit:
+```text
+d4e1996e12869d21343e5bb80b5771411917390c
+```
+Scope: match verified 2.5.3 disband behavior by closing the currently-open handled screen for every online team member during disband. The existing Ender Chest viewer cleanup remains separate and unchanged.
+
+Round 4 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 5 — Notification sound parity
 Add the verified 2.5.3 success/error sound side effects to the existing Fabric notification layer.
