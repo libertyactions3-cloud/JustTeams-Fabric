@@ -33,6 +33,7 @@ public final class TeamPersistentBlacklistGui {
             36,37,38,39,40,41,42,43,44
     };
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC);
+    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> MAIN_SNAPSHOTS = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, Boolean> OPEN = new WeakHashMap<>();
 
     private TeamPersistentBlacklistGui() {}
@@ -42,6 +43,7 @@ public final class TeamPersistentBlacklistGui {
     }
 
     public static void open(TeamMenuHandler menu, PlayerEntity player, Team team) {
+        snapshotMain(menu);
         OPEN.put(menu, true);
         Inventory inventory = menu.getMenuInventory();
         clear(inventory);
@@ -58,13 +60,13 @@ public final class TeamPersistentBlacklistGui {
 
     public static void close(TeamMenuHandler menu) {
         OPEN.remove(menu);
+        MAIN_SNAPSHOTS.remove(menu);
     }
 
     public static void handle(TeamMenuHandler menu, ServerPlayerEntity player, Team team, int slot) {
         if (!team.hasElevatedPermissions(player.getUuid())) return;
         if (slot == 49) {
-            OPEN.remove(menu);
-            TeamInPlaceGui.returnToMain(menu);
+            returnToMain(menu);
             return;
         }
 
@@ -122,6 +124,23 @@ public final class TeamPersistentBlacklistGui {
 
     private static String formatDate(Instant instant) {
         return instant == null ? "Unknown" : DATE_FORMAT.format(instant);
+    }
+
+    private static void snapshotMain(TeamMenuHandler menu) {
+        if (MAIN_SNAPSHOTS.containsKey(menu)) return;
+        ItemStack[] snapshot = new ItemStack[54];
+        for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
+        MAIN_SNAPSHOTS.put(menu, snapshot);
+    }
+
+    private static void returnToMain(TeamMenuHandler menu) {
+        ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu);
+        if (snapshot != null) {
+            Inventory inventory = menu.getMenuInventory();
+            for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
+        }
+        close(menu);
+        menu.sendContentUpdates();
     }
 
     private static int indexOf(int slot) {
