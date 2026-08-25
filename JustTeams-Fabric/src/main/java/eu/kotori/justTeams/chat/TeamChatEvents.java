@@ -37,9 +37,18 @@ public final class TeamChatEvents {
                     .append(Text.literal(": " + content));
 
             for (ServerPlayerEntity recipient : serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayerList()) {
-                if (team.isMember(recipient.getUuid())
-                        || JustTeamsFabric.permissions().has(recipient, JustTeamsPermissions.CHAT_SPY)) {
-                    recipient.sendMessage(formatted, false);
+                boolean teamMember = team.isMember(recipient.getUuid());
+                boolean spy = JustTeamsFabric.permissions().has(recipient, JustTeamsPermissions.CHAT_SPY)
+                        && TeamChatManager.isSpyEnabled(recipient.getUuid())
+                        && !teamMember;
+                if (teamMember || spy) {
+                    if (spy) {
+                        recipient.sendMessage(
+                                Text.literal("[SPY] [" + team.getName() + "] " + serverPlayer.getName().getString() + ": " + content),
+                                false);
+                    } else {
+                        recipient.sendMessage(formatted, false);
+                    }
                 }
             }
             return false;
