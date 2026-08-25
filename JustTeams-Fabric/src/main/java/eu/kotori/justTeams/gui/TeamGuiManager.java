@@ -30,6 +30,7 @@ public final class TeamGuiManager {
         if (player.currentScreenHandler instanceof TeamMenuHandler menu
                 && menu.getTeam().getName().equals(team.getName())
                 && team.isMember(player.getUuid())) {
+            TeamInPlaceWarpManagementGui.close(menu);
             TeamInPlaceGui.returnToMain(menu);
             return;
         }
@@ -58,6 +59,7 @@ public final class TeamGuiManager {
             menu = opened;
         }
 
+        TeamPersistentWarpManagementGui.close(menu);
         switch (view) {
             case MAIN -> TeamInPlaceGui.returnToMain(menu);
             case JOIN_REQUESTS -> TeamInPlaceGui.enterJoinRequests(menu, player, team);
@@ -68,6 +70,11 @@ public final class TeamGuiManager {
 
     private static void handleMainClick(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu) {
         if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE) return;
+
+        if (TeamPersistentWarpManagementGui.isOpen(menu)) {
+            if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentWarpManagementGui.handle(menu, serverPlayer, team, slot);
+            return;
+        }
 
         TeamInPlaceGui.View view = TeamInPlaceGui.view(menu);
         if (TeamInPlaceMemberGui.isOpen(menu)) {
