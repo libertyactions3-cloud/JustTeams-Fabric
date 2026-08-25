@@ -39,8 +39,6 @@ public final class TeamPersistentNoTeamGui {
             28,29,30,31,32,33,34,
             37,38,39,40,41,42,43
     };
-    private static final int PRIMARY_START = 0x4C9DDE;
-    private static final int PRIMARY_END = 0x4C96D2;
 
     private TeamPersistentNoTeamGui() {}
 
@@ -82,6 +80,7 @@ public final class TeamPersistentNoTeamGui {
 
     private static final class Handler extends ScreenHandler {
         private final Inventory menu = new SimpleInventory(54);
+        private final ServerPlayerEntity viewer;
         private final UUID viewerUuid;
         private View view;
         private LeaderboardType leaderboardType;
@@ -89,6 +88,7 @@ public final class TeamPersistentNoTeamGui {
         Handler(int syncId, net.minecraft.entity.player.PlayerInventory inventory, ServerPlayerEntity viewer,
                 View view, LeaderboardType leaderboardType) {
             super(ScreenHandlerType.GENERIC_9X6, syncId);
+            this.viewer = viewer;
             this.viewerUuid = viewer.getUuid();
             this.view = view;
             this.leaderboardType = leaderboardType;
@@ -98,8 +98,6 @@ public final class TeamPersistentNoTeamGui {
                 addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
             for (int col = 0; col < 9; col++) addSlot(new Slot(inventory, col, 8 + col * 18, 198));
         }
-
-        private ServerPlayerEntity player() { return JustTeamsFabric.server().getPlayerManager().getPlayer(viewerUuid); }
 
         private void render(View next, LeaderboardType type) {
             view = next;
@@ -190,7 +188,7 @@ public final class TeamPersistentNoTeamGui {
         }
 
         private String inviterName(Team team) {
-            ServerPlayerEntity owner = JustTeamsFabric.server().getPlayerManager().getPlayer(team.getOwnerUuid());
+            ServerPlayerEntity owner = viewer.getEntityWorld().getServer().getPlayerManager().getPlayer(team.getOwnerUuid());
             return owner == null ? team.getOwnerUuid().toString().substring(0, 8) : owner.getName().getString();
         }
 
@@ -272,15 +270,66 @@ public final class TeamPersistentNoTeamGui {
             }, () -> render(View.MAIN, null));
         }
 
-        private void save() { try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); } catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save team invitation change", exception); } }
+        private void save() {
+            try {
+                JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+            } catch (IOException exception) {
+                JustTeamsFabric.LOGGER.error("Failed to save team invitation change", exception);
+            }
+        }
+
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewerUuid) && !JustTeamsFabric.teams().isInTeam(player.getUuid()); }
-        private static ItemStack namedPlain(Item item, String name) { ItemStack stack = new ItemStack(item); stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false))); return stack; }
-        private static ItemStack namedGradient(Item item, String name) { ItemStack stack = new ItemStack(item); stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name)); return stack; }
-        private static ItemStack loreItem(Item item, String name, List<Text> lore) { ItemStack stack = namedGradient(item, name); stack.set(DataComponentTypes.LORE, new LoreComponent(lore)); return stack; }
-        private static MutableText plainLine(String text, Formatting color) { return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false)); }
-        private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) { return plainLine(prefix, prefixColor).append(plainLine(value, valueColor)); }
-        private static MutableText gradientText(String value) { MutableText result = Text.empty(); if (value.isEmpty()) return result; int length = Math.max(1, value.codePointCount(0, value.length()) - 1); int index = 0; for (int offset = 0; offset < value.length();) { int cp = value.codePointAt(offset); double t = (double) index / length; int r = (int) Math.round(0x4C + (0x4C - 0x4C) * t); int g = (int) Math.round(0x9D + (0x96 - 0x9D) * t); int b = (int) Math.round(0xDE + (0xD2 - 0xDE) * t); result.append(Text.literal(new String(Character.toChars(cp))).setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(true).withItalic(false))); offset += Character.charCount(cp); index++; } return result; }
-        private static final class MenuSlot extends Slot { MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); } @Override public boolean canInsert(ItemStack stack) { return false; } @Override public boolean canTakeItems(PlayerEntity player) { return false; } }
+
+        private static ItemStack namedPlain(Item item, String name) {
+            ItemStack stack = new ItemStack(item);
+            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
+            return stack;
+        }
+
+        private static ItemStack namedGradient(Item item, String name) {
+            ItemStack stack = new ItemStack(item);
+            stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name));
+            return stack;
+        }
+
+        private static ItemStack loreItem(Item item, String name, List<Text> lore) {
+            ItemStack stack = namedGradient(item, name);
+            stack.set(DataComponentTypes.LORE, new LoreComponent(lore));
+            return stack;
+        }
+
+        private static MutableText plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+        }
+
+        private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
+            return plainLine(prefix, prefixColor).append(plainLine(value, valueColor));
+        }
+
+        private static MutableText gradientText(String value) {
+            MutableText result = Text.empty();
+            if (value.isEmpty()) return result;
+            int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+            int index = 0;
+            for (int offset = 0; offset < value.length();) {
+                int cp = value.codePointAt(offset);
+                double t = (double) index / length;
+                int r = 76;
+                int g = (int) Math.round(157 + (150 - 157) * t);
+                int b = (int) Math.round(222 + (210 - 222) * t);
+                result.append(Text.literal(new String(Character.toChars(cp)))
+                        .setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(true).withItalic(false)));
+                offset += Character.charCount(cp);
+                index++;
+            }
+            return result;
+        }
+
+        private static final class MenuSlot extends Slot {
+            MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); }
+            @Override public boolean canInsert(ItemStack stack) { return false; }
+            @Override public boolean canTakeItems(PlayerEntity player) { return false; }
+        }
     }
 }
