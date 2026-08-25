@@ -231,7 +231,7 @@ public final class TeamMenuHandler extends ScreenHandler {
 
         MutableText name = Text.empty();
         int statusColor = isOnline ? 0x00FF00 : 0xFF4444;
-        name.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(statusColor).withItalic(false)));
+        name.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(statusColor).withItalic(false));
         String roleIcon = switch (member.getRole()) {
             case OWNER -> "★ ";
             case CO_OWNER -> "◆ ";
@@ -239,7 +239,7 @@ public final class TeamMenuHandler extends ScreenHandler {
         };
         name.append(Text.literal(roleIcon).setStyle(Style.EMPTY
                 .withColor(roleColor(member.getRole()))
-                .withItalic(false)));
+                .withItalic(false));
         if (isOnline) {
             name.append(gradientText(playerName, false));
         } else {
