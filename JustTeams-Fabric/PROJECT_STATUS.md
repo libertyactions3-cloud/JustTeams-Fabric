@@ -1,6 +1,6 @@
 # CONTINUATION / HANDOFF PROTOCOL — READ THIS FIRST
 
-> This file is the persistent handoff for continuing the JustTeams-Fabric port. Read it before auditing, editing, or claiming progress.
+This file is the persistent handoff for continuing the JustTeams-Fabric port. Read it before auditing, editing, or claiming progress.
 
 ## Canonical project
 
@@ -76,7 +76,7 @@ The previous core-parity cycle completed 10 source rounds and was followed by a 
 
 The GUI presentation/lore cycle also completed 10 source rounds and was followed by a successful local clean build after compile corrections.
 
-The **current GUI interaction / persistent-screen cycle has now completed 10 / 10 source-change rounds**. Its goal was to make `/team` navigation reuse the same 54-slot handler so menu items change in-place without resetting the player's mouse/cursor position.
+The GUI interaction / persistent-screen cycle also completed 10 source rounds. Its goal was to make `/team` navigation reuse the same 54-slot handler so menu items change in-place without resetting the player's mouse/cursor position.
 
 ```text
 Round 1  Join Requests + Warps in-place foundation       ✅
@@ -113,11 +113,13 @@ Back actions restore the existing `/team` inventory rather than opening another 
 
 ### Command entry behavior
 
-`/team settings` now enters the persistent 54-slot team handler for team members.
+`/team settings` enters the persistent 54-slot team handler for team members.
 
-`/team top` now enters the persistent leaderboard category/ranked views for team members. Players who are not in a team retain the standalone leaderboard GUI.
+`/team top` enters the persistent leaderboard category/ranked views for team members. Players who are not in a team retain the standalone leaderboard GUI.
 
 `/team blacklist` enters the persistent team handler for team members.
+
+`/team invites` remains accessible while a player is not in a team. This is intentional: pending invitations are specifically for players who are not already in a team.
 
 ### Intentional storage boundaries
 
@@ -127,17 +129,21 @@ Back actions restore the existing `/team` inventory rather than opening another 
 
 `TeamWarpManagementGui` is a Fabric-specific management surface with no standalone 2.5.3 GUI counterpart, but its existing controls are now rendered in-place when entered from the persistent team GUI.
 
-## Verification status
+## Current corrective GUI cycle
 
-The current persistent-GUI cycle is **source-complete at 10/10**.
+After the completed 10-round persistent-screen cycle, one additional scoped source round was required for runtime-discovered member-head behavior:
 
-The next step is the user's local clean build:
-
-```powershell
-./gradlew clean build --refresh-dependencies
+```text
+Round 1 / 10 — self-head interaction + member-editor layout correction ✅
 ```
 
-Do not claim the persistent-screen cycle is compile/runtime verified until that build and focused runtime testing succeed.
+The viewer's own member head is now non-interactive. The persistent member editor preserves the original 27-slot relative arrangement but centers that three-row arrangement inside the persistent six-row container.
+
+## Verification status
+
+The current corrective GUI cycle is source-complete for Round 1 only.
+
+The next step is the user's local clean build when we reach the appropriate verification gate for this corrective cycle. Do not claim compile/runtime verification until the user's actual build and focused runtime tests succeed.
 
 ---
 
