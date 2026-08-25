@@ -29,19 +29,12 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 1 / 10
-Current round: Round 1 completed at source level
-Next source-change round: Round 2
+Source-change rounds completed: 2 / 10
+Current round: Round 2 (active/pending build and runtime verification)
+Next source-change round: Round 3
 ```
 
 ### Round 1 — `/team info` parity
-Source commits:
-```text
-e310482830b891ed0eae32902a7922c7e8f5b1a2
-92d8470e5017c7bb4b611bf0dbd3f38b691def21
-99e8af793f6baf3d0437cd447b44b6b15e28f181
-```
-
 Scope: replace the minimal Fabric `/team info` output with the verified 2.5.3 information surface:
 - team name
 - tag
@@ -55,12 +48,32 @@ Scope: replace the minimal Fabric `/team info` output with the verified 2.5.3 in
 - member names
 - footer
 
-Implementation uses Fabric's 1.21.11 `NameToIdCache` for offline member-name resolution and retains the existing Fabric item-backed economy rather than inventing a Vault-style numeric bank balance. The command registration is wired through `TeamInfoCommandExtensions`.
+Implementation uses Fabric's 1.21.11 `NameToIdCache` for offline member-name resolution and retains the existing Fabric item-backed economy rather than inventing a Vault-style numeric bank balance.
 
-The source implementation is complete, but it still requires a clean build and in-game verification before the round is considered fully verified.
+Verification:
+- `./gradlew clean build --refresh-dependencies` → `BUILD SUCCESSFUL`
+- `/team info` works as a player and displays the expanded information.
+- console execution is rejected by the player-only command source requirement.
 
 ### Round 2 — Team creation defaults + validation parity
-Port the verified 2.5.3 default PVP/public/glow behavior and the user-facing name/tag validation rules into the existing Fabric configuration and creation path.
+Source commits:
+```text
+b01f79afc02bc9074cf83b24321c75ebd8cc1556
+32fe6301f004d2ca8a86e9ab655a4bab9c34dba3
+e6a4359126cc823168a2b7131c7247e5571a7aa5
+```
+Scope: verified 2.5.3 creation behavior:
+- configurable minimum/maximum team-name length (`3–16` by default)
+- configurable maximum tag length (`6` by default) with a hard minimum of `2`
+- ASCII letters/numbers/underscore validation
+- reject names/tags made only of digits/underscores
+- reject the reference's blocked administrative/system terms
+- creation defaults read from Fabric config (`default-pvp=true`, `default-public=false`)
+- glow remains disabled by default, matching the existing Fabric/reference creation semantics
+
+Important reference discrepancy retained intentionally: the 2.5.3 `messages.yml` says tags are `2–4`, but the executable validation actually uses `ConfigManager.getMaxTagLength()` and the supplied `config.yml` sets `max_tag_length: 6`. The executable behavior therefore wins.
+
+Round 2 requires another clean build and focused `/team create` runtime tests before it is considered verified.
 
 ### Round 3 — Protected warp password prompt parity
 When a protected warp is invoked without a password, reproduce the 2.5.3 chat-input prompt using the existing Fabric chat-input infrastructure.
