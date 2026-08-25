@@ -30,63 +30,43 @@ That cycle covered `/team info`, team creation defaults/validation, protected wa
 ## Current GUI presentation cycle
 
 ```text
-Source-change rounds completed: 2 / 10
-Current round: Round 2 — Join Requests presentation (source-complete)
-Next source-change round: Round 3
+Source-change rounds completed: 10 / 10
+Current round: Round 10 — Confirmation submenu presentation (source-complete)
+Next cycle: runtime/compile verification, then further GUI parity as needed
 ```
 
 ### Round 1 — Main `/team` menu item lore/presentation
-
-Source commit:
-```text
-4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d
-```
-
-Scope: translate the verified 2.5.3 `team-gui` presentation into the current Fabric main menu without redesigning its click behavior:
-- Join Requests lore + owner/co-owner locked presentation
-- Team Warps lore
-- Team Bank dynamic balance lore + disabled/permission presentation
-- Team Home set/not-set lore
-- Team Ender Chest lore + locked presentation
-- Sort Members lore with the current sort mode highlighted
-- Team Settings lore + owner/co-owner locked presentation
-- PvP status lore with dynamic Enabled/Disabled state
-- Leave/Disband lore
-- preserve the established 54-slot geometry, glass borders, leader/member head ordering, and explicit non-italic item text
-
-The source change does not alter the existing `TeamGuiManager` click/action routing.
+Source commit: `4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d`
 
 ### Round 2 — Join Requests submenu presentation
+Source commit: `f882b5dca1aacde6aa88a2d856a6694bb12e9f02`
 
-Source commit:
-```text
-f882b5dca1aacde6aa88a2d856a6694bb12e9f02
-```
+### Round 3 — Team Warps submenu presentation
+Source commit: `8c94a76f504efa1c15cf9cba23e1a7303a359fa4`
 
-Scope: translate the verified 2.5.3 `join-requests-gui` presentation into the existing Fabric Join Requests GUI:
-- Join Requests header uses the reference title styling
-- pending player heads use explicit online/offline status indicators
-- player-head lore matches the reference accept/deny instructions
-- empty state uses PAPER with the reference four-line presentation
-- Back button uses the reference name/lore and non-italic formatting
-- existing request storage, approval/denial, and click routing are unchanged
+### Round 4 — Team Settings submenu presentation
+Source commit: `5cf0a72e0645a6f9db718f063d22442e6c32b314`
 
-Verification: pending the next local clean build/runtime test for this GUI presentation pass.
+### Round 5 — Leaderboard Category/View presentation
+Source commit: `449442ea97b0e66786d4ea456ada7f8845debed7`
 
-## Next GUI presentation targets
+### Round 6 — Member Management presentation
+Source commit: `e21197a18b75f591aee3a925bffb7b375acdc74c`
 
-Round 3 should audit and implement the **Team Warps submenu** presentation, including warp item names, lore, password/state indicators, management controls, and Back/Close items, using the verified 2.5.3 `gui.yml` and reference Java behavior.
+### Round 7 — Blacklist presentation
+Source commit: `dc62876844879aa473ab0f0b933901879785ebdf`
 
-After that, continue through the existing Fabric inventory GUIs in focused, feature-scoped rounds rather than redesigning the GUI framework.
+### Round 8 — Pending Invites presentation
+Source commit: `0af94413e300e8e67dd165c364e3e8dc3760de96`
 
-## Deferred outside the GUI presentation cycle
+### Round 9 — No-Team menu presentation
+Source commit: `37fa9ae80b8ce89a245a8a8fc7e37c6188a8eaf5`
 
-The following remain later work unless a current GUI feature directly depends on them:
-- full admin subsystem
-- Redis/cross-server synchronization
-- database/migration/recovery architecture
-- Discord/webhooks
-- PlaceholderAPI
-- Bedrock/platform integrations
-- custom team-data API
-- other Paper-specific integrations
+### Round 10 — Confirmation submenu presentation
+Source commit: `0b0a1d6151979535101127a7c491215c18954a7f`
+
+The GUI presentation cycle intentionally did not redesign Fabric-specific bank or warp-management architecture. The item-backed bank remains a Fabric-specific presentation, and the warp-management screen has no direct 2.5.3 counterpart.
+
+## Next work
+
+Run the requested clean build to verify all ten GUI presentation rounds together, then perform focused runtime checks of the affected submenus.
