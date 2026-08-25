@@ -19,6 +19,7 @@ import net.minecraft.util.Formatting;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.WeakHashMap;
 
 /** Pending-invites view rendered inside the persistent 54-slot team handler. */
 public final class TeamPersistentInvitesGui {
@@ -31,7 +32,8 @@ public final class TeamPersistentInvitesGui {
     private static final int PRIMARY_START = 0x4C9D9D;
     private static final int PRIMARY_END = 0x4C96D2;
 
-    private static final java.util.WeakHashMap<TeamMenuHandler, Boolean> OPEN = new java.util.WeakHashMap<>();
+    private static final WeakHashMap<TeamMenuHandler, Boolean> OPEN = new WeakHashMap<>();
+    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> MAIN_SNAPSHOTS = new WeakHashMap<>();
 
     private TeamPersistentInvitesGui() {}
 
@@ -41,6 +43,7 @@ public final class TeamPersistentInvitesGui {
 
     public static void open(TeamMenuHandler menu, PlayerEntity player) {
         if (!(player instanceof ServerPlayerEntity)) return;
+        snapshotMain(menu);
         OPEN.put(menu, true);
         Inventory inventory = menu.getMenuInventory();
         clear(inventory);
@@ -70,17 +73,17 @@ public final class TeamPersistentInvitesGui {
 
     public static void close(TeamMenuHandler menu) {
         OPEN.remove(menu);
+        MAIN_SNAPSHOTS.remove(menu);
     }
 
     public static boolean handle(TeamMenuHandler menu, PlayerEntity player, int slot, int button) {
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return true;
         if (slot == 49) {
-            OPEN.remove(menu);
-            TeamInPlaceGui.returnToMain(menu);
+            returnToMain(menu);
             return true;
         }
         if (slot == 53) {
-            OPEN.remove(menu);
+            close(menu);
             serverPlayer.closeHandledScreen();
             return true;
         }
@@ -111,7 +114,7 @@ public final class TeamPersistentInvitesGui {
         save();
         JustTeamsFabric.glow().refreshAll(player.getEntityWorld().getServer());
         player.sendMessage(Text.literal("You have joined " + team.getName() + "."), false);
-        TeamGuiManager.openMain(player);
+        returnToMain(menu);
     }
 
     private static void deny(TeamMenuHandler menu, ServerPlayerEntity player, Team team) {
@@ -173,6 +176,23 @@ public final class TeamPersistentInvitesGui {
         stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 plainLine("Click to close this menu.", Formatting.RED))));
         return stack;
+    }
+
+    private static void snapshotMain(TeamMenuHandler menu) {
+        if (MAIN_SNAPSHOTS.containsKey(menu)) return;
+        ItemStack[] snapshot = new ItemStack[54];
+        for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
+        MAIN_SNAPSHOTS.put(menu, snapshot);
+    }
+
+    private static void returnToMain(TeamMenuHandler menu) {
+        ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu);
+        if (snapshot != null) {
+            Inventory inventory = menu.getMenuInventory();
+            for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
+        }
+        close(menu);
+        menu.sendContentUpdates();
     }
 
     private static int indexOf(int slot) {
