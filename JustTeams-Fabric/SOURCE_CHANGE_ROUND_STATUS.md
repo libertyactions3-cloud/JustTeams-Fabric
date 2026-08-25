@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 6 / 10
-Current round: Round 6 (active/pending build and runtime verification)
-Next source-change round: Round 7
+Source-change rounds completed: 7 / 10
+Current round: Round 7 (active/pending build and runtime verification)
+Next source-change round: Round 8
 ```
 
 ### Round 1 — `/team info` parity
@@ -125,7 +125,22 @@ Cross-server Redis/MySQL message transport is intentionally deferred because thi
 Round 6 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 7 — Chat-spy behavior
-Implement `/team chatspy` / `/team spy` based on the actual 2.5.3 listener behavior.
+Source commits:
+```text
+0ee3b2d9904e1f061a221ffc9f9ed1e2b278feb2
+2ebfb44c5e1dfccdacfa445c15519892a6e0a51a
+d863bfd6b0f06013ab6d9b86d26b1f5c179ad3f6
+714de9bf2cb1fda576e76002499fb7d6113d1611
+```
+Scope: reproduce the verified 2.5.3 chat-spy behavior locally:
+- `/team chatspy` and `/team spy`
+- permission-gated by `CHAT_SPY`
+- explicit per-player enable/disable state
+- enabled spies receive team-chat messages from teams they are not members of
+- spy messages use a `[SPY] [team] player: message` format
+- team members do not receive the separate spy-format copy
+
+Round 7 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 8 — Invite-list surface
 Implement `/team invites` and the corresponding invitation-list GUI/actions using the existing invitation state.
