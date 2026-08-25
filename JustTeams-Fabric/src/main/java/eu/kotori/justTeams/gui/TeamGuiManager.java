@@ -66,32 +66,8 @@ public final class TeamGuiManager {
         }
     }
 
-    public static void openPersistentInvites(ServerPlayerEntity player) {
-        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
-        if (team != null) {
-            player.sendMessage(Text.literal("You are already in a team."), true);
-            return;
-        }
-
-        if (!(player.currentScreenHandler instanceof TeamMenuHandler menu)) {
-            player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
-                    (syncId, inventory, ignored) -> new TeamMenuHandler(syncId, inventory, player.getUuid(),
-                            null, TeamGuiManager::handleMainClick),
-                    Text.literal("ᴘᴇɴᴅɪɴɢ ɪɴᴠɪᴛᴇs").setStyle(net.minecraft.text.Style.EMPTY.withItalic(false))
-            ));
-            if (!(player.currentScreenHandler instanceof TeamMenuHandler opened)) return;
-            menu = opened;
-        }
-        TeamPersistentInvitesGui.open(menu, player);
-    }
-
     private static void handleMainClick(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu) {
         if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE) return;
-
-        if (TeamPersistentInvitesGui.isOpen(menu)) {
-            TeamPersistentInvitesGui.handle(menu, player, slot, button);
-            return;
-        }
 
         TeamInPlaceGui.View view = TeamInPlaceGui.view(menu);
         if (TeamInPlaceMemberGui.isOpen(menu)) {
