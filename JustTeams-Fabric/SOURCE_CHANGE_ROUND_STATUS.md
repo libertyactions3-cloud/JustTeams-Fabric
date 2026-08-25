@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 4 / 10
-Current round: Round 4 (active/pending build and runtime verification)
-Next source-change round: Round 5
+Source-change rounds completed: 5 / 10
+Current round: Round 5 (active/pending build and runtime verification)
+Next source-change round: Round 6
 ```
 
 ### Round 1 — `/team info` parity
@@ -97,7 +97,13 @@ Scope: match verified 2.5.3 disband behavior by closing the currently-open handl
 Round 4 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 5 — Notification sound parity
-Add the verified 2.5.3 success/error sound side effects to the existing Fabric notification layer.
+Source commit:
+```text
+16daa32a7d1f209649650e4f58db44525dcdd3b9
+```
+Scope: add the verified 2.5.3 success sound side effect to the existing Fabric lifecycle notification manager for successful leave, kick, and disband actions. Sound playback remains controlled by the existing Fabric sound configuration. Error sounds remain in the existing failure/teleport paths where they are already implemented.
+
+Round 5 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 6 — `/teammsg` direct team messaging
 Implement the one-shot team-message command and its verified validation/cooldown behavior; keep cross-server behavior separate unless required by later parity scope.
