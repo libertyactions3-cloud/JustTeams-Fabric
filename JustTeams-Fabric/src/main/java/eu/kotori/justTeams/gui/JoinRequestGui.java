@@ -5,6 +5,7 @@ import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRole;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -18,7 +19,10 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +32,8 @@ import java.util.UUID;
 /** Server-side 54-slot GUI for approving or denying pending team join requests. */
 public final class JoinRequestGui {
     private static final int[] REQUEST_SLOTS = {19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
+    private static final int PRIMARY_START = 0x4C9DDE;
+    private static final int PRIMARY_END = 0x4C96D2;
 
     private JoinRequestGui() {}
 
@@ -38,7 +44,7 @@ public final class JoinRequestGui {
         }
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player, team),
-                Text.literal("ᴊᴏɪɴ ʀᴇǫᴜᴇs")));
+                Text.literal("ᴊᴏɪɴ ʀᴇǫᴜᴇs").setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static final class Handler extends ScreenHandler {
@@ -60,21 +66,69 @@ public final class JoinRequestGui {
         }
 
         private void populate() {
-            for (int i = 0; i < 54; i++) menu.setStack(i, named(Items.GRAY_STAINED_GLASS_PANE, " "));
-            menu.setStack(4, named(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇs"));
-            menu.setStack(49, named(Items.ARROW, "ʙᴀᴄᴋ"));
+            for (int i = 0; i < 54; i++) menu.setStack(i, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
+
+            ItemStack header = namedBold(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇs", PRIMARY_START, PRIMARY_END);
+            menu.setStack(4, header);
+
             requests.clear();
             for (UUID uuid : team.getJoinRequests()) {
                 if (!team.isMember(uuid)) requests.add(uuid);
             }
+
             for (int i = 0; i < REQUEST_SLOTS.length && i < requests.size(); i++) {
-                UUID uuid = requests.get(i);
-                ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-                head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(uuid));
-                head.set(DataComponentTypes.CUSTOM_NAME, Text.literal(resolveName(uuid)));
-                menu.setStack(REQUEST_SLOTS[i], head);
+                menu.setStack(REQUEST_SLOTS[i], createRequestHead(requests.get(i)));
             }
-            if (requests.isEmpty()) menu.setStack(22, named(Items.BARRIER, "No pending requests"));
+
+            if (requests.isEmpty()) {
+                ItemStack empty = new ItemStack(Items.PAPER);
+                empty.set(DataComponentTypes.CUSTOM_NAME,
+                        Text.literal("No Join Requests").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+                empty.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                        plainLine("There are currently no pending requests.", Formatting.GRAY),
+                        plainLine("", Formatting.GRAY),
+                        plainLine("Players can request to join if your", Formatting.DARK_GRAY),
+                        plainLine("team is set to public.", Formatting.DARK_GRAY)
+                )));
+                menu.setStack(22, empty);
+            }
+
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to the main menu.", Formatting.YELLOW)
+            )));
+            menu.setStack(49, back);
+        }
+
+        private ItemStack createRequestHead(UUID uuid) {
+            ItemStack head = new ItemStack(Items.PLAYER_HEAD);
+            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(uuid));
+
+            boolean online = false;
+            String playerName = resolveName(uuid);
+            if (viewer instanceof ServerPlayerEntity serverPlayer) {
+                ServerPlayerEntity target = serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(uuid);
+                online = target != null;
+                if (target != null) playerName = target.getName().getString();
+            }
+
+            MutableText name = gradientTextStatic(playerName, true, PRIMARY_START, PRIMARY_END);
+            MutableText rebuilt = Text.empty();
+            rebuilt.append(Text.literal("● ").setStyle(Style.EMPTY
+                    .withColor(online ? Formatting.GREEN : Formatting.RED)
+                    .withBold(false)
+                    .withItalic(false)));
+            rebuilt.append(name);
+            head.set(DataComponentTypes.CUSTOM_NAME, rebuilt);
+            head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("This player wants to join your team.", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Left-Click to Accept", Formatting.GREEN),
+                    plainLine("Right-Click to Deny", Formatting.RED)
+            )));
+            return head;
         }
 
         private String resolveName(UUID uuid) {
@@ -141,10 +195,43 @@ public final class JoinRequestGui {
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewer.getUuid()) && team.hasElevatedPermissions(player.getUuid()); }
 
-        private static ItemStack named(net.minecraft.item.Item item, String name) {
+        private static ItemStack namedPlain(net.minecraft.item.Item item, String name) {
             ItemStack stack = new ItemStack(item);
-            stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name));
+            stack.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
             return stack;
+        }
+
+        private static MutableText plainLine(String text, Formatting color) {
+            return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+        }
+
+        private static ItemStack namedBold(net.minecraft.item.Item item, String name, int startColor, int endColor) {
+            ItemStack stack = new ItemStack(item);
+            stack.set(DataComponentTypes.CUSTOM_NAME, gradientTextStatic(name, true, startColor, endColor));
+            return stack;
+        }
+
+        private static MutableText gradientTextStatic(String value, boolean bold, int start, int end) {
+            MutableText result = Text.empty();
+            if (value.isEmpty()) return result;
+            int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+            int index = 0;
+            for (int offset = 0; offset < value.length();) {
+                int codePoint = value.codePointAt(offset);
+                double t = (double) index / length;
+                int sr = (start >> 16) & 0xFF, sg = (start >> 8) & 0xFF, sb = start & 0xFF;
+                int er = (end >> 16) & 0xFF, eg = (end >> 8) & 0xFF, eb = end & 0xFF;
+                int r = (int) Math.round(sr + (er - sr) * t);
+                int g = (int) Math.round(sg + (eg - sg) * t);
+                int b = (int) Math.round(sb + (eb - sb) * t);
+                int rgb = (r << 16) | (g << 8) | b;
+                result.append(Text.literal(new String(Character.toChars(codePoint)))
+                        .setStyle(Style.EMPTY.withColor(rgb).withBold(bold).withItalic(false)));
+                offset += Character.charCount(codePoint);
+                index++;
+            }
+            return result;
         }
 
         private static final class MenuSlot extends Slot {
