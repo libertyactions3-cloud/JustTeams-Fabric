@@ -86,7 +86,7 @@ public final class TeamConfirmationGui {
             completed = true;
             if (viewer instanceof ServerPlayerEntity serverPlayer) {
                 serverPlayer.closeHandledScreen();
-                serverPlayer.getServer().execute(action);
+                serverPlayer.getEntityWorld().getServer().execute(action);
             } else {
                 action.run();
             }
@@ -108,7 +108,7 @@ public final class TeamConfirmationGui {
             if (!completed && player.getUuid().equals(viewer.getUuid())) {
                 completed = true;
                 if (player instanceof ServerPlayerEntity serverPlayer) {
-                    serverPlayer.getServer().execute(cancel);
+                    serverPlayer.getEntityWorld().getServer().execute(cancel);
                 } else {
                     cancel.run();
                 }
