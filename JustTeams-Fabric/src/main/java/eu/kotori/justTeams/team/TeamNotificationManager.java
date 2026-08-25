@@ -37,6 +37,14 @@ public final class TeamNotificationManager {
     }
 
     public static void notifyDisband(MinecraftServer server, Team team, UUID ownerUuid) {
+        // 2.5.3 closes the inventory of every online team member when disbanding.
+        // TeamEnderChestGui already closes/releases its tracked viewers; this also
+        // closes any other currently-open handled screen for every online member.
+        for (TeamPlayer member : team.getMembers()) {
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(member.getPlayerUuid());
+            if (player != null) player.closeHandledScreen();
+        }
+
         ServerPlayerEntity owner = server.getPlayerManager().getPlayer(ownerUuid);
         if (owner != null) owner.sendMessage(Text.literal("You have successfully disbanded your team."), false);
         broadcastExcept(server, team, Text.literal("The team " + team.getName() + " has been disbanded."), ownerUuid);
