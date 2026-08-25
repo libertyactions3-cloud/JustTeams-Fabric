@@ -1,0 +1,48 @@
+package eu.kotori.justTeams.commands;
+
+import com.mojang.brigadier.CommandDispatcher;
+import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.gui.TeamSettingsGui;
+import eu.kotori.justTeams.permission.JustTeamsPermissions;
+import eu.kotori.justTeams.team.Team;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+
+public final class TeamSettingsCommandExtension {
+    private TeamSettingsCommandExtension() {}
+
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        var team = dispatcher.getRoot().getChild("team");
+        if (team == null) return;
+
+        team.addChild(CommandManager.literal("settings")
+                .executes(context -> open(context.getSource()))
+                .build());
+    }
+
+    private static int open(ServerCommandSource source) {
+        try {
+            ServerPlayerEntity player = source.getPlayerOrThrow();
+            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) {
+                source.sendError(Text.literal("You do not have permission to use this command."));
+                return 0;
+            }
+            Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+            if (team == null) {
+                source.sendError(Text.literal("You are not in a team."));
+                return 0;
+            }
+            if (!team.hasElevatedPermissions(player.getUuid())) {
+                source.sendError(Text.literal("Only the owner or co-owner can access team settings."));
+                return 0;
+            }
+            TeamSettingsGui.open(player, team);
+            return 1;
+        } catch (Exception exception) {
+            source.sendError(Text.literal(exception.getMessage() == null ? "Unable to open team settings." : exception.getMessage()));
+            return 0;
+        }
+    }
+}
