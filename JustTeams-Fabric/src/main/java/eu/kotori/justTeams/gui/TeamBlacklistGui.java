@@ -54,6 +54,10 @@ public final class TeamBlacklistGui {
             player.sendMessage(Text.literal("Only the owner or co-owner can manage the team blacklist."), true);
             return;
         }
+        if (player.currentScreenHandler instanceof TeamMenuHandler menu) {
+            TeamPersistentBlacklistGui.open(menu, serverPlayer, team);
+            return;
+        }
         serverPlayer.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, serverPlayer, team),
                 Text.literal("ᴛᴇᴀᴍ ʙʟᴀᴄᴋʟɪsᴛ").setStyle(Style.EMPTY.withItalic(false))));
