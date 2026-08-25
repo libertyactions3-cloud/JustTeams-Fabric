@@ -25,7 +25,10 @@ public final class TeamGuiManager {
 
     public static void openMain(PlayerEntity player) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
-        if (team == null) { NoTeamGui.open(player); return; }
+        if (team == null) {
+            if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentNoTeamGui.openMain(serverPlayer);
+            return;
+        }
 
         if (player.currentScreenHandler instanceof TeamMenuHandler menu
                 && menu.getTeam().getName().equals(team.getName())
@@ -46,7 +49,7 @@ public final class TeamGuiManager {
     public static void openPersistentView(ServerPlayerEntity player, TeamInPlaceGui.View view) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         if (team == null) {
-            NoTeamGui.open(player);
+            TeamPersistentNoTeamGui.openMain(player);
             return;
         }
 
@@ -76,7 +79,11 @@ public final class TeamGuiManager {
                                                  TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType type) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         if (team == null) {
-            TeamLeaderboardGui.openCategories(player);
+            if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) {
+                TeamPersistentNoTeamGui.openLeaderboardCategories(player);
+            } else {
+                TeamPersistentNoTeamGui.openLeaderboardCategories(player);
+            }
             return;
         }
 
