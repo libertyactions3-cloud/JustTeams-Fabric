@@ -1,6 +1,8 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -13,12 +15,19 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.IOException;
+import java.util.List;
 
 /** 27-slot GUI shown to players who are not currently in a team. */
 public final class NoTeamGui {
+    private static final int PRIMARY_START = 0x4C9DDE;
+    private static final int PRIMARY_END = 0x4C96D2;
+
     private NoTeamGui() {}
 
     public static void open(PlayerEntity player) {
@@ -28,7 +37,7 @@ public final class NoTeamGui {
         }
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player),
-                Text.literal("ᴛᴇᴀᴍ ᴍᴇɴᴜ")
+                Text.literal("ᴛᴇᴀᴍ ᴍᴇɴᴜ").setStyle(Style.EMPTY.withItalic(false))
         ));
     }
 
@@ -54,23 +63,23 @@ public final class NoTeamGui {
         }
 
         private void populate() {
-            ItemStack filler = named(Items.GRAY_STAINED_GLASS_PANE, " ");
+            ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
             for (int i = 0; i < 27; i++) menu.setStack(i, filler.copy());
 
-            ItemStack create = named(Items.WRITABLE_BOOK, "ᴄʀᴇᴀᴛᴇ ᴀ ᴛᴇᴀᴍ");
-            create.set(net.minecraft.component.DataComponentTypes.LORE,
-                    new net.minecraft.component.type.LoreComponent(java.util.List.of(
-                            Text.literal("Start your own team and invite your friends!"),
-                            Text.literal(""),
-                            Text.literal("Click to begin the creation process."))));
+            ItemStack create = namedGradient(Items.WRITABLE_BOOK, "ᴄʀᴇᴀᴛᴇ ᴀ ᴛᴇᴀᴍ");
+            create.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Start your own team and invite your friends!", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to begin the creation process.", Formatting.YELLOW)
+            )));
             menu.setStack(12, create);
 
-            ItemStack leaderboards = named(Items.EMERALD, "ᴠɪᴇᴡ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅs");
-            leaderboards.set(net.minecraft.component.DataComponentTypes.LORE,
-                    new net.minecraft.component.type.LoreComponent(java.util.List.of(
-                            Text.literal("See the top teams on the server."),
-                            Text.literal(""),
-                            Text.literal("Click to view leaderboards."))));
+            ItemStack leaderboards = namedGradient(Items.EMERALD, "ᴠɪᴇᴡ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅs");
+            leaderboards.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("See the top teams on the server.", Formatting.GRAY),
+                    plainLine("", Formatting.GRAY),
+                    plainLine("Click to view leaderboards.", Formatting.YELLOW)
+            )));
             menu.setStack(14, leaderboards);
         }
 
@@ -131,10 +140,41 @@ public final class NoTeamGui {
         }, () -> open(player));
     }
 
-    private static ItemStack named(net.minecraft.item.Item item, String name) {
+    private static ItemStack namedPlain(net.minecraft.item.Item item, String name) {
         ItemStack stack = new ItemStack(item);
-        stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, Text.literal(name));
+        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
         return stack;
+    }
+
+    private static ItemStack namedGradient(net.minecraft.item.Item item, String name) {
+        ItemStack stack = new ItemStack(item);
+        stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name));
+        return stack;
+    }
+
+    private static MutableText plainLine(String text, Formatting color) {
+        return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+    }
+
+    private static MutableText gradientText(String value) {
+        MutableText result = Text.empty();
+        if (value.isEmpty()) return result;
+        int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+        int index = 0;
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            double t = (double) index / length;
+            int sr = (PRIMARY_START >> 16) & 0xFF, sg = (PRIMARY_START >> 8) & 0xFF, sb = PRIMARY_START & 0xFF;
+            int er = (PRIMARY_END >> 16) & 0xFF, eg = (PRIMARY_END >> 8) & 0xFF, eb = PRIMARY_END & 0xFF;
+            int r = (int) Math.round(sr + (er - sr) * t);
+            int g = (int) Math.round(sg + (eg - sg) * t);
+            int b = (int) Math.round(sb + (eb - sb) * t);
+            result.append(Text.literal(new String(Character.toChars(codePoint)))
+                    .setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(true).withItalic(false)));
+            offset += Character.charCount(codePoint);
+            index++;
+        }
+        return result;
     }
 
     private static final class MenuSlot extends Slot {
