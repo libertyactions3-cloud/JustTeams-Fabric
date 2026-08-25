@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 7 / 10
-Current round: Round 7 (active/pending build and runtime verification)
-Next source-change round: Round 8
+Source-change rounds completed: 8 / 10
+Current round: Round 8 (active/pending build and runtime verification)
+Next source-change round: Round 9
 ```
 
 ### Round 1 — `/team info` parity
@@ -143,7 +143,24 @@ Scope: reproduce the verified 2.5.3 chat-spy behavior locally:
 Round 7 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 8 — Invite-list surface
-Implement `/team invites` and the corresponding invitation-list GUI/actions using the existing invitation state.
+Source commits:
+```text
+df85fb3f4cf9828f9cdcf67d2d9c04323ee4a44b
+b8dd08ce3076f84d8f44390564ecff91f943d51b
+bf977829076216c31a26aa458e88d5a6e556c2e2
+```
+Scope: add `/team invites` and a 54-slot pending-invites GUI using the existing team invite UUID state:
+- glass-pane border matching 2.5.3
+- invite entries begin at slot 9
+- diamond team icons
+- team name/tag/inviter/member-count/description information
+- Paper empty-state item at slot 22
+- Back at slot 49 and Close at slot 53
+- left-click accepts an invitation
+- right-click denies an invitation
+- invitation changes persist through existing TeamStorage
+
+Round 8 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 9 — Team blacklist
 Port blacklist/unblacklist state, persistence, command behavior, and the player-facing blacklist GUI.
