@@ -30,7 +30,7 @@ public final class TeamGuiManager {
         if (player.currentScreenHandler instanceof TeamMenuHandler menu
                 && menu.getTeam().getName().equals(team.getName())
                 && team.isMember(player.getUuid())) {
-            TeamInPlaceWarpManagementGui.close(menu);
+            TeamPersistentWarpManagementGui.close(menu);
             TeamInPlaceGui.returnToMain(menu);
             return;
         }
