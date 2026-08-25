@@ -1,7 +1,7 @@
 package eu.kotori.justTeams.commands;
 
-import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
@@ -29,9 +29,20 @@ public final class TeamInfoCommandExtensions {
         LiteralArgumentBuilder<ServerCommandSource> replacement = CommandManager.literal("info")
                 .requires(source -> source.getEntity() instanceof ServerPlayerEntity player
                         && JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_INFO))
-                .executes(context -> execute(context.getSource()));
+                .executes(context -> executeSafely(context.getSource()));
 
         team.addChild(replacement.build());
+    }
+
+    private static int executeSafely(ServerCommandSource source) {
+        try {
+            return execute(source);
+        } catch (Exception exception) {
+            String message = exception.getMessage();
+            source.sendError(Text.literal(message == null ? "Command failed." : message));
+            JustTeamsFabric.LOGGER.error("JustTeams /team info failed", exception);
+            return 0;
+        }
     }
 
     private static int execute(ServerCommandSource source) throws Exception {
@@ -60,7 +71,7 @@ public final class TeamInfoCommandExtensions {
         source.sendFeedback(() -> Text.literal(String.format(Locale.ROOT,
                 "Kills: %d | Deaths: %d | KDR: %.2f",
                 team.getKills(), team.getDeaths(), kdr)), false);
-        source.sendFeedback(() -> Text.literal("Members (" + team.getMembers().size() + "):") , false);
+        source.sendFeedback(() -> Text.literal("Members (" + team.getMembers().size() + "):"), false);
 
         for (TeamPlayer member : team.getMembers()) {
             String name = resolveName(source.getServer(), member.getPlayerUuid());
