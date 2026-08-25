@@ -18,7 +18,10 @@ import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.util.Comparator;
 import java.util.List;
@@ -27,29 +30,26 @@ import java.util.List;
 public final class TeamLeaderboardGui {
     public enum Type { KILLS, BALANCE, MEMBERS }
 
+    private static final int PRIMARY_START = 0x4C9DDE;
+    private static final int PRIMARY_END = 0x4C96D2;
+
     private TeamLeaderboardGui() {}
 
     public static void openCategories(PlayerEntity player) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new CategoryHandler(syncId, inventory, player),
-                Text.literal("ᴛᴇᴀᴍ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ")));
+                Text.literal("ᴛᴇᴀᴍ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ").setStyle(Style.EMPTY.withItalic(false))));
     }
 
     public static void openLeaderboard(PlayerEntity player, Type type) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new LeaderboardHandler(syncId, inventory, player, type),
-                Text.literal("ᴛᴏᴘ " + type.name().toLowerCase())));
+                Text.literal("ᴛᴏᴘ " + type.name().toLowerCase()).setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static void fill(Inventory inventory, int size) {
-        ItemStack filler = named(Items.GRAY_STAINED_GLASS_PANE, " ");
+        ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
         for (int i = 0; i < size; i++) inventory.setStack(i, filler.copy());
-    }
-
-    private static ItemStack named(Item item, String name) {
-        ItemStack stack = new ItemStack(item);
-        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name));
-        return stack;
     }
 
     private static void addPlayerInventory(ScreenHandler handler, PlayerInventory inventory, int yStart, int hotbarY) {
@@ -107,10 +107,18 @@ public final class TeamLeaderboardGui {
         CategoryHandler(int syncId, PlayerInventory inventory, PlayerEntity viewer) {
             super(ScreenHandlerType.GENERIC_9X3, syncId, inventory, viewer, 27, 84, 142);
             fill(menu, 27);
-            menu.setStack(11, named(Items.DIAMOND_SWORD, "ᴛᴏᴘ ᴋɪʟʟs"));
-            menu.setStack(13, named(Items.EMERALD, "ᴛᴏᴘ ʙᴀʟᴀɴᴄᴇ"));
-            menu.setStack(15, named(Items.PLAYER_HEAD, "ᴛᴏᴘ ᴍᴇᴍʙᴇʀs"));
-            menu.setStack(22, named(Items.BARRIER, "ʙᴀᴄᴋ"));
+            menu.setStack(11, categoryItem(Items.NETHERITE_SWORD, "ᴛᴏᴘ ᴋɪʟʟs",
+                    "Shows the top 10 teams with the most kills."));
+            menu.setStack(13, categoryItem(Items.DIAMOND, "ᴛᴏᴘ ʙᴀʟᴀɴᴄᴇ",
+                    "Shows the top 10 richest teams."));
+            menu.setStack(15, categoryItem(Items.PLAYER_HEAD, "ᴛᴏᴘ ᴍᴇᴍʙᴇʀs",
+                    "Shows the top 10 teams with the most members."));
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to your team.", Formatting.YELLOW))));
+            menu.setStack(22, back);
         }
 
         @Override
@@ -153,18 +161,38 @@ public final class TeamLeaderboardGui {
                 int rank = i + 1;
                 ItemStack head = new ItemStack(Items.PLAYER_HEAD);
                 head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(team.getOwnerUuid()));
-                head.set(DataComponentTypes.CUSTOM_NAME, Text.literal("#" + rank + " " + team.getName()));
-                String value = switch (type) {
-                    case KILLS -> "Kills: " + team.getKills();
-                    case BALANCE -> "Balance: " + String.format("%.2f", team.getBalance());
-                    case MEMBERS -> "Members: " + team.getMembers().size();
-                };
+                head.set(DataComponentTypes.CUSTOM_NAME,
+                        gradientText("#" + rank + " " + team.getName(), true));
+                String statisticName;
+                String statisticValue;
+                switch (type) {
+                    case KILLS -> {
+                        statisticName = "Kills";
+                        statisticValue = String.valueOf(team.getKills());
+                    }
+                    case BALANCE -> {
+                        statisticName = "Balance";
+                        statisticValue = String.format("%.2f", team.getBalance());
+                    }
+                    case MEMBERS -> {
+                        statisticName = "Members";
+                        statisticValue = String.valueOf(team.getMembers().size());
+                    }
+                    default -> throw new IllegalStateException("Unexpected leaderboard type: " + type);
+                }
                 head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                        Text.literal("Tag: " + team.getTag()),
-                        Text.literal(value))));
+                        composeLine("Tag: ", team.getTag(), Formatting.GRAY, Formatting.WHITE),
+                        composeLine(statisticName + ": ", statisticValue, Formatting.GRAY, Formatting.WHITE)
+                )));
                 menu.setStack(SLOTS[i], head);
             }
-            menu.setStack(49, named(Items.ARROW, "ʙᴀᴄᴋ"));
+
+            ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
+            back.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false)));
+            back.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("Click to return to category selection.", Formatting.YELLOW))));
+            menu.setStack(49, back);
         }
 
         private Comparator<Team> comparator() {
@@ -185,6 +213,49 @@ public final class TeamLeaderboardGui {
                 TeamLeaderboardGui.openCategories(player);
             }
         }
+    }
+
+    private static ItemStack categoryItem(Item item, String name, String loreText) {
+        ItemStack stack = new ItemStack(item);
+        stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(name, true));
+        stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                plainLine(loreText, Formatting.GRAY))));
+        return stack;
+    }
+
+    private static ItemStack namedPlain(Item item, String name) {
+        ItemStack stack = new ItemStack(item);
+        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false)));
+        return stack;
+    }
+
+    private static MutableText composeLine(String prefix, String value, Formatting prefixColor, Formatting valueColor) {
+        return plainLine(prefix, prefixColor).append(plainLine(value, valueColor));
+    }
+
+    private static MutableText plainLine(String text, Formatting color) {
+        return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+    }
+
+    private static MutableText gradientText(String value, boolean bold) {
+        MutableText result = Text.empty();
+        if (value.isEmpty()) return result;
+        int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
+        int index = 0;
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            double t = (double) index / length;
+            int sr = (PRIMARY_START >> 16) & 0xFF, sg = (PRIMARY_START >> 8) & 0xFF, sb = PRIMARY_START & 0xFF;
+            int er = (PRIMARY_END >> 16) & 0xFF, eg = (PRIMARY_END >> 8) & 0xFF, eb = PRIMARY_END & 0xFF;
+            int r = (int) Math.round(sr + (er - sr) * t);
+            int g = (int) Math.round(sg + (eg - sg) * t);
+            int b = (int) Math.round(sb + (eb - sb) * t);
+            result.append(Text.literal(new String(Character.toChars(codePoint)))
+                    .setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(bold).withItalic(false)));
+            offset += Character.charCount(codePoint);
+            index++;
+        }
+        return result;
     }
 
     private static final class MenuSlot extends Slot {
