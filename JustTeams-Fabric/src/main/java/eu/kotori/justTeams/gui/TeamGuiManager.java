@@ -6,7 +6,6 @@ import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -68,12 +67,20 @@ public final class TeamGuiManager {
             case 52 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamInPlaceGui.enterSettings(menu, player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access team settings."), true); }
             case 8 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamInPlaceGui.enterJoinRequests(menu, player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access join requests."), true); }
             case 46 -> TeamEnderChestGui.open(player, team);
-            case 47 -> TeamHomeGui.open(player, team);
+            case 47 -> useHome(player, team);
             case 48 -> { }
             case 50 -> { if (player instanceof ServerPlayerEntity serverPlayer && JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK)) TeamBankGui.open(player, team); else player.sendMessage(Text.literal("You do not have permission to use the team bank."), true); }
             case 7 -> TeamInPlaceGui.enterWarps(menu, player, team);
             default -> { }
         }
+    }
+
+    private static void useHome(PlayerEntity player, Team team) {
+        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+        TeamPlayer member = team.getMember(player.getUuid());
+        if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
+        if (team.getHome() == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
+        JustTeamsFabric.teleports().requestHome(serverPlayer, team.getHome());
     }
 
     private static void togglePvp(PlayerEntity player, Team team, TeamMenuHandler menu) {
