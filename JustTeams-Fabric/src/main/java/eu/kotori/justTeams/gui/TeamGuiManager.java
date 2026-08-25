@@ -31,6 +31,7 @@ public final class TeamGuiManager {
                 && menu.getTeam().getName().equals(team.getName())
                 && team.isMember(player.getUuid())) {
             TeamPersistentWarpManagementGui.close(menu);
+            TeamPersistentBlacklistGui.close(menu);
             TeamInPlaceGui.returnToMain(menu);
             return;
         }
@@ -60,6 +61,7 @@ public final class TeamGuiManager {
         }
 
         TeamPersistentWarpManagementGui.close(menu);
+        TeamPersistentBlacklistGui.close(menu);
         switch (view) {
             case MAIN -> TeamInPlaceGui.returnToMain(menu);
             case JOIN_REQUESTS -> TeamInPlaceGui.enterJoinRequests(menu, player, team);
@@ -73,6 +75,10 @@ public final class TeamGuiManager {
 
         if (TeamPersistentWarpManagementGui.isOpen(menu)) {
             if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentWarpManagementGui.handle(menu, serverPlayer, team, slot);
+            return;
+        }
+        if (TeamPersistentBlacklistGui.isOpen(menu)) {
+            if (player instanceof ServerPlayerEntity serverPlayer) TeamPersistentBlacklistGui.handle(menu, serverPlayer, team, slot);
             return;
         }
 
