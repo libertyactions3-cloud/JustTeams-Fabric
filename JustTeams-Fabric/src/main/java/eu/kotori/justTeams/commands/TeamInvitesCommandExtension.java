@@ -2,7 +2,7 @@ package eu.kotori.justTeams.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import eu.kotori.justTeams.JustTeamsFabric;
-import eu.kotori.justTeams.gui.TeamInvitesGui;
+import eu.kotori.justTeams.gui.TeamPersistentNoTeamGui;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -27,7 +27,7 @@ public final class TeamInvitesCommandExtension {
             source.sendError(Text.literal("You do not have permission to use this command."));
             return 0;
         }
-        TeamInvitesGui.open(player);
+        TeamPersistentNoTeamGui.openInvites(player);
         return 1;
     }
 }
