@@ -70,69 +70,74 @@ The user's canonical verification build is:
 
 ---
 
-# CURRENT RESUME POINT — GUI PRESENTATION / LORE PARITY
+# CURRENT RESUME POINT — GUI INTERACTION / PERSISTENT SCREEN PARITY
 
 The previous core-parity cycle completed 10 source rounds and was followed by a successful local clean build.
 
-The current GUI presentation cycle has now also completed **10 / 10 source-change rounds**. It was based directly on the supplied 2.5.3 `gui.yml` plus the corresponding Java GUI classes.
+The GUI presentation/lore cycle also completed 10 source rounds and was followed by a successful local clean build after compile corrections.
+
+The **current GUI interaction / persistent-screen cycle has now completed 10 / 10 source-change rounds**. Its goal was to make `/team` navigation reuse the same 54-slot handler so menu items change in-place without resetting the player's mouse/cursor position.
 
 ```text
-Round 1  Main /team menu                    ✅
-Round 2  Join Requests                      ✅
-Round 3  Team Warps                         ✅
-Round 4  Team Settings                      ✅
-Round 5  Leaderboard Category/View          ✅
-Round 6  Member Management                  ✅
-Round 7  Blacklist                           ✅
-Round 8  Pending Invites                    ✅
-Round 9  No-Team menu                       ✅
-Round 10 Confirmation GUI                   ✅
+Round 1  Join Requests + Warps in-place foundation       ✅
+Round 2  Settings + dynamic Sort/PvP                    ✅
+Round 3  Member Management in-place                     ✅
+Round 4  Main Home direct action                         ✅
+Round 5  Persistent /team handler reuse                 ✅
+Round 6  Persistent /team settings command entry        ✅
+Round 7  Persistent warp management                     ✅
+Round 8  Persistent blacklist management                ✅
+Round 9  Persistent navigation cleanup                  ✅
+Round 10 Persistent leaderboard command/view            ✅
 ```
 
-### GUI presentation source commits
+### Persistent GUI behavior now implemented
+
+`TeamGuiManager.openMain()` reuses an already-open `TeamMenuHandler` instead of opening a new handled screen when the player is already viewing the team menu.
+
+The persistent in-place renderer covers:
 
 ```text
-R1  4c46cc5ab2b2fabd2c83861e40d6aa171a8e818d
-R2  f882b5dca1aacde6aa88a2d856a6694bb12e9f02
-R3  8c94a76f504efa1c15cf9cba23e1a7303a359fa4
-R4  5cf0a72e0645a6f9db718f063d22442e6c32b314
-R5  449442ea97b0e66786d4ea456ada7f8845debed7
-R6  e21197a18b75f591aee3a925bffb7b375acdc74c
-R7  dc62876844879aa473ab0f0b933901879785ebdf
-R8  0af94413e300e8e67dd165c364e3e8dc3760de96
-R9  37fa9ae80b8ce89a245a8a8fc7e37c6188a8eaf5
-R10 0b0a1d6151979535101127a7c491215c18954a7f
+Join Requests
+Team Warps
+Team Settings
+Member Management
+Warp Management
+Blacklist Management
+Leaderboards
+Sort state
+PvP state
 ```
 
-## Presentation decisions
+Back actions restore the existing `/team` inventory rather than opening another chest screen wherever the persistent view is applicable.
 
-All custom GUI item names and lore explicitly disable italics unless 2.5.3 explicitly requests italic formatting.
+### Command entry behavior
 
-The main `/team` menu retains the user's required geometry:
+`/team settings` now enters the persistent 54-slot team handler for team members.
 
-```text
-0–8    glass/top border, with Warps at 7 and Join Requests at 8
-9–44   member heads, leader first
-45     PvP
-46     Ender Chest
-47     Home
-48     blank
-49     Sort
-50     Bank
-51     blank
-52     Settings
-53     Leave/Disband
-```
+`/team top` now enters the persistent leaderboard category/ranked views for team members. Players who are not in a team retain the standalone leaderboard GUI.
 
-### Intentional Fabric-specific GUI differences
+`/team blacklist` enters the persistent team handler for team members.
 
-`TeamBankGui` remains an item-backed team-owned currency inventory. The 2.5.3 BankGUI is a numeric Vault-money menu, so its deposit/balance/withdraw presentation was not transplanted onto the Fabric bank.
+### Intentional storage boundaries
 
-`TeamWarpManagementGui` is a Fabric-specific management screen. The supplied 2.5.3 GUI set has no standalone warp-management GUI, so its extra controls were not falsely attributed to the reference.
+`TeamBankGui` remains an item-backed team-owned currency inventory. The 2.5.3 BankGUI is a numeric Vault-money menu, so that presentation was not transplanted onto the Fabric bank.
+
+`Team Ender Chest` remains a real persistent item inventory. Its underlying slots and persistence must be preserved if it is later made persistent in the same screen; it is not treated as a decorative submenu.
+
+`TeamWarpManagementGui` is a Fabric-specific management surface with no standalone 2.5.3 GUI counterpart, but its existing controls are now rendered in-place when entered from the persistent team GUI.
 
 ## Verification status
 
-The 10 GUI rounds are source-complete. The next step is the user's local clean build, followed by focused runtime checks of the affected menus. Do not claim the presentation cycle is runtime-verified until that build and testing occur.
+The current persistent-GUI cycle is **source-complete at 10/10**.
+
+The next step is the user's local clean build:
+
+```powershell
+./gradlew clean build --refresh-dependencies
+```
+
+Do not claim the persistent-screen cycle is compile/runtime verified until that build and focused runtime testing succeed.
 
 ---
 
@@ -148,12 +153,33 @@ disband inventory cleanup
 lifecycle success sounds
 /teammsg
 chat-spy
-/team invites
+team invite-list GUI
 blacklist/unblacklist
 /team settings + /guild /clan /party aliases
 ```
 
 The user then ran the canonical clean build successfully.
+
+---
+
+# GUI PRESENTATION / LORE CYCLE — COMPLETED
+
+The preceding GUI presentation cycle completed 10 source rounds covering:
+
+```text
+main /team menu
+Join Requests
+Team Warps
+Team Settings
+Leaderboard Category/View
+Member Management
+Blacklist
+Pending Invites
+No-Team menu
+Confirmation GUI
+```
+
+Names/lore were translated from the supplied 2.5.3 `gui.yml`, with explicit non-italic formatting for custom item text unless the reference required otherwise.
 
 ---
 
