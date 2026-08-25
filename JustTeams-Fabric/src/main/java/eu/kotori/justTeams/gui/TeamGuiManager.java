@@ -26,10 +26,44 @@ public final class TeamGuiManager {
     public static void openMain(PlayerEntity player) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         if (team == null) { NoTeamGui.open(player); return; }
+
+        if (player.currentScreenHandler instanceof TeamMenuHandler menu
+                && menu.getTeam().getName().equals(team.getName())
+                && team.isMember(player.getUuid())) {
+            TeamInPlaceGui.returnToMain(menu);
+            return;
+        }
+
         player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new TeamMenuHandler(syncId, inventory, player.getUuid(), team, TeamGuiManager::handleMainClick),
                 Text.literal("Team - " + team.getMembers().size() + "/Infinity")
         ));
+    }
+
+    public static void openPersistentView(ServerPlayerEntity player, TeamInPlaceGui.View view) {
+        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+        if (team == null) {
+            NoTeamGui.open(player);
+            return;
+        }
+
+        TeamMenuHandler menu;
+        if (player.currentScreenHandler instanceof TeamMenuHandler existing
+                && existing.getTeam().getName().equals(team.getName())
+                && team.isMember(player.getUuid())) {
+            menu = existing;
+        } else {
+            openMain(player);
+            if (!(player.currentScreenHandler instanceof TeamMenuHandler opened)) return;
+            menu = opened;
+        }
+
+        switch (view) {
+            case MAIN -> TeamInPlaceGui.returnToMain(menu);
+            case JOIN_REQUESTS -> TeamInPlaceGui.enterJoinRequests(menu, player, team);
+            case WARPS -> TeamInPlaceGui.enterWarps(menu, player, team);
+            case SETTINGS -> TeamInPlaceGui.enterSettings(menu, player, team);
+        }
     }
 
     private static void handleMainClick(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu) {
