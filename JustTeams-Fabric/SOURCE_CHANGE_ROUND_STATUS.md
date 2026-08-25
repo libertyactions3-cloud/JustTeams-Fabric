@@ -29,9 +29,9 @@ BUILD SUCCESSFUL
 ## Current cycle
 
 ```text
-Source-change rounds completed: 5 / 10
-Current round: Round 5 (active/pending build and runtime verification)
-Next source-change round: Round 6
+Source-change rounds completed: 6 / 10
+Current round: Round 6 (active/pending build and runtime verification)
+Next source-change round: Round 7
 ```
 
 ### Round 1 — `/team info` parity
@@ -106,7 +106,23 @@ Scope: add the verified 2.5.3 success sound side effect to the existing Fabric l
 Round 5 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 6 — `/teammsg` direct team messaging
-Implement the one-shot team-message command and its verified validation/cooldown behavior; keep cross-server behavior separate unless required by later parity scope.
+Source commits:
+```text
+7bb60b2ab092b665a631e301b7f3e26ddfea338d
+434b1aca4e6ecf7615c4d22e8a426235d22e840a
+```
+Scope: implement the local one-shot `/teammsg <message>` command using the verified 2.5.3 behavior:
+- player-only command
+- team membership required
+- 2-second per-player message cooldown
+- maximum 20 messages per 60-second window
+- maximum 200 characters
+- verified blocked-term filter
+- delivery to all online members of the player's team
+
+Cross-server Redis/MySQL message transport is intentionally deferred because this round targets the single-server Fabric feature path.
+
+Round 6 source implementation is complete. Build/runtime verification remains pending.
 
 ### Round 7 — Chat-spy behavior
 Implement `/team chatspy` / `/team spy` based on the actual 2.5.3 listener behavior.
