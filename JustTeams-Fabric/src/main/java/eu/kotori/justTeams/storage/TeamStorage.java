@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.storage;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.team.BlacklistedPlayer;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamEnderChest;
 import eu.kotori.justTeams.team.TeamLocation;
@@ -69,6 +70,20 @@ public final class TeamStorage {
         NbtList members = new NbtList(); for (TeamPlayer member : team.getMembers()) members.add(writeMember(member)); tag.put("members", members);
         NbtList requests = new NbtList(); for (UUID uuid : team.getJoinRequests()) requests.add(NbtString.of(uuid.toString())); tag.put("joinRequests", requests);
         NbtList invites = new NbtList(); for (UUID uuid : team.getInvites()) invites.add(NbtString.of(uuid.toString())); tag.put("invites", invites);
+        NbtList blacklist = new NbtList();
+        for (BlacklistedPlayer entry : team.getBlacklist()) blacklist.add(writeBlacklistEntry(entry));
+        tag.put("blacklist", blacklist);
+        return tag;
+    }
+
+    private NbtCompound writeBlacklistEntry(BlacklistedPlayer entry) {
+        NbtCompound tag = new NbtCompound();
+        tag.putString("uuid", entry.getPlayerUuid().toString());
+        tag.putString("name", entry.getPlayerName());
+        tag.putString("reason", entry.getReason());
+        tag.putString("blacklistedBy", entry.getBlacklistedByUuid().toString());
+        tag.putString("blacklistedByName", entry.getBlacklistedByName());
+        tag.putLong("blacklistedAt", entry.getBlacklistedAt().toEpochMilli());
         return tag;
     }
 
@@ -104,6 +119,20 @@ public final class TeamStorage {
         NbtList members = tag.getListOrEmpty("members"); for (int i = 0; i < members.size(); i++) team.addMember(readMember(members.getCompoundOrEmpty(i)));
         NbtList requests = tag.getListOrEmpty("joinRequests"); for (int i = 0; i < requests.size(); i++) requests.getString(i).ifPresent(v -> team.addJoinRequest(UUID.fromString(v)));
         NbtList invites = tag.getListOrEmpty("invites"); for (int i = 0; i < invites.size(); i++) invites.getString(i).ifPresent(v -> team.addInvite(UUID.fromString(v)));
+        NbtList blacklist = tag.getListOrEmpty("blacklist");
+        for (int i = 0; i < blacklist.size(); i++) {
+            NbtCompound entry = blacklist.getCompoundOrEmpty(i);
+            try {
+                team.addBlacklistEntry(new BlacklistedPlayer(
+                        UUID.fromString(entry.getString("uuid").orElseThrow()),
+                        entry.getString("name").orElse("Unknown"),
+                        entry.getString("reason").orElse(""),
+                        UUID.fromString(entry.getString("blacklistedBy").orElseThrow()),
+                        entry.getString("blacklistedByName").orElse("Unknown"),
+                        Instant.ofEpochMilli(entry.getLong("blacklistedAt", System.currentTimeMillis()))));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         return team;
     }
     private TeamLocation readLocation(NbtCompound tag) { return new TeamLocation(tag.getString("dimension").orElse("minecraft:overworld"), tag.getDouble("x", 0D), tag.getDouble("y", 0D), tag.getDouble("z", 0D), tag.getFloat("yaw", 0F), tag.getFloat("pitch", 0F)); }
