@@ -30,9 +30,9 @@ That cycle covered `/team info`, team creation defaults/validation, protected wa
 ## Current GUI presentation cycle
 
 ```text
-Source-change rounds completed: 1 / 10
-Current round: Round 1 — main /team menu lore parity (source-complete)
-Next source-change round: Round 2
+Source-change rounds completed: 2 / 10
+Current round: Round 2 — Join Requests presentation (source-complete)
+Next source-change round: Round 3
 ```
 
 ### Round 1 — Main `/team` menu item lore/presentation
@@ -56,11 +56,26 @@ Scope: translate the verified 2.5.3 `team-gui` presentation into the current Fab
 
 The source change does not alter the existing `TeamGuiManager` click/action routing.
 
+### Round 2 — Join Requests submenu presentation
+
+Source commit:
+```text
+f882b5dca1aacde6aa88a2d856a6694bb12e9f02
+```
+
+Scope: translate the verified 2.5.3 `join-requests-gui` presentation into the existing Fabric Join Requests GUI:
+- Join Requests header uses the reference title styling
+- pending player heads use explicit online/offline status indicators
+- player-head lore matches the reference accept/deny instructions
+- empty state uses PAPER with the reference four-line presentation
+- Back button uses the reference name/lore and non-italic formatting
+- existing request storage, approval/denial, and click routing are unchanged
+
 Verification: pending the next local clean build/runtime test for this GUI presentation pass.
 
 ## Next GUI presentation targets
 
-Round 2 should continue with the next currently implemented inventory GUI whose visible names/lore do not yet fully reproduce `gui.yml` — starting with Join Requests and its player-head/empty-state presentation.
+Round 3 should audit and implement the **Team Warps submenu** presentation, including warp item names, lore, password/state indicators, management controls, and Back/Close items, using the verified 2.5.3 `gui.yml` and reference Java behavior.
 
 After that, continue through the existing Fabric inventory GUIs in focused, feature-scoped rounds rather than redesigning the GUI framework.
 
