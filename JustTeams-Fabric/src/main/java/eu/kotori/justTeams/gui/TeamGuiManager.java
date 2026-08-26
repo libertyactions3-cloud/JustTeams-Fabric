@@ -36,13 +36,15 @@ public final class TeamGuiManager {
             TeamPersistentWarpManagementGui.close(menu);
             TeamPersistentBlacklistGui.close(menu);
             TeamPersistentLeaderboardGui.close(menu);
+            TeamInPlaceMemberGui.back(menu);
             TeamInPlaceGui.returnToMain(menu);
+            TeamInPlaceGui.refreshMainMembers(menu, player, team);
             return;
         }
 
         player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new TeamMenuHandler(syncId, inventory, player.getUuid(), team, TeamGuiManager::handleMainClick),
-                Text.literal("Team - " + team.getMembers().size() + "/Infinity")
+                Text.literal("ᴛᴇᴀᴍ ᴍᴇɴᴜ")
         ));
     }
 
@@ -79,11 +81,8 @@ public final class TeamGuiManager {
                                                  TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType type) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         if (team == null) {
-            if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) {
-                TeamPersistentNoTeamGui.openLeaderboardCategories(player);
-            } else {
-                TeamPersistentNoTeamGui.openLeaderboard(player, type);
-            }
+            if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) TeamPersistentNoTeamGui.openLeaderboardCategories(player);
+            else TeamPersistentNoTeamGui.openLeaderboard(player, type);
             return;
         }
 
@@ -100,11 +99,8 @@ public final class TeamGuiManager {
 
         TeamPersistentWarpManagementGui.close(menu);
         TeamPersistentBlacklistGui.close(menu);
-        if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) {
-            TeamPersistentLeaderboardGui.openCategories(menu);
-        } else {
-            TeamPersistentLeaderboardGui.openLeaderboard(menu, type);
-        }
+        if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) TeamPersistentLeaderboardGui.openCategories(menu);
+        else TeamPersistentLeaderboardGui.openLeaderboard(menu, type);
     }
 
     private static void handleMainClick(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu) {
@@ -169,7 +165,7 @@ public final class TeamGuiManager {
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
         TeamPlayer member = team.getMember(player.getUuid());
         if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
-        if (team.getHome() == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
+        if (team.getHome() == null) { player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome."), false); return; }
         JustTeamsFabric.teleports().requestHome(serverPlayer, team.getHome());
     }
 
