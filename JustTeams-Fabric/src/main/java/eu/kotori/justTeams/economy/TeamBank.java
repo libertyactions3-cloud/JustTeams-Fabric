@@ -52,9 +52,9 @@ public final class TeamBank extends SimpleInventory {
 
     private int[] findWithdrawal(long value) {
         if (value <= 0L) return new int[]{0, 0, 0};
-        int ore = count(Items.DEEPSLATE_EMERALD_ORE);
-        int blocks = count(Items.EMERALD_BLOCK);
-        int emeralds = count(Items.EMERALD);
+        int ore = countCurrency(Items.DEEPSLATE_EMERALD_ORE);
+        int blocks = countCurrency(Items.EMERALD_BLOCK);
+        int emeralds = countCurrency(Items.EMERALD);
         int maxOre = (int) Math.min(ore, Math.min(Integer.MAX_VALUE, value / 81L));
         for (int o = maxOre; o >= 0; o--) {
             long afterOre = value - (long) o * 81L;
@@ -67,7 +67,7 @@ public final class TeamBank extends SimpleInventory {
         return null;
     }
 
-    private int count(Item item) {
+    private int countCurrency(Item item) {
         int total = 0;
         for (int slot = 0; slot < size(); slot++) {
             ItemStack stack = getStack(slot);
