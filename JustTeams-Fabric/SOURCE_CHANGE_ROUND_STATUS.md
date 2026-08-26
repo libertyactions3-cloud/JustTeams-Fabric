@@ -17,61 +17,100 @@ Completed at source level. Covered in-place submenu navigation, persistent setti
 ## Current corrective GUI cycle
 
 ```text
-Source-change rounds completed: 1 / 10
-Current round: Round 1 — command parity + universal GUI mapping/refresh correction
+Source-change rounds completed: 6 / 10
+Current round: Round 6 complete — rank/permission command parity + GUI layout/refresh + AutoBank + player-argument completion
 Next verification build: after Round 10, unless a compile blocker requires an earlier build
 ```
 
-### Round 1 — command parity + GUI mapping/refresh
+### Round 1 — self-head interaction + member-editor layout
+Completed.
+- Viewer own member head is non-interactive.
+- Persistent member editor was centered within the six-row container.
+- `/team invites` remained valid for teamless players.
 
-The viewer's own member head in the main `/team` menu is now non-interactive.
+### Round 2 — rank/permission foundation + persistence
+Completed.
+- Added the seven-rank ladder: Leader, Co-Leader, Officer, Underofficer, Associate, Member, Initiate.
+- Added persisted per-member toggles for invite, warp creation, and AutoBank.
+- Existing Owner/Co-Owner/Member legacy role compatibility remains intact.
+- TeamStorage persists the new rank and toggles.
 
-The persistent member-management view now uses the requested six-row positions:
+### Round 3 — AutoBank economy foundation
+Completed.
+- Added exact team-bank currency withdrawal/availability for 81/9/1 denominations.
+- FeatureCostManager can route supported feature costs through the member's team AutoBank toggle instead of player inventory.
+- `/team autobank` persists the toggle across restarts.
+
+### Round 4 — command permission parity
+Completed.
+- `/team invite` uses plain online-player suggestions without `@` and enforces the member invite toggle.
+- `/team promote` and `/team demote` step through the seven-rank ladder.
+- Warp creation checks the independent warp-creation toggle.
+- Co-Leaders may remove any team warp.
+- Invite success/notification and accept/join notification paths are preserved.
+
+### Round 5 — persistent GUI layout and Join Requests refresh
+Completed.
+- Main `/team` member heads use the verified 2.5.3 positions: `19–25`, `28–34`, `37–43`.
+- Join Request heads fill the entire persistent interior: `9–44`, immediately under the top glass row through the bottom interior row.
+- Accepting a join request refreshes the saved main-team member-head snapshot while the player remains inside Join Requests.
+- No `Dynamic` lore line is present on the request heads.
+- Main GUI click dispatch uses the same verified slot map.
+- Unset Home chat feedback uses the verified 2.5.3 message.
+
+### Round 6 — command argument coverage + warp node enforcement
+Completed.
+- Ownership transfer player arguments use plain online-name suggestions.
+- Blacklist/unblacklist player arguments use plain online-name suggestions.
+- Base passwordless `/team warp set` now uses `canSetWarps`.
+- Passworded warp creation uses the same permission.
+- Base `/team warp remove` now allows the owner or Co-Leader to remove any warp.
+- A dedicated command override preserves both passwordless and passworded warp creation paths.
+- The member-management GUI now contains the requested independent toggles at slots 38, 40, and 42.
+
+## Verified-but-not-yet-resolved parity observations
+
+### Member-button cooldowns
+The public v2.5.2 history confirms a configurable **PvP toggle cooldown** (default 300 seconds), but I have not yet found authoritative evidence that the member-management promote/demote/permission buttons themselves use individual cooldown timers. Do not invent a cooldown duration. Trace the 2.5.3 source before implementing any such timer.
+
+### Home button exact GUI color
+The verified 2.5.3 GUI behavior includes the Ender Pearl Home button and the `Home not set.` lore state, and the verified chat message is recorded elsewhere. The exact MiniMessage color tag for the `Home not set.` lore line has not yet been conclusively recovered from the reference source. Do not claim an exact color until verified.
+
+### Universal inventory-GUI persistence
+The project rule remains that inventory-GUI → inventory-GUI transitions must reuse the same 54-slot handler whenever applicable so the mouse/cursor position does not reset. Vanilla anvil text input remains a separate AnvilScreenHandler exception.
+
+## Mandatory Paper → Fabric slot mapping rule
+
+Do **not** assume a Bukkit/Paper Inventory slot number equals a Fabric ScreenHandler slot ID.
+
+For every GUI:
+
+1. Determine the 2.5.3 Bukkit Inventory index.
+2. Determine the Fabric backing Inventory index.
+3. Determine the order of Fabric `ScreenHandler.addSlot(...)` calls.
+4. Determine the resulting Fabric ScreenHandler slot ID.
+5. Verify the Fabric slot x/y coordinates put it in the same visual row/column.
+
+Always distinguish:
 
 ```text
-slot 4  = player-info head
-slot 19 = dynamic promote/demote
-slot 22 = kick member
-slot 25 = transfer ownership
-slot 37 = bank withdraw
-slot 39 = use team ender chest
-slot 41 = set team home
-slot 43 = use team home
-slot 49 = back
-```
-
-Ownership transfer confirmation is handled inside the same persistent 54-slot container rather than opening a separate inventory.
-
-The `/team requests` command now enters the same in-place Join Requests view used by the `/team` menu.
-
-The `/team invite <player>` argument now uses the verified Fabric player argument type so online players can be tab-completed. The inviter receives a success message and the invited player receives the invitation message.
-
-`/team accept <team>` now reports successful joining to the player and notifies existing online team members.
-
-Unset home now uses the verified 2.5.3 message:
-
-```text
-[ᴛᴇᴀᴍꜱ] Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome.
-```
-
-Post-kick main-menu member heads are rebuilt from current team state rather than restoring a stale submenu snapshot. The persistent team menu title no longer embeds a stale member count.
-
-`/team invites` remains accessible while a player is not in a team; that is intentional because pending invites are specifically for teamless players. The active teamless invite path uses a persistent 54-slot inventory container.
-
-### Slot-mapping rule retained for future GUI work
-
-Do not assume a Bukkit Inventory index equals a Fabric ScreenHandler slot ID.
-For every GUI, distinguish:
-
-```text
-Bukkit inventory index
-Fabric backing Inventory index
+Bukkit Inventory index
+Fabric backing Inventory / Slot.index
 Fabric ScreenHandler slot ID
 ```
 
-Verify the order of `ScreenHandler.addSlot(...)` and the slot x/y coordinates before mapping any reference slot.
+For the active persistent six-row handler, the 54 menu slots are added first in row-major order:
 
-The active persistent 54-slot chest handlers add all 54 menu slots first, in row-major order, followed by the player inventory, so menu backing indices 0–53 correspond directly to ScreenHandler slot IDs 0–53 in those handlers. That direct mapping must not be generalized to legacy 27-slot handlers without checking their construction order.
+```text
+0  1  2  3  4  5  6  7  8
+9 10 11 12 13 14 15 16 17
+18 19 20 21 22 23 24 25 26
+27 28 29 30 31 32 33 34 35
+36 37 38 39 40 41 42 43 44
+45 46 47 48 49 50 51 52 53
+```
+
+Only in handlers constructed that way do backing indices `0–53` directly correspond to ScreenHandler IDs `0–53`.
 
 ## Verification rule
 
@@ -82,3 +121,5 @@ The user's canonical verification build is:
 ```
 
 Do not claim source compatibility until the user's local build confirms it.
+
+Round 10 remains the final build gate for this cycle.
