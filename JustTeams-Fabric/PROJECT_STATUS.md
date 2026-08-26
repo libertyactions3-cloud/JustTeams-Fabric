@@ -60,7 +60,8 @@ Do not redesign unrelated architecture. Record unrelated issues only as Later.
 
 ## Repository activity / 10-round workflow
 
-A round counts only when something under `src/` changes. Documentation, searching, auditing, builds, and runtime tests do not consume rounds.
+A round counts only when a change is made somewhere under `src/` in `JustTeams-Fabric`.
+Documentation, searching/auditing, planning, Gradle builds, and runtime testing do not consume rounds.
 
 The user's canonical verification build is:
 
@@ -76,7 +77,7 @@ The previous core-parity cycle completed 10 source rounds and was followed by a 
 
 The GUI presentation/lore cycle also completed 10 source rounds and was followed by a successful local clean build after compile corrections.
 
-The GUI interaction / persistent-screen cycle also completed 10 source rounds. Its goal was to make `/team` navigation reuse the same 54-slot handler so menu items change in-place without resetting the player's mouse/cursor position.
+The GUI persistent-screen cycle also completed 10 source rounds. Its goal was to make inventory GUI navigation reuse the same 54-slot handler so menu items change in-place without resetting the player's mouse/cursor position.
 
 ```text
 Round 1  Join Requests + Warps in-place foundation       ✅
@@ -91,59 +92,93 @@ Round 9  Persistent navigation cleanup                  ✅
 Round 10 Persistent leaderboard command/view            ✅
 ```
 
-### Persistent GUI behavior now implemented
-
-`TeamGuiManager.openMain()` reuses an already-open `TeamMenuHandler` instead of opening a new handled screen when the player is already viewing the team menu.
-
-The persistent in-place renderer covers:
-
-```text
-Join Requests
-Team Warps
-Team Settings
-Member Management
-Warp Management
-Blacklist Management
-Leaderboards
-Sort state
-PvP state
-```
-
-Back actions restore the existing `/team` inventory rather than opening another chest screen wherever the persistent view is applicable.
-
-### Command entry behavior
-
-`/team settings` enters the persistent 54-slot team handler for team members.
-
-`/team top` enters the persistent leaderboard category/ranked views for team members. Players who are not in a team retain the standalone leaderboard GUI.
-
-`/team blacklist` enters the persistent team handler for team members.
-
-`/team invites` remains accessible while a player is not in a team. This is intentional: pending invitations are specifically for players who are not already in a team.
-
-### Intentional storage boundaries
-
-`TeamBankGui` remains an item-backed team-owned currency inventory. The 2.5.3 BankGUI is a numeric Vault-money menu, so that presentation was not transplanted onto the Fabric bank.
-
-`Team Ender Chest` remains a real persistent item inventory. Its underlying slots and persistence must be preserved if it is later made persistent in the same screen; it is not treated as a decorative submenu.
-
-`TeamWarpManagementGui` is a Fabric-specific management surface with no standalone 2.5.3 GUI counterpart, but its existing controls are now rendered in-place when entered from the persistent team GUI.
-
 ## Current corrective GUI cycle
 
-After the completed 10-round persistent-screen cycle, one additional scoped source round was required for runtime-discovered member-head behavior:
-
 ```text
-Round 1 / 10 — self-head interaction + member-editor layout correction ✅
+Source-change rounds completed: 1 / 10
+Round 1 — command parity + universal GUI mapping/refresh correction ✅
 ```
 
-The viewer's own member head is now non-interactive. The persistent member editor preserves the original 27-slot relative arrangement but centers that three-row arrangement inside the persistent six-row container.
+### Corrective Round 1 completed work
+
+The viewer's own member head in `/team` is now non-interactive.
+
+The persistent member-management view now uses the requested six-row positions:
+
+```text
+slot 4  = PLAYER_HEAD / player-info
+slot 19 = dynamic PROMOTE TO CO-OWNER / DEMOTE TO MEMBER
+slot 22 = RED_WOOL / KICK MEMBER
+slot 25 = BEACON / TRANSFER OWNERSHIP
+slot 37 = GOLD_INGOT / ʙᴀɴᴋ ᴡɪᴛʜᴅʀᴀᴡ
+slot 39 = ENDER_CHEST / ᴜsᴇ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ
+slot 41 = GRASS_BLOCK / sᴇᴛ ᴛᴇᴀᴍ ʜᴏᴍᴇ
+slot 43 = ENDER_PEARL / ᴜsᴇ ᴛᴇᴀᴍ ʜᴏᴍᴇ
+slot 49 = ARROW / ʙᴀᴄᴋ
+```
+
+Ownership transfer confirmation is now rendered inside the same persistent 54-slot inventory rather than opening the legacy 27-slot confirmation GUI.
+
+`/team requests` now enters the same in-place Join Requests view used by the `/team` menu rather than the legacy separate request screen.
+
+`/team invite <player>` now uses Fabric's player argument type so online players can be tab-completed. The command gives the inviter a success message and the target a direct invitation message.
+
+`/team accept <team>` now reports success to the joining player and notifies existing online team members.
+
+The unset-home message now matches the verified 2.5.3 wording:
+
+```text
+[ᴛᴇᴀᴍꜱ] Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome.
+```
+
+Post-kick member heads are rebuilt from current team state. The submenu snapshot is cleared on return so stale members are not restored by a later Back operation. The persistent main-menu title no longer embeds a stale member count.
+
+`/team invites` remains accessible while a player is not in a team. This is intentional because pending invitations are specifically for teamless players. Its active path now uses the persistent 54-slot teamless inventory container.
+
+## Slot-mapping rule — mandatory for every future GUI
+
+Do **not** assume a Bukkit Inventory index equals a Fabric ScreenHandler slot ID.
+
+For every GUI, distinguish:
+
+```text
+Bukkit Inventory index
+Fabric backing Inventory index
+Fabric ScreenHandler slot ID
+```
+
+Determine all three explicitly, then verify the x/y coordinates and the order of `ScreenHandler.addSlot(...)` calls.
+
+For an active persistent six-row chest handler that adds the 54 menu slots first in row-major order:
+
+```text
+0  1  2  3  4  5  6  7  8
+9 10 11 12 13 14 15 16 17
+18 19 20 21 22 23 24 25 26
+27 28 29 30 31 32 33 34 35
+36 37 38 39 40 41 42 43 44
+45 46 47 48 49 50 51 52 53
+```
+
+those menu backing indices do correspond directly to ScreenHandler slot IDs `0–53` because the handler constructor establishes that order. This direct mapping must **not** be generalized to legacy 27-slot handlers, whose player-inventory slots are added immediately after their 27 menu slots.
+
+## Friendly-fire/PvP status
+
+The Fabric friendly-fire disabler is already correctly implemented in `TeamFriendlyFire`: when the attacker and victim are team members, damage is allowed only when `team.isPvpEnabled()` is true. The GUI PvP toggle updates that same team state, so no new friendly-fire architecture is needed.
+
+## Inventory GUI transition rule
+
+Inventory-GUI → inventory-GUI transitions must reuse the same persistent 54-slot handler whenever the feature is participating in the persistent GUI system. A 27-slot reference layout is rendered inside the 54-slot handler rather than switching to a `GENERIC_9X3` handler, because 27- and 54-slot generic container handlers are distinct screen-handler types and replacing the handler resets the client-side screen state.
+
+Vanilla anvil text input remains a separate screen because it is an `AnvilScreenHandler`, not an inventory/chest GUI. It is not treated as an inventory-to-inventory transition.
 
 ## Verification status
 
-The current corrective GUI cycle is source-complete for Round 1 only.
+The corrective cycle is currently source-complete at **1 / 10**.
 
-The next step is the user's local clean build when we reach the appropriate verification gate for this corrective cycle. Do not claim compile/runtime verification until the user's actual build and focused runtime tests succeed.
+The next source rounds should continue auditing remaining inventory GUI transitions, especially the legacy Bank, Ender Chest, Home, and Confirmation surfaces, until they all conform to the same persistent-screen rule.
+
+Do not claim compile/runtime verification until the user's actual local build and focused runtime tests succeed.
 
 ---
 
