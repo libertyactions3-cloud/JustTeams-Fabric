@@ -1,7 +1,9 @@
 package eu.kotori.justTeams;
 
 import eu.kotori.justTeams.chat.TeamChatEvents;
+import eu.kotori.justTeams.commands.TeamAutoBankCommandExtension;
 import eu.kotori.justTeams.commands.TeamBlacklistCommandExtension;
+import eu.kotori.justTeams.commands.TeamChatSpyCommandExtension;
 import eu.kotori.justTeams.commands.TeamCommand;
 import eu.kotori.justTeams.commands.TeamCommandAliasExtensions;
 import eu.kotori.justTeams.commands.TeamCreationCommandExtensions;
@@ -9,7 +11,6 @@ import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInvitesCommandExtension;
 import eu.kotori.justTeams.commands.TeamLeaderboardCommandExtensions;
 import eu.kotori.justTeams.commands.TeamMessageCommandExtension;
-import eu.kotori.justTeams.commands.TeamChatSpyCommandExtension;
 import eu.kotori.justTeams.commands.TeamOwnershipCommandExtensions;
 import eu.kotori.justTeams.commands.TeamSettingsCommandExtension;
 import eu.kotori.justTeams.commands.TeamWarpCommandExtensions;
@@ -51,11 +52,8 @@ public final class JustTeamsFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        try {
-            config = new JustTeamsConfig(FabricLoader.getInstance().getConfigDir());
-        } catch (IOException exception) {
-            throw new RuntimeException("Unable to load JustTeams configuration", exception);
-        }
+        try { config = new JustTeamsConfig(FabricLoader.getInstance().getConfigDir()); }
+        catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams configuration", exception); }
 
         teamManager = new TeamManager();
         teamStorage = new TeamStorage();
@@ -82,6 +80,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamInvitesCommandExtension.register(dispatcher);
             TeamBlacklistCommandExtension.register(dispatcher);
             TeamSettingsCommandExtension.register(dispatcher);
+            TeamAutoBankCommandExtension.register(dispatcher);
             TeamCommandAliasExtensions.register(dispatcher);
         });
         ChatInputEvents.register();
@@ -93,66 +92,27 @@ public final class JustTeamsFabric implements ModInitializer {
 
     private static PermissionService createPermissionService() {
         if (FabricLoader.getInstance().isModLoaded("luckperms")) {
-            try {
-                LOGGER.info("LuckPerms detected; enabling JustTeams LuckPerms permissions");
-                return new LuckPermsPermissionService();
-            } catch (RuntimeException exception) {
-                LOGGER.warn("LuckPerms was detected but its API could not be initialized; using default JustTeams permissions", exception);
-            }
+            try { LOGGER.info("LuckPerms detected; enabling JustTeams LuckPerms permissions"); return new LuckPermsPermissionService(); }
+            catch (RuntimeException exception) { LOGGER.warn("LuckPerms was detected but its API could not be initialized; using default JustTeams permissions", exception); }
         }
         return PermissionService.defaults();
     }
 
     private void loadTeamData(MinecraftServer server) {
-        try {
-            teamStorage.load(teamManager);
-            LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size());
-        } catch (IOException exception) {
-            throw new RuntimeException("Unable to load JustTeams data", exception);
-        }
+        try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); }
+        catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); }
     }
 
     private void saveTeamData(MinecraftServer server, boolean logSuccess) {
-        try {
-            teamStorage.save(teamManager);
-            if (logSuccess) LOGGER.info("Saved {} team(s) including persistent bank inventories", teamManager.size());
-        } catch (IOException exception) {
-            LOGGER.error("Unable to save JustTeams data", exception);
-        }
+        try { teamStorage.save(teamManager); if (logSuccess) LOGGER.info("Saved {} team(s) including persistent bank inventories", teamManager.size()); }
+        catch (IOException exception) { LOGGER.error("Unable to save JustTeams data", exception); }
     }
 
-    public static TeamManager teams() {
-        if (teamManager == null) throw new IllegalStateException("JustTeams has not initialized");
-        return teamManager;
-    }
-
-    public static TeamStorage storage() {
-        if (teamStorage == null) throw new IllegalStateException("JustTeams has not initialized");
-        return teamStorage;
-    }
-
-    public static JustTeamsConfig config() {
-        if (config == null) throw new IllegalStateException("JustTeams has not initialized");
-        return config;
-    }
-
-    public static PermissionService permissions() {
-        if (permissionService == null) throw new IllegalStateException("JustTeams has not initialized");
-        return permissionService;
-    }
-
-    public static GlowManager glow() {
-        if (glowManager == null) throw new IllegalStateException("JustTeams has not initialized");
-        return glowManager;
-    }
-
-    public static TeamTeleportManager teleports() {
-        if (teleportManager == null) throw new IllegalStateException("JustTeams has not initialized");
-        return teleportManager;
-    }
-
-    public static EconomyProvider economy() {
-        if (economyProvider == null) throw new IllegalStateException("JustTeams has not initialized");
-        return economyProvider;
-    }
+    public static TeamManager teams() { if (teamManager == null) throw new IllegalStateException("JustTeams has not initialized"); return teamManager; }
+    public static TeamStorage storage() { if (teamStorage == null) throw new IllegalStateException("JustTeams has not initialized"); return teamStorage; }
+    public static JustTeamsConfig config() { if (config == null) throw new IllegalStateException("JustTeams has not initialized"); return config; }
+    public static PermissionService permissions() { if (permissionService == null) throw new IllegalStateException("JustTeams has not initialized"); return permissionService; }
+    public static GlowManager glow() { if (glowManager == null) throw new IllegalStateException("JustTeams has not initialized"); return glowManager; }
+    public static TeamTeleportManager teleports() { if (teleportManager == null) throw new IllegalStateException("JustTeams has not initialized"); return teleportManager; }
+    public static EconomyProvider economy() { if (economyProvider == null) throw new IllegalStateException("JustTeams has not initialized"); return economyProvider; }
 }
