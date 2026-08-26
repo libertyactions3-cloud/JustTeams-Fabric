@@ -22,7 +22,7 @@ import net.minecraft.text.Text;
 import java.io.IOException;
 import java.util.UUID;
 
-/** Server-side Home GUI following the inventory pattern used by Fabric claim mods such as Flan. */
+/** Legacy Home management GUI retained for direct compatibility paths. */
 public final class TeamHomeGui {
     private TeamHomeGui() {}
 
@@ -70,8 +70,7 @@ public final class TeamHomeGui {
                 super.onSlotClick(slotIndex, button, actionType, player);
                 return;
             }
-            if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE)
-                return;
+            if (actionType == SlotActionType.QUICK_MOVE || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW || actionType == SlotActionType.CLONE) return;
             if (!(player instanceof ServerPlayerEntity serverPlayer) || !player.getUuid().equals(viewerUuid) || !team.isMember(viewerUuid)) return;
             switch (slotIndex) {
                 case 11 -> useHome(serverPlayer);
@@ -86,7 +85,7 @@ public final class TeamHomeGui {
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
             TeamLocation home = team.getHome();
-            if (home == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
+            if (home == null) { player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome."), false); return; }
             JustTeamsFabric.teleports().requestHome(player, home);
         }
 
@@ -94,45 +93,20 @@ public final class TeamHomeGui {
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null || !member.canSetHome()) { player.sendMessage(Text.literal("You do not have permission to set the team home."), true); return; }
             if (!FeatureCostManager.charge(player, "sethome")) return;
-            team.setHome(TeamLocation.fromPlayer(player));
-            save();
-            player.sendMessage(Text.literal("Team home set at your current location."), true);
-            populate();
-            sendContentUpdates();
+            team.setHome(TeamLocation.fromPlayer(player)); save(); player.sendMessage(Text.literal("Team home set at your current location."), true); populate(); sendContentUpdates();
         }
 
         private void clearHome(ServerPlayerEntity player) {
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null || !member.canSetHome()) { player.sendMessage(Text.literal("You do not have permission to clear the team home."), true); return; }
             if (team.getHome() == null) { player.sendMessage(Text.literal("Your team does not have a home set."), true); return; }
-            team.clearHome();
-            save();
-            player.sendMessage(Text.literal("Team home cleared."), true);
-            populate();
-            sendContentUpdates();
+            team.clearHome(); save(); player.sendMessage(Text.literal("Team home cleared."), true); populate(); sendContentUpdates();
         }
 
-        private void save() {
-            try {
-                JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            } catch (IOException exception) {
-                JustTeamsFabric.LOGGER.error("Failed to save JustTeams data after Home GUI action", exception);
-            }
-        }
-
+        private void save() { try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); } catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save JustTeams data after Home GUI action", exception); } }
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
         @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(viewerUuid) && team.isMember(viewerUuid); }
-
-        private static ItemStack named(net.minecraft.item.Item item, String name) {
-            ItemStack stack = new ItemStack(item);
-            stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, Text.literal(name));
-            return stack;
-        }
-
-        private static final class MenuSlot extends Slot {
-            private MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); }
-            @Override public boolean canInsert(ItemStack stack) { return false; }
-            @Override public boolean canTakeItems(PlayerEntity player) { return false; }
-        }
+        private static ItemStack named(net.minecraft.item.Item item, String name) { ItemStack stack = new ItemStack(item); stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME, Text.literal(name)); return stack; }
+        private static final class MenuSlot extends Slot { private MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); } @Override public boolean canInsert(ItemStack stack) { return false; } @Override public boolean canTakeItems(PlayerEntity player) { return false; } }
     }
 }
