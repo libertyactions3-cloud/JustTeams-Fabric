@@ -10,5 +10,9 @@ public final class TeamCommandSuggestions {
     private TeamCommandSuggestions() {}
 
     public static final SuggestionProvider<ServerCommandSource> ONLINE_PLAYERS = (context, builder) ->
-            CommandSource.suggestMatching(context.getSource().getOnlinePlayerNames(), builder);
+            CommandSource.suggestMatching(
+                    context.getSource().getServer().getPlayerManager().getPlayerList().stream()
+                            .map(player -> player.getGameProfile().getName()),
+                    builder
+            );
 }
