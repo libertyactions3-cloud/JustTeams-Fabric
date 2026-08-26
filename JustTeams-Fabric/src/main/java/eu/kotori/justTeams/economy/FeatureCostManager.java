@@ -1,6 +1,8 @@
 package eu.kotori.justTeams.economy;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.team.Team;
+import eu.kotori.justTeams.team.TeamPlayer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -27,6 +29,15 @@ public final class FeatureCostManager {
             player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
             return false;
         }
+
+        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+        TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
+        if (member != null && member.canUseAutoBank()) {
+            if (team.getBank().canWithdrawValue((long) cost)) return true;
+            player.sendMessage(Text.literal("The team bank does not contain enough exact currency for this cost."), true);
+            return false;
+        }
+
         if (!JustTeamsFabric.economy().isAvailable()) {
             player.sendMessage(Text.literal("The item economy is unavailable."), true);
             return false;
@@ -43,6 +54,14 @@ public final class FeatureCostManager {
         if (cost <= 0.0D) return true;
         if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
             player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
+            return false;
+        }
+
+        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+        TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
+        if (member != null && member.canUseAutoBank()) {
+            if (team.getBank().tryWithdrawValue((long) cost)) return true;
+            player.sendMessage(Text.literal("The team bank does not contain enough exact currency for this cost."), true);
             return false;
         }
 
