@@ -17,9 +17,10 @@ Completed at source level. Covered in-place submenu navigation, persistent setti
 ## Current corrective GUI cycle
 
 ```text
-Source-change rounds completed: 6 / 10
-Current round: Round 6 complete — rank/permission command parity + GUI layout/refresh + AutoBank + player-argument completion
-Next verification build: after Round 10, unless a compile blocker requires an earlier build
+Source-change rounds completed: 7 / 10
+Current round: Round 7 complete — compile/API corrections for TeamBank, player-name suggestions, and rank-change notification
+Verification: user's local clean build succeeded after Round 7
+Next source round: Round 8
 ```
 
 ### Round 1 — self-head interaction + member-editor layout
@@ -67,6 +68,13 @@ Completed.
 - Base `/team warp remove` now allows the owner or Co-Leader to remove any warp.
 - A dedicated command override preserves both passwordless and passworded warp creation paths.
 - The member-management GUI now contains the requested independent toggles at slots 38, 40, and 42.
+
+### Round 7 — compile/API corrections
+Completed and locally verified.
+- Renamed the private `TeamBank.count(Item)` helper so it no longer conflicts with the public `Inventory.count(Item)` API inherited from `SimpleInventory`.
+- Corrected online-player suggestions to use the Fabric server player manager and `player.getName().getString()`, preserving plain names without `@`.
+- Corrected rank-change notification to reuse the already-resolved `ServerPlayerEntity` instead of calling `getPlayerOrThrow()` from a helper that could not propagate `CommandSyntaxException`.
+- User subsequently ran `./gradlew clean build --refresh-dependencies` successfully with no compilation errors.
 
 ## Verified-but-not-yet-resolved parity observations
 
@@ -120,6 +128,4 @@ The user's canonical verification build is:
 ./gradlew clean build --refresh-dependencies
 ```
 
-Do not claim source compatibility until the user's local build confirms it.
-
-Round 10 remains the final build gate for this cycle.
+Round 7 is now compile-verified by the user's local build. Round 10 remains the final build gate for this corrective cycle.
