@@ -32,9 +32,18 @@ import java.util.WeakHashMap;
 
 /** In-place 54-slot views used by the main team inventory without opening a second chest screen. */
 public final class TeamInPlaceGui {
-    private static final int[] JOIN_REQUEST_SLOTS = {19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
+    private static final int[] JOIN_REQUEST_SLOTS = {
+            9,10,11,12,13,14,15,16,17,
+            18,19,20,21,22,23,24,25,26,
+            27,28,29,30,31,32,33,34,35,
+            36,37,38,39,40,41,42,43,44
+    };
     private static final int[] WARP_SLOTS = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
-    private static final int[] MEMBER_HEAD_SLOTS = {9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44};
+    private static final int[] MEMBER_HEAD_SLOTS = {
+            19,20,21,22,23,24,25,
+            28,29,30,31,32,33,34,
+            37,38,39,40,41,42,43
+    };
     private static final int PRIMARY_START = 0x4C9DDE;
     private static final int PRIMARY_END = 0x4C96D2;
 
@@ -110,23 +119,33 @@ public final class TeamInPlaceGui {
 
     public static void refreshMainMembers(TeamMenuHandler menu, PlayerEntity viewer, Team team) {
         Inventory inventory = menu.getMenuInventory();
+        refreshMembersInto(inventory, viewer, team);
+        menu.sendContentUpdates();
+    }
+
+    private static void refreshMainSnapshotMembers(TeamMenuHandler menu, PlayerEntity viewer, Team team) {
+        ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu);
+        if (snapshot == null) return;
+        Inventory snapshotInventory = new net.minecraft.inventory.SimpleInventory(54);
+        for (int slot = 0; slot < snapshot.length; slot++) snapshotInventory.setStack(slot, snapshot[slot].copy());
+        refreshMembersInto(snapshotInventory, viewer, team);
+        for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = snapshotInventory.getStack(slot).copy();
+    }
+
+    private static void refreshMembersInto(Inventory inventory, PlayerEntity viewer, Team team) {
         for (int slot : MEMBER_HEAD_SLOTS) inventory.setStack(slot, ItemStack.EMPTY);
         List<TeamPlayer> members = new ArrayList<>(team.getMembers());
         TeamPlayer owner = team.getMember(team.getOwnerUuid());
         members.removeIf(member -> member.getPlayerUuid().equals(team.getOwnerUuid()));
         members.sort(Comparator.comparing(TeamPlayer::getJoinDate, Comparator.nullsLast(Comparator.naturalOrder())));
         if (owner != null) members.add(0, owner);
-        for (int i = 0; i < MEMBER_HEAD_SLOTS.length && i < members.size(); i++) {
-            inventory.setStack(MEMBER_HEAD_SLOTS[i], createMemberHead(viewer, members.get(i)));
-        }
-        menu.sendContentUpdates();
+        for (int i = 0; i < MEMBER_HEAD_SLOTS.length && i < members.size(); i++) inventory.setStack(MEMBER_HEAD_SLOTS[i], createMemberHead(viewer, members.get(i)));
     }
 
     private static ItemStack createMemberHead(PlayerEntity viewer, TeamPlayer member) {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(member.getPlayerUuid()));
-        ServerPlayerEntity online = viewer instanceof ServerPlayerEntity serverPlayer
-                ? serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(member.getPlayerUuid()) : null;
+        ServerPlayerEntity online = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(member.getPlayerUuid()) : null;
         boolean isOnline = online != null;
         String name = isOnline ? online.getName().getString() : member.getPlayerUuid().toString().substring(0, 8);
         MutableText title = Text.empty();
@@ -135,9 +154,7 @@ public final class TeamInPlaceGui {
         head.set(DataComponentTypes.CUSTOM_NAME, title);
         String role = switch (member.getRole()) { case OWNER -> "Owner"; case CO_OWNER -> "Co-Owner"; case MEMBER -> "Member"; };
         String joined = member.getJoinDate() == null ? "Unknown" : DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC).format(member.getJoinDate());
-        head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                composeLine("Role: ", role, Formatting.GRAY, Formatting.WHITE),
-                composeLine("Joined: ", joined, Formatting.GRAY, Formatting.WHITE))));
+        head.set(DataComponentTypes.LORE, new LoreComponent(List.of(composeLine("Role: ", role, Formatting.GRAY, Formatting.WHITE), composeLine("Joined: ", joined, Formatting.GRAY, Formatting.WHITE))));
         return head;
     }
 
@@ -147,18 +164,13 @@ public final class TeamInPlaceGui {
         ItemStack sort = namedGradient(Items.HOPPER, "sᴏʀᴛ ᴍᴇᴍʙᴇʀs");
         sort.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 plainLine("Click to change the sorting.", Formatting.GRAY), plainLine("", Formatting.GRAY),
-                sortLine("Join Date", team.getCurrentSortType().name().equals("JOIN_DATE")),
-                sortLine("Alphabetical", team.getCurrentSortType().name().equals("ALPHABETICAL")),
-                sortLine("Online Status", team.getCurrentSortType().name().equals("ONLINE_STATUS")) )));
+                sortLine("Join Date", team.getCurrentSortType().name().equals("JOIN_DATE")), sortLine("Alphabetical", team.getCurrentSortType().name().equals("ALPHABETICAL")), sortLine("Online Status", team.getCurrentSortType().name().equals("ONLINE_STATUS")) )));
         menu.getMenuInventory().setStack(49, sort); ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu); if (snapshot != null) snapshot[49] = sort.copy(); menu.sendContentUpdates();
     }
 
     public static void updateMainPvpItem(TeamMenuHandler menu, Team team) {
         ItemStack pvp = namedGradient(Items.DIAMOND_SWORD, "ᴘᴠᴘ sᴛᴀᴛᴜs");
-        pvp.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                plainLine("Toggle PvP between team members.", Formatting.GRAY), plainLine("", Formatting.GRAY),
-                composeLine("Currently: ", team.isPvpEnabled() ? "Enabled" : "Disabled", Formatting.GRAY, team.isPvpEnabled() ? Formatting.GREEN : Formatting.RED),
-                plainLine("", Formatting.GRAY), plainLine("Click to toggle.", Formatting.YELLOW))));
+        pvp.set(DataComponentTypes.LORE, new LoreComponent(List.of(plainLine("Toggle PvP between team members.", Formatting.GRAY), plainLine("", Formatting.GRAY), composeLine("Currently: ", team.isPvpEnabled() ? "Enabled" : "Disabled", Formatting.GRAY, team.isPvpEnabled() ? Formatting.GREEN : Formatting.RED), plainLine("", Formatting.GRAY), plainLine("Click to toggle.", Formatting.YELLOW))));
         menu.getMenuInventory().setStack(45, pvp); ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu); if (snapshot != null) snapshot[45] = pvp.copy(); menu.sendContentUpdates();
     }
 
@@ -166,9 +178,21 @@ public final class TeamInPlaceGui {
         int index = indexOf(JOIN_REQUEST_SLOTS, slot); if (index < 0) return false;
         List<UUID> requests = new ArrayList<>(); for (UUID uuid : team.getJoinRequests()) if (!team.isMember(uuid)) requests.add(uuid);
         if (index >= requests.size()) return true; UUID uuid = requests.get(index);
-        if (button == 0) { team.removeJoinRequest(uuid); if (!JustTeamsFabric.teams().isInTeam(uuid)) { JustTeamsFabric.teams().addMember(team, new TeamPlayer(uuid, TeamRole.MEMBER, java.time.Instant.now(), false, false, false, true)); notifyPlayer(player, uuid, "Your request to join " + team.getName() + " was accepted."); }}
-        else if (button == 1) { team.removeJoinRequest(uuid); notifyPlayer(player, uuid, "Your request to join " + team.getName() + " was denied."); }
-        save(); enterJoinRequests(menu, player, team); return true;
+        if (button == 0) {
+            team.removeJoinRequest(uuid);
+            if (!JustTeamsFabric.teams().isInTeam(uuid)) {
+                JustTeamsFabric.teams().addMember(team, new TeamPlayer(uuid, TeamRole.MEMBER, java.time.Instant.now(), false, false, false, true));
+                notifyPlayer(player, uuid, "Your request to join " + team.getName() + " was accepted.");
+                save();
+                refreshMainSnapshotMembers(menu, player, team);
+            }
+        } else if (button == 1) {
+            team.removeJoinRequest(uuid);
+            notifyPlayer(player, uuid, "Your request to join " + team.getName() + " was denied.");
+            save();
+        }
+        enterJoinRequests(menu, player, team);
+        return true;
     }
 
     public static boolean handleWarpClick(TeamMenuHandler menu, ServerPlayerEntity player, Team team, int slot, int button) {
