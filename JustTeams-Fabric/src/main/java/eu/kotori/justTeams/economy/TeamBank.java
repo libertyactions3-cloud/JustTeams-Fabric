@@ -21,25 +21,15 @@ public final class TeamBank extends SimpleInventory {
     private final Team team;
     private final Set<Item> currencyItems;
 
-    public TeamBank(Team team) {
-        this(team, JustTeamsFabric.config().getCurrencyItems());
-    }
-
-    public TeamBank(Team team, Set<Item> currencyItems) {
-        super(SLOT_COUNT);
-        this.team = team;
-        this.currencyItems = Set.copyOf(currencyItems);
-    }
-
+    public TeamBank(Team team) { this(team, JustTeamsFabric.config().getCurrencyItems()); }
+    public TeamBank(Team team, Set<Item> currencyItems) { super(SLOT_COUNT); this.team = team; this.currencyItems = Set.copyOf(currencyItems); }
     public Team getTeam() { return team; }
     public Set<Item> getCurrencyItems() { return currencyItems; }
     public boolean isCurrency(ItemStack stack) { return !stack.isEmpty() && currencyItems.contains(stack.getItem()); }
-
     @Override public boolean canInsert(ItemStack stack) { return isCurrency(stack) && super.canInsert(stack); }
     @Override public boolean isValid(int slot, ItemStack stack) { return isCurrency(stack); }
     @Override public boolean canPlayerUse(PlayerEntity player) { return team.isMember(player.getUuid()); }
 
-    /** Returns the configured item-economy value of one currency item. */
     public static int currencyValue(Item item) {
         if (item == Items.DEEPSLATE_EMERALD_ORE) return 81;
         if (item == Items.EMERALD_BLOCK) return 9;
@@ -47,50 +37,34 @@ public final class TeamBank extends SimpleInventory {
         return 0;
     }
 
-    /**
-     * Withdraws an exact currency value from the team bank.
-     * Returns false without changing the bank if no exact denomination combination exists.
-     */
+    public boolean canWithdrawValue(long value) { return findWithdrawal(value) != null; }
+
     public boolean tryWithdrawValue(long value) {
         if (value <= 0L) return true;
+        int[] use = findWithdrawal(value);
+        if (use == null) return false;
+        removeValue(Items.DEEPSLATE_EMERALD_ORE, use[0]);
+        removeValue(Items.EMERALD_BLOCK, use[1]);
+        removeValue(Items.EMERALD, use[2]);
+        markDirty();
+        return true;
+    }
+
+    private int[] findWithdrawal(long value) {
+        if (value <= 0L) return new int[]{0, 0, 0};
         int ore = count(Items.DEEPSLATE_EMERALD_ORE);
         int blocks = count(Items.EMERALD_BLOCK);
         int emeralds = count(Items.EMERALD);
-
-        long target = value;
-        int useOre = (int) Math.min(ore, target / 81L);
-        target -= (long) useOre * 81L;
-        int useBlocks = (int) Math.min(blocks, target / 9L);
-        target -= (long) useBlocks * 9L;
-        int useEmeralds = (int) Math.min(emeralds, target);
-
-        if (target > useEmeralds) {
-            // Greedy denomination use can fail when a smaller denomination is needed.
-            // Search the bounded ore/block combinations (the largest denomination is only 81).
-            useOre = -1;
-            useBlocks = -1;
-            useEmeralds = -1;
-            outer:
-            for (int o = Math.min(ore, (int) Math.min(Integer.MAX_VALUE, value / 81L)); o >= 0; o--) {
-                long afterOre = value - (long) o * 81L;
-                for (int b = Math.min(blocks, (int) Math.min(Integer.MAX_VALUE, afterOre / 9L)); b >= 0; b--) {
-                    long remainder = afterOre - (long) b * 9L;
-                    if (remainder <= emeralds) {
-                        useOre = o;
-                        useBlocks = b;
-                        useEmeralds = (int) remainder;
-                        break outer;
-                    }
-                }
+        int maxOre = (int) Math.min(ore, Math.min(Integer.MAX_VALUE, value / 81L));
+        for (int o = maxOre; o >= 0; o--) {
+            long afterOre = value - (long) o * 81L;
+            int maxBlocks = (int) Math.min(blocks, Math.min(Integer.MAX_VALUE, afterOre / 9L));
+            for (int b = maxBlocks; b >= 0; b--) {
+                long remainder = afterOre - (long) b * 9L;
+                if (remainder >= 0L && remainder <= emeralds) return new int[]{o, b, (int) remainder};
             }
-            if (useOre < 0) return false;
         }
-
-        removeValue(Items.DEEPSLATE_EMERALD_ORE, useOre);
-        removeValue(Items.EMERALD_BLOCK, useBlocks);
-        removeValue(Items.EMERALD, useEmeralds);
-        markDirty();
-        return true;
+        return null;
     }
 
     private int count(Item item) {
@@ -114,7 +88,6 @@ public final class TeamBank extends SimpleInventory {
         }
     }
 
-    /** Serializes occupied slots through the 1.21.11 ItemStack CODEC. */
     public NbtList toNbtList() {
         NbtList list = new NbtList();
         for (int slot = 0; slot < size(); slot++) {
@@ -128,7 +101,6 @@ public final class TeamBank extends SimpleInventory {
         return list;
     }
 
-    /** Restores occupied slots from the serialized item-stack list. */
     public void readNbtList(NbtList list) {
         clear();
         for (int i = 0; i < list.size(); i++) {
