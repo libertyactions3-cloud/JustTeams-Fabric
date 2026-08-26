@@ -15,10 +15,9 @@ import java.io.IOException;
 /** Entry point for the server-side JustTeams inventory GUI system. */
 public final class TeamGuiManager {
     private static final int[] MEMBER_SLOTS = {
-            9,10,11,12,13,14,15,16,17,
-            18,19,20,21,22,23,24,25,26,
-            27,28,29,30,31,32,33,34,35,
-            36,37,38,39,40,41,42,43,44
+            19,20,21,22,23,24,25,
+            28,29,30,31,32,33,34,
+            37,38,39,40,41,42,43
     };
 
     private TeamGuiManager() {}
@@ -50,17 +49,13 @@ public final class TeamGuiManager {
 
     public static void openPersistentView(ServerPlayerEntity player, TeamInPlaceGui.View view) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
-        if (team == null) {
-            TeamPersistentNoTeamGui.openMain(player);
-            return;
-        }
+        if (team == null) { TeamPersistentNoTeamGui.openMain(player); return; }
 
         TeamMenuHandler menu;
         if (player.currentScreenHandler instanceof TeamMenuHandler existing
                 && existing.getTeam().getName().equals(team.getName())
-                && team.isMember(player.getUuid())) {
-            menu = existing;
-        } else {
+                && team.isMember(player.getUuid())) menu = existing;
+        else {
             openMain(player);
             if (!(player.currentScreenHandler instanceof TeamMenuHandler opened)) return;
             menu = opened;
@@ -85,18 +80,15 @@ public final class TeamGuiManager {
             else TeamPersistentNoTeamGui.openLeaderboard(player, type);
             return;
         }
-
         TeamMenuHandler menu;
         if (player.currentScreenHandler instanceof TeamMenuHandler existing
                 && existing.getTeam().getName().equals(team.getName())
-                && team.isMember(player.getUuid())) {
-            menu = existing;
-        } else {
+                && team.isMember(player.getUuid())) menu = existing;
+        else {
             openMain(player);
             if (!(player.currentScreenHandler instanceof TeamMenuHandler opened)) return;
             menu = opened;
         }
-
         TeamPersistentWarpManagementGui.close(menu);
         TeamPersistentBlacklistGui.close(menu);
         if (view == TeamPersistentLeaderboardGui.View.CATEGORIES) TeamPersistentLeaderboardGui.openCategories(menu);
@@ -146,6 +138,7 @@ public final class TeamGuiManager {
             TeamInPlaceMemberGui.enter(menu, player, team, target, slot);
             return;
         }
+
         switch (slot) {
             case 45 -> togglePvp(player, team, menu);
             case 53 -> leaveOrDisband(player, team);
