@@ -5,6 +5,7 @@ import eu.kotori.justTeams.chat.TeamChatManager;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
+import eu.kotori.justTeams.team.TeamRank;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,9 +16,10 @@ import java.io.IOException;
 /** Entry point for the server-side JustTeams inventory GUI system. */
 public final class TeamGuiManager {
     private static final int[] MEMBER_SLOTS = {
-            19,20,21,22,23,24,25,
-            28,29,30,31,32,33,34,
-            37,38,39,40,41,42,43
+            9,10,11,12,13,14,15,16,17,
+            18,19,20,21,22,23,24,25,26,
+            27,28,29,30,31,32,33,34,35,
+            36,37,38,39,40,41,42,43,44
     };
 
     private TeamGuiManager() {}
@@ -132,9 +134,27 @@ public final class TeamGuiManager {
         }
 
         int memberIndex = memberIndexForSlot(slot);
-        if (memberIndex >= 0 && memberIndex < team.getMembers().size()) {
-            TeamPlayer target = team.getMembers().get(memberIndex);
+        if (memberIndex >= 0) {
+            java.util.List<TeamPlayer> displayedMembers = new java.util.ArrayList<>(team.getMembers());
+            displayedMembers.sort((left, right) -> switch (team.getCurrentSortType()) {
+                case ONLINE_STATUS -> {
+                    boolean leftOnline = player instanceof ServerPlayerEntity sp && sp.getEntityWorld().getServer().getPlayerManager().getPlayer(left.getPlayerUuid()) != null;
+                    boolean rightOnline = player instanceof ServerPlayerEntity sp && sp.getEntityWorld().getServer().getPlayerManager().getPlayer(right.getPlayerUuid()) != null;
+                    int status = Boolean.compare(rightOnline, leftOnline);
+                    if (status != 0) yield status;
+                    yield Integer.compare(left.getRank().ordinal(), right.getRank().ordinal());
+                }
+                case ALPHABETICAL -> String.CASE_INSENSITIVE_ORDER.compare(
+                        eu.kotori.justTeams.util.PlayerNameResolver.resolve(player instanceof ServerPlayerEntity sp ? sp.getEntityWorld().getServer() : null, left.getPlayerUuid()),
+                        eu.kotori.justTeams.util.PlayerNameResolver.resolve(player instanceof ServerPlayerEntity sp ? sp.getEntityWorld().getServer() : null, right.getPlayerUuid()));
+                case RANK -> Integer.compare(left.getRank().ordinal(), right.getRank().ordinal());
+            });
+            if (memberIndex >= displayedMembers.size()) return;
+            TeamPlayer target = displayedMembers.get(memberIndex);
             if (target.getPlayerUuid().equals(player.getUuid())) return;
+            TeamPlayer viewerMember = team.getMember(player.getUuid());
+            if (viewerMember == null || viewerMember.getRank().ordinal() > TeamRank.UNDEROFFICER.ordinal()) return;
+            if (target.getRank().ordinal() <= viewerMember.getRank().ordinal()) return;
             TeamInPlaceMemberGui.enter(menu, player, team, target, slot);
             return;
         }
@@ -142,7 +162,7 @@ public final class TeamGuiManager {
         switch (slot) {
             case 45 -> togglePvp(player, team, menu);
             case 53 -> leaveOrDisband(player, team);
-            case 49 -> { team.cycleSortType(); save(); TeamInPlaceGui.updateMainSortItem(menu, team); }
+            case 49 -> { team.cycleSortType(); save(); TeamInPlaceGui.updateMainSortItem(menu, team); TeamInPlaceGui.refreshMainMembers(menu, player, team); }
             case 52 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamInPlaceGui.enterSettings(menu, player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access team settings."), true); }
             case 8 -> { if (team.hasElevatedPermissions(player.getUuid())) TeamInPlaceGui.enterJoinRequests(menu, player, team); else player.sendMessage(Text.literal("Only the owner or co-owners can access join requests."), true); }
             case 46 -> TeamEnderChestGui.open(player, team);
@@ -158,7 +178,12 @@ public final class TeamGuiManager {
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
         TeamPlayer member = team.getMember(player.getUuid());
         if (member == null || !member.canUseHome()) { player.sendMessage(Text.literal("You do not have permission to use the team home."), true); return; }
-        if (team.getHome() == null) { player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome."), false); return; }
+        if (team.getHome() == null) {
+            Text message = Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.BLUE))
+                    .append(Text.literal("Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.RED)));
+            player.sendMessage(message, false);
+            return;
+        }
         JustTeamsFabric.teleports().requestHome(serverPlayer, team.getHome());
     }
 
@@ -188,5 +213,4 @@ public final class TeamGuiManager {
     private static void close(PlayerEntity player) { if (player instanceof ServerPlayerEntity serverPlayer) serverPlayer.closeHandledScreen(); }
     private static int memberIndexForSlot(int slot) { for (int i = 0; i < MEMBER_SLOTS.length; i++) if (MEMBER_SLOTS[i] == slot) return i; return -1; }
     private static void save() { try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); } catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save JustTeams data after GUI action", exception); } }
-    @FunctionalInterface public interface TeamMenuActionHandler { void handle(PlayerEntity player, int slot, int button, SlotActionType actionType, Team team, TeamMenuHandler menu); }
 }
