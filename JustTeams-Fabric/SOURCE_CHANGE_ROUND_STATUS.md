@@ -17,10 +17,10 @@ Completed at source level. Covered in-place submenu navigation, persistent setti
 ## Current corrective GUI cycle
 
 ```text
-Source-change rounds completed: 7 / 10
-Current round: Round 7 complete — compile/API corrections for TeamBank, player-name suggestions, and rank-change notification
-Verification: user's local clean build succeeded after Round 7
-Next source round: Round 8
+Source-change rounds completed: 9 / 10
+Current round: Round 9 complete — member GUI/rank/sort/name persistence + AutoBank/bank economy + logs + disband/sethome routing
+Verification: Round 7 was the last user-verified clean build
+Next verification build: Round 10 final gate
 ```
 
 ### Round 1 — self-head interaction + member-editor layout
@@ -52,40 +52,72 @@ Completed.
 
 ### Round 5 — persistent GUI layout and Join Requests refresh
 Completed.
-- Main `/team` member heads use the verified 2.5.3 positions: `19–25`, `28–34`, `37–43`.
-- Join Request heads fill the entire persistent interior: `9–44`, immediately under the top glass row through the bottom interior row.
-- Accepting a join request refreshes the saved main-team member-head snapshot while the player remains inside Join Requests.
-- No `Dynamic` lore line is present on the request heads.
-- Main GUI click dispatch uses the same verified slot map.
+- Main `/team` member heads used the earlier verified layout `19–25`, `28–34`, `37–43`; this was superseded by Round 9's requested `9–44` placement.
+- Join Request heads fill the persistent interior `9–44`.
+- Accepting a join request refreshes the saved main-team member-head snapshot while remaining inside Join Requests.
+- No `Dynamic` lore line is present on request heads.
+- Main GUI click dispatch uses the verified slot map.
 - Unset Home chat feedback uses the verified 2.5.3 message.
 
 ### Round 6 — command argument coverage + warp node enforcement
 Completed.
 - Ownership transfer player arguments use plain online-name suggestions.
 - Blacklist/unblacklist player arguments use plain online-name suggestions.
-- Base passwordless `/team warp set` now uses `canSetWarps`.
+- Base passwordless `/team warp set` uses `canSetWarps`.
 - Passworded warp creation uses the same permission.
-- Base `/team warp remove` now allows the owner or Co-Leader to remove any warp.
+- Base `/team warp remove` allows the owner or Co-Leader to remove any warp.
 - A dedicated command override preserves both passwordless and passworded warp creation paths.
-- The member-management GUI now contains the requested independent toggles at slots 38, 40, and 42.
+- Member-management GUI contains independent feature toggles.
 
 ### Round 7 — compile/API corrections
 Completed and locally verified.
 - Renamed the private `TeamBank.count(Item)` helper so it no longer conflicts with the public `Inventory.count(Item)` API inherited from `SimpleInventory`.
 - Corrected online-player suggestions to use the Fabric server player manager and `player.getName().getString()`, preserving plain names without `@`.
-- Corrected rank-change notification to reuse the already-resolved `ServerPlayerEntity` instead of calling `getPlayerOrThrow()` from a helper that could not propagate `CommandSyntaxException`.
+- Corrected rank-change notification to reuse the already-resolved `ServerPlayerEntity` instead of calling `getPlayerOrThrow()` from a helper that could propagate `CommandSyntaxException`.
 - User subsequently ran `./gradlew clean build --refresh-dependencies` successfully with no compilation errors.
+
+### Round 8 — member management / rank / sorting / AutoBank state separation
+Completed at source level; not yet build-verified.
+- Main `/team` member heads now start at slot 9 and fill 9–44.
+- Main member heads show `Online Status` first, `Rank` second, and Joined date after that.
+- `Role` presentation was replaced with `Rank` in the affected GUI.
+- Hopper sort modes are `Online Status` (default), `Rank`, and `Alphabetical`; clicking the hopper cycles Online Status → Rank → Alphabetical → Online Status.
+- Rank sorting is highest-to-lowest using the seven-rank ladder.
+- Member-management no longer contains the golden helmet.
+- The green dye, red dye, red wool, and beacon action names are aqua/small-caps.
+- Gold ingot at slot 37 now combines bank withdrawal and AutoBank permission; the emerald-block permission item was removed.
+- `/team autobank` now has a separate permission bit/state model: the gold-item permission gates the command, while AutoBank can be ON/OFF independently.
+- AutoBank is disabled when a member is added to or removed from a team.
+- Member-head clicks require the viewer to be Underofficer or higher and the selected target to be strictly lower rank; own/same/higher-rank heads do not open member management.
+- Persisted `lastKnownName` was added to team-member data so offline GUI entries can resolve to the real last-known in-game name rather than display a UUID.
+- A login hook updates the stored last-known username and the server UUID/name cache.
+- Team bank GUI balance display now uses lime `<amount> total emeralds` wording rather than decimal formatting.
+- `/team sethome` is the setting command; `/team home` is the use/teleport command with `home clear` retained separately.
+- `/team home` when unset uses the requested blue `[ᴛᴇᴀᴍꜱ]` tag and red warning text.
+- The main `/team` bank-log entry point is a writable-book / “book and quill” item at slot 6, directly left of the compass at slot 7.
+
+### Round 9 — bank economy change + audit logs + disband confirmation
+Completed at source level; not yet build-verified.
+- Team-bank AutoBank withdrawal can use 81-value deepslate emerald ore and, when lower denominations are absent and bank space permits, convert the minimum ore into emerald blocks + emeralds as change so the requested value is removed exactly.
+- Successful AutoBank withdrawals are logged with UUID, last-known/current username, amount, action, and timestamp.
+- Manual bank withdrawals are logged too.
+- Each team's bank log is stored separately, capped at 10,000 entries, and entries older than seven days are pruned.
+- Added a persistent 54-slot bank-log GUI with a weekly calculated AutoBank top-spender view toggled from the same slot.
+- The bank-log GUI deliberately does not display UUIDs to players; it displays the stored username.
+- Main TNT disband action now enters a two-stage persistent confirmation flow.
+- `/team disband` now enters the first confirmation stage instead of immediately deleting the team.
+- The confirmed disband path remains a single final operation after the second confirmation.
 
 ## Verified-but-not-yet-resolved parity observations
 
 ### Member-button cooldowns
 The public v2.5.2 history confirms a configurable **PvP toggle cooldown** (default 300 seconds), but I have not yet found authoritative evidence that the member-management promote/demote/permission buttons themselves use individual cooldown timers. Do not invent a cooldown duration. Trace the 2.5.3 source before implementing any such timer.
 
-### Home button exact GUI color
-The verified 2.5.3 GUI behavior includes the Ender Pearl Home button and the `Home not set.` lore state, and the verified chat message is recorded elsewhere. The exact MiniMessage color tag for the `Home not set.` lore line has not yet been conclusively recovered from the reference source. Do not claim an exact color until verified.
-
 ### Universal inventory-GUI persistence
 The project rule remains that inventory-GUI → inventory-GUI transitions must reuse the same 54-slot handler whenever applicable so the mouse/cursor position does not reset. Vanilla anvil text input remains a separate AnvilScreenHandler exception.
+
+### 2.5.3 disband confirmation presentation
+Two-stage disband confirmation behavior is verified from the upstream release history, and the Fabric port now provides two persistent stages. The exact 2.5.3 visual arrangement/text of the second disband confirmation has not been conclusively recovered, so do not claim pixel-perfect second-stage presentation parity yet.
 
 ## Mandatory Paper → Fabric slot mapping rule
 
@@ -107,18 +139,7 @@ Fabric backing Inventory / Slot.index
 Fabric ScreenHandler slot ID
 ```
 
-For the active persistent six-row handler, the 54 menu slots are added first in row-major order:
-
-```text
-0  1  2  3  4  5  6  7  8
-9 10 11 12 13 14 15 16 17
-18 19 20 21 22 23 24 25 26
-27 28 29 30 31 32 33 34 35
-36 37 38 39 40 41 42 43 44
-45 46 47 48 49 50 51 52 53
-```
-
-Only in handlers constructed that way do backing indices `0–53` directly correspond to ScreenHandler IDs `0–53`.
+For the active persistent six-row handler, the 54 menu slots are added first in row-major order, so menu backing indices `0–53` correspond to ScreenHandler IDs `0–53` in that construction.
 
 ## Verification rule
 
@@ -128,4 +149,4 @@ The user's canonical verification build is:
 ./gradlew clean build --refresh-dependencies
 ```
 
-Round 7 is now compile-verified by the user's local build. Round 10 remains the final build gate for this corrective cycle.
+Round 7 is the last compile-verified source state. Round 10 remains the final build gate for this corrective cycle.
