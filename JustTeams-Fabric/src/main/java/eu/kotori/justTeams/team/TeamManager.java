@@ -44,11 +44,14 @@ public final class TeamManager {
     public void addMember(Team team, TeamPlayer player) {
         if (isInTeam(player.getPlayerUuid())) throw new IllegalStateException("Player already belongs to a team");
         if (team.isBlacklisted(player.getPlayerUuid())) throw new IllegalStateException("That player is blacklisted from this team.");
+        player.setCanUseAutoBank(false);
         team.addMember(player);
         playerTeams.put(player.getPlayerUuid(), team.getId());
     }
 
     public void removeMember(Team team, UUID playerUuid) {
+        TeamPlayer member = team.getMember(playerUuid);
+        if (member != null) member.setCanUseAutoBank(false);
         team.removeMember(playerUuid);
         playerTeams.remove(playerUuid);
     }
