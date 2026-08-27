@@ -128,7 +128,7 @@ public final class Team {
     public boolean removeBlacklistEntry(UUID playerUuid) { return blacklist.removeIf(entry -> entry.getPlayerUuid().equals(playerUuid)); }
     public TeamSortType getCurrentSortType() { return currentSortType; }
     public void setSortType(TeamSortType sortType) { currentSortType = sortType == null ? TeamSortType.ONLINE_STATUS : sortType; }
-    public void cycleSortType() { currentSortType = switch (currentSortType) { case ONLINE_STATUS -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.RANK; case RANK -> TeamSortType.ONLINE_STATUS; }; }
+    public void cycleSortType() { currentSortType = switch (currentSortType) { case ONLINE_STATUS -> TeamSortType.RANK; case RANK -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.ONLINE_STATUS; }; }
     public List<TeamPlayer> getSortedMembers(Comparator<TeamPlayer> comparator) { return members.stream().sorted(comparator).toList(); }
     public String getPlainName() { return stripFormatting(name); }
     public String getPlainTag() { return stripFormatting(getTag()); }
