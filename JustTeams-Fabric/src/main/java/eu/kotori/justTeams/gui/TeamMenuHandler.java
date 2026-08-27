@@ -4,7 +4,6 @@ import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
-import eu.kotori.justTeams.team.TeamRank;
 import eu.kotori.justTeams.team.TeamSortType;
 import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.component.DataComponentTypes;
@@ -35,7 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Server-side 54-slot Team GUI matching the requested Fabric layout and the 2.5.3 presentation. */
+/** Server-side 54-slot Team GUI matching the requested Fabric layout and 2.5.3 presentation. */
 public final class TeamMenuHandler extends ScreenHandler {
     private static final int[] MEMBER_SLOTS = {
             9,10,11,12,13,14,15,16,17,
@@ -58,11 +57,8 @@ public final class TeamMenuHandler extends ScreenHandler {
         this.team = team;
         this.actionHandler = actionHandler;
         populate(playerInventory.player);
-        for (int row = 0; row < 6; row++) {
-            for (int column = 0; column < 9; column++) {
-                addSlot(new MenuSlot(menuInventory, row * 9 + column, 8 + column * 18, 18 + row * 18));
-            }
-        }
+        for (int row = 0; row < 6; row++) for (int column = 0; column < 9; column++)
+            addSlot(new MenuSlot(menuInventory, row * 9 + column, 8 + column * 18, 18 + row * 18));
         addPlayerInventory(playerInventory);
     }
 
@@ -78,9 +74,9 @@ public final class TeamMenuHandler extends ScreenHandler {
         for (int slot = 45; slot < 54; slot++) menuInventory.setStack(slot, filler.copy());
         for (int slot = 9; slot < 45; slot++) menuInventory.setStack(slot, ItemStack.EMPTY);
 
-        for (int i = 0; i < MEMBER_SLOTS.length && i < orderedMembers().size(); i++) {
-            menuInventory.setStack(MEMBER_SLOTS[i], createMemberHead(viewer, orderedMembers().get(i)));
-        }
+        List<TeamPlayer> members = orderedMembers(viewer);
+        for (int i = 0; i < MEMBER_SLOTS.length && i < members.size(); i++)
+            menuInventory.setStack(MEMBER_SLOTS[i], createMemberHead(viewer, members.get(i)));
 
         boolean elevated = team.hasElevatedPermissions(viewer.getUuid());
         boolean bankEnabled = JustTeamsFabric.config().isBankEnabled();
@@ -91,13 +87,11 @@ public final class TeamMenuHandler extends ScreenHandler {
                 plainLine("View team bank transaction logs.", Formatting.GRAY),
                 plainLine("", Formatting.GRAY),
                 plainLine("Click to view logs.", Formatting.YELLOW))));
-
         menuInventory.setStack(8, elevated
                 ? itemWithLore(namedGradient(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs"), List.of(
                         plainLine("View pending requests to join your team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to view requests.", Formatting.YELLOW)))
                 : itemWithLore(namedColored(Items.LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs", Formatting.RED, true), List.of(
                         plainLine("Only the owner or co-owners can access this.", Formatting.RED))));
-
         menuInventory.setStack(7, itemWithLore(namedGradient(Items.COMPASS, "ᴛᴇᴀᴍ ᴡᴀʀᴘs"), List.of(
                 plainLine("Manage your team's warps.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to view warps.", Formatting.YELLOW))));
 
@@ -127,12 +121,18 @@ public final class TeamMenuHandler extends ScreenHandler {
         TeamPlayer viewerMember = team.getMember(viewer.getUuid());
         boolean enderPermission = viewerMember != null && (viewerMember.canUseEnderChest()
                 || (viewer instanceof ServerPlayerEntity serverPlayer && JustTeamsFabric.permissions().has(serverPlayer, "justteams.bypass.enderchest.use")));
-        menuInventory.setStack(46, !enderEnabled || !enderPermission
-                ? itemWithLore(namedColored(Items.GRAY_DYE, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ ⨯ LOCKED", Formatting.DARK_GRAY, true), List.of(
-                        plainLine(!enderPermission ? "You do not have permission for the ender chest." : "The team ender chest is disabled in the config.", Formatting.GRAY),
-                        plainLine(!enderPermission ? "Ask an Owner/Co-Owner to grant you access." : "", Formatting.GRAY)))
-                : itemWithLore(namedGradient(Items.ENDER_CHEST, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ"), List.of(
-                        plainLine("A shared inventory for your team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to open the ender chest.", Formatting.YELLOW))));
+        ItemStack enderChest;
+        if (!enderEnabled || !enderPermission) {
+            enderChest = namedColored(Items.GRAY_DYE, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ ⨯ LOCKED", Formatting.DARK_GRAY, true);
+            enderChest.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine(!enderPermission ? "You do not have permission for the ender chest." : "The team ender chest is disabled in the config.", Formatting.GRAY),
+                    plainLine(!enderPermission ? "Ask an Owner/Co-Owner to grant you access." : "", Formatting.GRAY))));
+        } else {
+            enderChest = namedGradient(Items.ENDER_CHEST, "ᴛᴇᴀᴍ ᴇɴᴅᴇʀ ᴄʜᴇsᴛ");
+            enderChest.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                    plainLine("A shared inventory for your team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Click to open the ender chest.", Formatting.YELLOW))));
+        }
+        menuInventory.setStack(46, enderChest);
 
         TeamSortType currentSort = team.getCurrentSortType();
         ItemStack sort = namedGradient(Items.HOPPER, "sᴏʀᴛ ᴍᴇᴍʙᴇʀs");
@@ -143,8 +143,7 @@ public final class TeamMenuHandler extends ScreenHandler {
                 sortLine("Rank", currentSort == TeamSortType.RANK))));
         menuInventory.setStack(49, sort);
 
-        ItemStack settings = elevated
-                ? namedGradient(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs")
+        ItemStack settings = elevated ? namedGradient(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs")
                 : namedColored(Items.COMPARATOR, "ᴛᴇᴀᴍ sᴇᴛᴛɪɴɢs", Formatting.RED, true);
         settings.set(DataComponentTypes.LORE, new LoreComponent(List.of(plainLine(
                 elevated ? "Click to manage team settings." : "Only the owner or co-owners can access this.",
@@ -167,11 +166,18 @@ public final class TeamMenuHandler extends ScreenHandler {
         menuInventory.setStack(53, leaveOrDisband);
     }
 
-    private List<TeamPlayer> orderedMembers() {
+    private List<TeamPlayer> orderedMembers(PlayerEntity viewer) {
         List<TeamPlayer> members = new ArrayList<>(team.getMembers());
-        MinecraftServer server = null;
-        try { server = JustTeamsFabric.teams() == null ? null : null; } catch (Exception ignored) { }
-        final MinecraftServer currentServer = server;
+        MinecraftServer server = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer() : null;
+        Comparator<TeamPlayer> comparator = switch (team.getCurrentSortType()) {
+            case ONLINE_STATUS -> Comparator.comparing((TeamPlayer member) ->
+                    server != null && server.getPlayerManager().getPlayer(member.getPlayerUuid()) != null).reversed()
+                    .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+            case ALPHABETICAL -> Comparator.comparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+            case RANK -> Comparator.comparingInt((TeamPlayer member) -> member.getRank().ordinal())
+                    .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+        };
+        members.sort(comparator);
         return members;
     }
 
@@ -179,18 +185,16 @@ public final class TeamMenuHandler extends ScreenHandler {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(member.getPlayerUuid()));
         MinecraftServer server = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer() : null;
-        ServerPlayerEntity online = server == null ? null : server.getPlayerManager().getPlayer(member.getPlayerUuid());
-        boolean isOnline = online != null;
+        boolean isOnline = server != null && server.getPlayerManager().getPlayer(member.getPlayerUuid()) != null;
         String playerName = PlayerNameResolver.resolve(server, member.getPlayerUuid());
         MutableText name = Text.empty();
         name.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(isOnline ? 0x00FF00 : 0xFF4444).withItalic(false)));
         name.append(gradientText(playerName, true));
         head.set(DataComponentTypes.CUSTOM_NAME, name);
-        String rankName = member.getRank().getDisplayName();
         String joined = member.getJoinDate() == null ? "Unknown" : DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC).format(member.getJoinDate());
         head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 composeLine("Online Status: ", isOnline ? "Online" : "Offline", Formatting.GRAY, isOnline ? Formatting.GREEN : Formatting.RED),
-                composeLine("Rank: ", rankName, Formatting.GRAY, Formatting.WHITE),
+                composeLine("Rank: ", member.getRank().getDisplayName(), Formatting.GRAY, Formatting.WHITE),
                 composeLine("Joined: ", joined, Formatting.GRAY, Formatting.WHITE))));
         return head;
     }
@@ -215,10 +219,7 @@ public final class TeamMenuHandler extends ScreenHandler {
     private static int interpolate(int start, int end, double t) { int sr = (start >> 16) & 0xFF, sg = (start >> 8) & 0xFF, sb = start & 0xFF, er = (end >> 16) & 0xFF, eg = (end >> 8) & 0xFF, eb = end & 0xFF; int r = (int) Math.round(sr + (er - sr) * t), g = (int) Math.round(sg + (eg - sg) * t), b = (int) Math.round(sb + (eb - sb) * t); return (r << 16) | (g << 8) | b; }
 
     @Override public void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
-        if (slotIndex >= 0 && slotIndex < menuInventory.size()) {
-            if (actionHandler != null) actionHandler.handle(player, slotIndex, button, actionType, team, this);
-            return;
-        }
+        if (slotIndex >= 0 && slotIndex < menuInventory.size()) { if (actionHandler != null) actionHandler.handle(player, slotIndex, button, actionType, team, this); return; }
         super.onSlotClick(slotIndex, button, actionType, player);
     }
     @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
