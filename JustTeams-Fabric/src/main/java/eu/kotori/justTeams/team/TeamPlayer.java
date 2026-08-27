@@ -30,7 +30,9 @@ public final class TeamPlayer {
     private boolean canDemoteMembers;
     private boolean canInvite;
     private boolean canSetWarps;
+    /** Permission to use AutoBank; separate from whether AutoBank is currently enabled. */
     private boolean canUseAutoBank;
+    private boolean autoBankEnabled;
 
     public TeamPlayer(UUID playerUuid, TeamRole role, Instant joinDate,
                       boolean canWithdraw, boolean canUseEnderChest,
@@ -45,6 +47,7 @@ public final class TeamPlayer {
         this.canUseHome = canUseHome;
         this.canSetWarps = true;
         this.canUseAutoBank = false;
+        this.autoBankEnabled = false;
         this.canInvite = defaultInvitePermission(this.rank);
         setDefaultEditingPermissions();
     }
@@ -86,6 +89,7 @@ public final class TeamPlayer {
         this.canInvite = canInvite;
         this.canSetWarps = canSetWarps;
         this.canUseAutoBank = canUseAutoBank;
+        this.autoBankEnabled = false;
     }
 
     private static TeamRank defaultRank(TeamRole role) {
@@ -170,7 +174,12 @@ public final class TeamPlayer {
     public boolean canSetWarps() { return canSetWarps; }
     public void setCanSetWarps(boolean value) { canSetWarps = value; }
     public boolean canUseAutoBank() { return canUseAutoBank; }
-    public void setCanUseAutoBank(boolean value) { canUseAutoBank = value; }
+    public void setCanUseAutoBank(boolean value) {
+        canUseAutoBank = value;
+        if (!value) autoBankEnabled = false;
+    }
+    public boolean isAutoBankEnabled() { return autoBankEnabled; }
+    public void setAutoBankEnabled(boolean value) { autoBankEnabled = canUseAutoBank && value; }
 
     public boolean canEditPlayer(TeamPlayer target) {
         if (target == null || playerUuid.equals(target.playerUuid)) return false;
