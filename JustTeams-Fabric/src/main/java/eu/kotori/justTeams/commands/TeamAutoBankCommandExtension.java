@@ -28,10 +28,10 @@ public final class TeamAutoBankCommandExtension {
             if (team == null) throw new IllegalStateException("You are not in a team.");
             TeamPlayer member = team.getMember(player.getUuid());
             if (member == null) throw new IllegalStateException("You are not a team member.");
-            boolean enabled = !member.canUseAutoBank();
-            member.setCanUseAutoBank(enabled);
+            if (!member.canUseAutoBank()) throw new IllegalStateException("Team AutoBank is disabled for you by your team. An authorized member must enable the BANK WITHDRAW AND USE AUTOBANK permission in your player-management menu.");
+            member.setCanUseAutoBank(false);
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            source.sendFeedback(() -> Text.literal("Team AutoBank is now " + (enabled ? "enabled" : "disabled") + "."), false);
+            source.sendFeedback(() -> Text.literal("Team AutoBank is now disabled."), false);
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to toggle AutoBank." : exception.getMessage()));
