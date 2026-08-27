@@ -9,7 +9,7 @@ import eu.kotori.justTeams.commands.TeamCommandAliasExtensions;
 import eu.kotori.justTeams.commands.TeamCreationCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInviteCommandExtension;
-import eu.kotori.justTeams.commands.TeamInvitesCommandExtension;
+import eu.kotori.justTeams.commands.TeamInvitesCommandExtensions;
 import eu.kotori.justTeams.commands.TeamLeaderboardCommandExtensions;
 import eu.kotori.justTeams.commands.TeamMessageCommandExtension;
 import eu.kotori.justTeams.commands.TeamOwnershipCommandExtensions;
@@ -20,6 +20,7 @@ import eu.kotori.justTeams.commands.TeamWarpPermissionCommandExtension;
 import eu.kotori.justTeams.config.JustTeamsConfig;
 import eu.kotori.justTeams.economy.EconomyProvider;
 import eu.kotori.justTeams.economy.ItemEconomyProvider;
+import eu.kotori.justTeams.economy.TeamBankLogManager;
 import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
 import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
@@ -30,6 +31,7 @@ import eu.kotori.justTeams.team.GlowManager;
 import eu.kotori.justTeams.team.TeamManager;
 import eu.kotori.justTeams.team.TeamTeleportManager;
 import eu.kotori.justTeams.util.ChatInputEvents;
+import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -59,9 +61,10 @@ public final class JustTeamsFabric implements ModInitializer {
 
         teamManager = new TeamManager(); teamStorage = new TeamStorage(); permissionService = createPermissionService(); glowManager = new GlowManager(); teleportManager = new TeamTeleportManager(); economyProvider = new ItemEconomyProvider();
 
-        ServerLifecycleEvents.SERVER_STARTING.register(this::loadTeamData);
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> { loadTeamData(server); TeamBankLogManager.pruneAll(); });
         ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> saveTeamData(server, false));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> saveTeamData(server, true));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> PlayerNameResolver.remember(server, handler.getPlayer()));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> TeamEnderChestGui.handleDisconnect(handler.getPlayer()));
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -76,7 +79,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamMessageCommandExtension.register(dispatcher);
             TeamChatSpyCommandExtension.register(dispatcher);
             TeamInviteCommandExtension.register(dispatcher);
-            TeamInvitesCommandExtension.register(dispatcher);
+            TeamInvitesCommandExtensions.register(dispatcher);
             TeamBlacklistCommandExtension.register(dispatcher);
             TeamSettingsCommandExtension.register(dispatcher);
             TeamAutoBankCommandExtension.register(dispatcher);
