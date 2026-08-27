@@ -37,6 +37,16 @@ public final class TeamBank extends SimpleInventory {
         return 0;
     }
 
+    public long getTotalEmeraldValue() {
+        long total = 0L;
+        for (int slot = 0; slot < size(); slot++) {
+            ItemStack stack = getStack(slot);
+            int value = currencyValue(stack.getItem());
+            if (value > 0 && isCurrency(stack)) total += (long) stack.getCount() * value;
+        }
+        return total;
+    }
+
     public boolean canWithdrawValue(long value) { return findWithdrawal(value) != null; }
 
     public boolean tryWithdrawValue(long value) {
