@@ -32,7 +32,7 @@ public final class FeatureCostManager {
 
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
-        if (member != null && member.canUseAutoBank()) {
+        if (member != null && member.canUseAutoBank() && member.isAutoBankEnabled()) {
             if (team.getBank().canWithdrawValue((long) cost)) return true;
             player.sendMessage(Text.literal("The team bank does not contain enough exact currency for this cost."), true);
             return false;
@@ -59,7 +59,7 @@ public final class FeatureCostManager {
 
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
-        if (member != null && member.canUseAutoBank()) {
+        if (member != null && member.canUseAutoBank() && member.isAutoBankEnabled()) {
             if (team.getBank().tryWithdrawValue((long) cost)) return true;
             player.sendMessage(Text.literal("The team bank does not contain enough exact currency for this cost."), true);
             return false;
