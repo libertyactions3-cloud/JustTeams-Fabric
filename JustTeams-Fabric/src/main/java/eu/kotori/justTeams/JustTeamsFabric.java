@@ -9,7 +9,7 @@ import eu.kotori.justTeams.commands.TeamCommandAliasExtensions;
 import eu.kotori.justTeams.commands.TeamCreationCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInviteCommandExtension;
-import eu.kotori.justTeams.commands.TeamInvitesCommandExtensions;
+import eu.kotori.justTeams.commands.TeamInvitesCommandExtension;
 import eu.kotori.justTeams.commands.TeamLeaderboardCommandExtensions;
 import eu.kotori.justTeams.commands.TeamMessageCommandExtension;
 import eu.kotori.justTeams.commands.TeamOwnershipCommandExtensions;
@@ -79,7 +79,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamMessageCommandExtension.register(dispatcher);
             TeamChatSpyCommandExtension.register(dispatcher);
             TeamInviteCommandExtension.register(dispatcher);
-            TeamInvitesCommandExtensions.register(dispatcher);
+            TeamInvitesCommandExtension.register(dispatcher);
             TeamBlacklistCommandExtension.register(dispatcher);
             TeamSettingsCommandExtension.register(dispatcher);
             TeamAutoBankCommandExtension.register(dispatcher);
