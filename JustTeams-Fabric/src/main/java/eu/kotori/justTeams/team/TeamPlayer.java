@@ -6,18 +6,13 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Function;
 
-/**
- * Platform-neutral member state with Fabric-specific online-player lookup
- * supplied by the TeamManager. Permission semantics mirror Paper JustTeams.
- *
- * TeamRole remains the legacy ownership/co-owner/member compatibility layer;
- * TeamRank is the player-facing seven-step rank ladder.
- */
+/** Platform-neutral member state with Fabric-specific online-player lookup. */
 public final class TeamPlayer {
     private final UUID playerUuid;
     private TeamRole role;
     private TeamRank rank;
     private final Instant joinDate;
+    private String lastKnownName;
 
     private boolean canWithdraw;
     private boolean canUseEnderChest;
@@ -101,34 +96,23 @@ public final class TeamPlayer {
     }
 
     private static boolean defaultInvitePermission(TeamRank rank) {
-        return rank == TeamRank.LEADER
-                || rank == TeamRank.CO_LEADER
-                || rank == TeamRank.OFFICER
-                || rank == TeamRank.UNDEROFFICER;
+        return rank == TeamRank.LEADER || rank == TeamRank.CO_LEADER
+                || rank == TeamRank.OFFICER || rank == TeamRank.UNDEROFFICER;
     }
 
     private void setDefaultEditingPermissions() {
         switch (role) {
             case OWNER -> {
-                canEditMembers = true;
-                canEditCoOwners = true;
-                canKickMembers = true;
-                canPromoteMembers = true;
-                canDemoteMembers = true;
+                canEditMembers = true; canEditCoOwners = true; canKickMembers = true;
+                canPromoteMembers = true; canDemoteMembers = true;
             }
             case CO_OWNER -> {
-                canEditMembers = true;
-                canEditCoOwners = false;
-                canKickMembers = true;
-                canPromoteMembers = false;
-                canDemoteMembers = false;
+                canEditMembers = true; canEditCoOwners = false; canKickMembers = true;
+                canPromoteMembers = false; canDemoteMembers = false;
             }
             case MEMBER -> {
-                canEditMembers = false;
-                canEditCoOwners = false;
-                canKickMembers = false;
-                canPromoteMembers = false;
-                canDemoteMembers = false;
+                canEditMembers = false; canEditCoOwners = false; canKickMembers = false;
+                canPromoteMembers = false; canDemoteMembers = false;
             }
         }
     }
@@ -137,18 +121,17 @@ public final class TeamPlayer {
     public TeamRole getRole() { return role; }
     public TeamRank getRank() { return rank; }
     public Instant getJoinDate() { return joinDate; }
+    public String getLastKnownName() { return lastKnownName; }
+    public void setLastKnownName(String name) { if (name != null && !name.isBlank()) lastKnownName = name; }
 
-    public void setRole(TeamRole role) {
-        this.role = role;
-        setDefaultEditingPermissions();
-    }
+    public void setRole(TeamRole role) { this.role = role; }
 
     public void setRank(TeamRank rank) {
         if (rank == null) return;
         this.rank = rank;
-        if (rank == TeamRank.LEADER) setRole(TeamRole.OWNER);
-        else if (rank == TeamRank.CO_LEADER) setRole(TeamRole.CO_OWNER);
-        else setRole(TeamRole.MEMBER);
+        if (rank == TeamRank.LEADER) this.role = TeamRole.OWNER;
+        else if (rank == TeamRank.CO_LEADER) this.role = TeamRole.CO_OWNER;
+        else this.role = TeamRole.MEMBER;
     }
 
     public boolean canWithdraw() { return canWithdraw; }
@@ -174,10 +157,7 @@ public final class TeamPlayer {
     public boolean canSetWarps() { return canSetWarps; }
     public void setCanSetWarps(boolean value) { canSetWarps = value; }
     public boolean canUseAutoBank() { return canUseAutoBank; }
-    public void setCanUseAutoBank(boolean value) {
-        canUseAutoBank = value;
-        if (!value) autoBankEnabled = false;
-    }
+    public void setCanUseAutoBank(boolean value) { canUseAutoBank = value; if (!value) autoBankEnabled = false; }
     public boolean isAutoBankEnabled() { return autoBankEnabled; }
     public void setAutoBankEnabled(boolean value) { autoBankEnabled = canUseAutoBank && value; }
 
@@ -199,15 +179,13 @@ public final class TeamPlayer {
 
     public boolean canPromotePlayer(TeamPlayer target) {
         return target != null && !playerUuid.equals(target.playerUuid)
-                && role == TeamRole.OWNER && target.role == TeamRole.MEMBER && canPromoteMembers;
+                && role == TeamRole.OWNER && canPromoteMembers;
     }
 
     public boolean canDemotePlayer(TeamPlayer target) {
         return target != null && !playerUuid.equals(target.playerUuid)
-                && role == TeamRole.OWNER && target.role == TeamRole.CO_OWNER && canDemoteMembers;
+                && role == TeamRole.OWNER && canDemoteMembers;
     }
 
-    public ServerPlayerEntity getServerPlayer(Function<UUID, ServerPlayerEntity> lookup) {
-        return lookup.apply(playerUuid);
-    }
+    public ServerPlayerEntity getServerPlayer(Function<UUID, ServerPlayerEntity> lookup) { return lookup.apply(playerUuid); }
 }
