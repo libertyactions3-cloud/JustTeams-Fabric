@@ -16,7 +16,6 @@ import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.WeakHashMap;
 
 /** Persistent 54-slot team-bank audit-log view and one-week AutoBank top-spender view. */
@@ -77,7 +76,6 @@ public final class TeamBankLogsGui {
             lore.add(compose("Amount: ", entry.amount() + " total emeralds", Formatting.GRAY, Formatting.GREEN));
             lore.add(compose("Type: ", entry.kind() == TeamBankLogManager.Kind.AUTOBANK ? "AutoBank" : "Manual withdrawal", Formatting.GRAY, Formatting.WHITE));
             lore.add(compose("Action: ", entry.action(), Formatting.GRAY, Formatting.WHITE));
-            lore.add(compose("UUID: ", entry.playerUuid().toString(), Formatting.DARK_GRAY, Formatting.DARK_GRAY));
             log.set(DataComponentTypes.LORE, new LoreComponent(lore));
             inventory.setStack(LOG_SLOTS[i], log);
         }
