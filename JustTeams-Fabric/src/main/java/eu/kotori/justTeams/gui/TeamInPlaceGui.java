@@ -5,8 +5,10 @@ import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRole;
+import eu.kotori.justTeams.team.TeamSortType;
 import eu.kotori.justTeams.team.TeamWarp;
 import eu.kotori.justTeams.util.ChatInputManager;
+import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
@@ -40,9 +42,10 @@ public final class TeamInPlaceGui {
     };
     private static final int[] WARP_SLOTS = {10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};
     private static final int[] MEMBER_HEAD_SLOTS = {
-            19,20,21,22,23,24,25,
-            28,29,30,31,32,33,34,
-            37,38,39,40,41,42,43
+            9,10,11,12,13,14,15,16,17,
+            18,19,20,21,22,23,24,25,26,
+            27,28,29,30,31,32,33,34,35,
+            36,37,38,39,40,41,42,43,44
     };
     private static final int PRIMARY_START = 0x4C9DDE;
     private static final int PRIMARY_END = 0x4C96D2;
@@ -135,10 +138,16 @@ public final class TeamInPlaceGui {
     private static void refreshMembersInto(Inventory inventory, PlayerEntity viewer, Team team) {
         for (int slot : MEMBER_HEAD_SLOTS) inventory.setStack(slot, ItemStack.EMPTY);
         List<TeamPlayer> members = new ArrayList<>(team.getMembers());
-        TeamPlayer owner = team.getMember(team.getOwnerUuid());
-        members.removeIf(member -> member.getPlayerUuid().equals(team.getOwnerUuid()));
-        members.sort(Comparator.comparing(TeamPlayer::getJoinDate, Comparator.nullsLast(Comparator.naturalOrder())));
-        if (owner != null) members.add(0, owner);
+        ServerPlayerEntity serverViewer = viewer instanceof ServerPlayerEntity sp ? sp : null;
+        var server = serverViewer == null ? null : serverViewer.getEntityWorld().getServer();
+        Comparator<TeamPlayer> comparator = switch (team.getCurrentSortType()) {
+            case ONLINE_STATUS -> Comparator.comparing((TeamPlayer member) -> server != null && server.getPlayerManager().getPlayer(member.getPlayerUuid()) != null).reversed()
+                    .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+            case ALPHABETICAL -> Comparator.comparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+            case RANK -> Comparator.comparingInt((TeamPlayer member) -> member.getRank().ordinal())
+                    .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
+        };
+        members.sort(comparator);
         for (int i = 0; i < MEMBER_HEAD_SLOTS.length && i < members.size(); i++) inventory.setStack(MEMBER_HEAD_SLOTS[i], createMemberHead(viewer, members.get(i)));
     }
 
@@ -146,25 +155,29 @@ public final class TeamInPlaceGui {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(member.getPlayerUuid()));
         ServerPlayerEntity online = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(member.getPlayerUuid()) : null;
+        var server = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer() : null;
         boolean isOnline = online != null;
-        String name = isOnline ? online.getName().getString() : member.getPlayerUuid().toString().substring(0, 8);
+        String name = PlayerNameResolver.resolve(server, member.getPlayerUuid());
         MutableText title = Text.empty();
         title.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(isOnline ? Formatting.GREEN : Formatting.RED).withItalic(false)));
-        title.append(Text.literal(name).setStyle(Style.EMPTY.withColor(roleColor(member.getRole())).withBold(member.getRole() == TeamRole.OWNER).withItalic(false)));
+        title.append(gradientText(name, true));
         head.set(DataComponentTypes.CUSTOM_NAME, title);
-        String role = switch (member.getRole()) { case OWNER -> "Owner"; case CO_OWNER -> "Co-Owner"; case MEMBER -> "Member"; };
+        String rank = member.getRank().getDisplayName();
         String joined = member.getJoinDate() == null ? "Unknown" : DateTimeFormatter.ofPattern("dd MMM yyyy").withZone(ZoneOffset.UTC).format(member.getJoinDate());
-        head.set(DataComponentTypes.LORE, new LoreComponent(List.of(composeLine("Role: ", role, Formatting.GRAY, Formatting.WHITE), composeLine("Joined: ", joined, Formatting.GRAY, Formatting.WHITE))));
+        head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
+                composeLine("Online Status: ", isOnline ? "Online" : "Offline", Formatting.GRAY, isOnline ? Formatting.GREEN : Formatting.RED),
+                composeLine("Rank: ", rank, Formatting.GRAY, Formatting.WHITE),
+                composeLine("Joined: ", joined, Formatting.GRAY, Formatting.WHITE))));
         return head;
     }
-
-    private static Formatting roleColor(TeamRole role) { return switch (role) { case OWNER -> Formatting.GOLD; case CO_OWNER -> Formatting.RED; case MEMBER -> Formatting.WHITE; }; }
 
     public static void updateMainSortItem(TeamMenuHandler menu, Team team) {
         ItemStack sort = namedGradient(Items.HOPPER, "sᴏʀᴛ ᴍᴇᴍʙᴇʀs");
         sort.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 plainLine("Click to change the sorting.", Formatting.GRAY), plainLine("", Formatting.GRAY),
-                sortLine("Join Date", team.getCurrentSortType().name().equals("JOIN_DATE")), sortLine("Alphabetical", team.getCurrentSortType().name().equals("ALPHABETICAL")), sortLine("Online Status", team.getCurrentSortType().name().equals("ONLINE_STATUS")) )));
+                sortLine("Online Status", team.getCurrentSortType() == TeamSortType.ONLINE_STATUS),
+                sortLine("Alphabetical", team.getCurrentSortType() == TeamSortType.ALPHABETICAL),
+                sortLine("Rank", team.getCurrentSortType() == TeamSortType.RANK))));
         menu.getMenuInventory().setStack(49, sort); ItemStack[] snapshot = MAIN_SNAPSHOTS.get(menu); if (snapshot != null) snapshot[49] = sort.copy(); menu.sendContentUpdates();
     }
 
@@ -224,7 +237,7 @@ public final class TeamInPlaceGui {
     private static void notifyPlayer(PlayerEntity viewer, UUID targetUuid, String message) { if (viewer instanceof ServerPlayerEntity serverPlayer) { ServerPlayerEntity target = serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(targetUuid); if (target != null) target.sendMessage(Text.literal(message), false); } }
     private static void snapshotMain(TeamMenuHandler menu) { if (MAIN_SNAPSHOTS.containsKey(menu)) return; ItemStack[] snapshot = new ItemStack[54]; for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy(); MAIN_SNAPSHOTS.put(menu, snapshot); }
     private static void clearForSubmenu(Inventory inventory) { ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "); for (int slot = 0; slot < 54; slot++) inventory.setStack(slot, ItemStack.EMPTY); for (int slot = 0; slot < 9; slot++) inventory.setStack(slot, filler.copy()); for (int slot = 45; slot < 54; slot++) inventory.setStack(slot, filler.copy()); }
-    private static ItemStack requestItem(PlayerEntity viewer, UUID uuid) { ItemStack head = new ItemStack(Items.PLAYER_HEAD); head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(uuid)); boolean online = false; String name = uuid.toString().substring(0, 8); if (viewer instanceof ServerPlayerEntity serverPlayer) { ServerPlayerEntity target = serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayer(uuid); if (target != null) { online = true; name = target.getName().getString(); } } MutableText title = Text.empty(); title.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(online ? Formatting.GREEN : Formatting.RED).withItalic(false))); title.append(gradientText(name, true)); head.set(DataComponentTypes.CUSTOM_NAME, title); head.set(DataComponentTypes.LORE, new LoreComponent(List.of(plainLine("This player wants to join your team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Left-Click to Accept", Formatting.GREEN), plainLine("Right-Click to Deny", Formatting.RED)))); return head; }
+    private static ItemStack requestItem(PlayerEntity viewer, UUID uuid) { ItemStack head = new ItemStack(Items.PLAYER_HEAD); head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(uuid)); var server = viewer instanceof ServerPlayerEntity sp ? sp.getEntityWorld().getServer() : null; ServerPlayerEntity target = server == null ? null : server.getPlayerManager().getPlayer(uuid); boolean online = target != null; String name = PlayerNameResolver.resolve(server, uuid); MutableText title = Text.empty(); title.append(Text.literal("● ").setStyle(Style.EMPTY.withColor(online ? Formatting.GREEN : Formatting.RED).withItalic(false))); title.append(gradientText(name, true)); head.set(DataComponentTypes.CUSTOM_NAME, title); head.set(DataComponentTypes.LORE, new LoreComponent(List.of(plainLine("This player wants to join your team.", Formatting.GRAY), plainLine("", Formatting.GRAY), plainLine("Left-Click to Accept", Formatting.GREEN), plainLine("Right-Click to Deny", Formatting.RED)))); return head; }
     private static ItemStack warpItem(TeamWarp warp) { boolean passwordProtected = !warp.getPassword().isEmpty(); ItemStack stack = new ItemStack(passwordProtected ? Items.IRON_BLOCK : Items.GOLD_BLOCK); stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(warp.getName(), true)); int separator = warp.getWorld().lastIndexOf(':'); String serverName = separator >= 0 && separator + 1 < warp.getWorld().length() ? warp.getWorld().substring(separator + 1) : warp.getWorld(); stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(composeLine("Server: ", serverName, Formatting.GRAY, Formatting.WHITE), plainLine("", Formatting.GRAY), passwordProtected ? plainLine("Password Protected", Formatting.RED) : plainLine("Public", Formatting.GREEN)))); return stack; }
     private static ItemStack backItem() { ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ"); back.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ʙᴀᴄᴋ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withBold(true).withItalic(false))); back.set(DataComponentTypes.LORE, new LoreComponent(List.of(plainLine("Click to return to the main menu.", Formatting.YELLOW)))); return back; }
     private static ItemStack namedPlain(Item item, String name) { ItemStack stack = new ItemStack(item); stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withItalic(false))); return stack; }
