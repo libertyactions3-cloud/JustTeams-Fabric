@@ -17,11 +17,13 @@ import java.util.WeakHashMap;
 /** Two-stage persistent confirmation flow for team disbanding. */
 public final class TeamDisbandConfirmationGui {
     private static final WeakHashMap<TeamMenuHandler, Integer> STAGES = new WeakHashMap<>();
+    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> SNAPSHOTS = new WeakHashMap<>();
 
     private TeamDisbandConfirmationGui() {}
 
     public static void openFirst(TeamMenuHandler menu, ServerPlayerEntity player, Team team) {
         if (!team.isOwner(player.getUuid())) return;
+        snapshot(menu);
         STAGES.put(menu, 1);
         render(menu, team, 1);
     }
@@ -34,13 +36,8 @@ public final class TeamDisbandConfirmationGui {
         if (slot == 15 || slot == 49) { closeToMain(menu); return; }
         if (slot != 11) return;
         if (!team.isOwner(player.getUuid())) { closeToMain(menu); return; }
-        if (stage == 1) {
-            STAGES.put(menu, 2);
-            render(menu, team, 2);
-        } else {
-            STAGES.remove(menu);
-            TeamGuiManager.performDisband(player, team);
-        }
+        if (stage == 1) { STAGES.put(menu, 2); render(menu, team, 2); }
+        else { STAGES.remove(menu); SNAPSHOTS.remove(menu); TeamGuiManager.performDisband(player, team); }
     }
 
     private static void render(TeamMenuHandler menu, Team team, int stage) {
@@ -55,9 +52,8 @@ public final class TeamDisbandConfirmationGui {
         warning.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                 Text.literal("Team: " + team.getName()).setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)),
                 Text.literal("").setStyle(net.minecraft.text.Style.EMPTY.withItalic(false)),
-                Text.literal(stage == 1 ? "This permanently deletes the team." : "This is your final confirmation."),
-                Text.literal("All members, settings, warps, bank data, and team data will be removed.")
-                        .setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.DARK_RED).withItalic(false)))));
+                Text.literal(stage == 1 ? "This permanently deletes the team." : "This is your final confirmation.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)),
+                Text.literal("All members, settings, warps, bank data, and team data will be removed.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.DARK_RED).withItalic(false)))));
         inventory.setStack(13, warning);
 
         ItemStack confirm = new ItemStack(stage == 1 ? Items.GREEN_WOOL : Items.RED_WOOL);
@@ -72,9 +68,19 @@ public final class TeamDisbandConfirmationGui {
         menu.sendContentUpdates();
     }
 
+    private static void snapshot(TeamMenuHandler menu) {
+        ItemStack[] snapshot = new ItemStack[54];
+        for (int slot = 0; slot < 54; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
+        SNAPSHOTS.put(menu, snapshot);
+    }
+
     private static void closeToMain(TeamMenuHandler menu) {
         STAGES.remove(menu);
-        TeamInPlaceGui.returnToMain(menu);
+        ItemStack[] snapshot = SNAPSHOTS.remove(menu);
+        if (snapshot == null) return;
+        Inventory inventory = menu.getMenuInventory();
+        for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
+        menu.sendContentUpdates();
     }
 
     private static ItemStack pane() {
