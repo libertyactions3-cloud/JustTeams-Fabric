@@ -27,6 +27,7 @@ public final class PlayerNameResolver {
 
     public static void remember(MinecraftServer server, ServerPlayerEntity player) {
         if (server == null || player == null) return;
-        server.getApiServices().nameToIdCache().add(player.getPlayerConfigEntry());
+        server.getApiServices().nameToIdCache()
+                .add(new PlayerConfigEntry(player.getUuid(), player.getName().getString()));
     }
 }
