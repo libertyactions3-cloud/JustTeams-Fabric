@@ -83,7 +83,7 @@ public final class TeamMenuHandler extends ScreenHandler {
         boolean bankPermission = viewer instanceof ServerPlayerEntity serverPlayer
                 && JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK);
 
-        menuInventory.setStack(6, itemWithLore(namedGradient(Items.BOOK_AND_QUILL, "ʙᴀɴᴋ ʟᴏɢs"), List.of(
+        menuInventory.setStack(6, itemWithLore(namedGradient(Items.WRITABLE_BOOK, "ʙᴀɴᴋ ʟᴏɢs"), List.of(
                 plainLine("View team bank transaction logs.", Formatting.GRAY),
                 plainLine("", Formatting.GRAY),
                 plainLine("Click to view logs.", Formatting.YELLOW))));
@@ -170,15 +170,13 @@ public final class TeamMenuHandler extends ScreenHandler {
         List<TeamPlayer> members = new ArrayList<>(team.getMembers());
         MinecraftServer server = viewer instanceof ServerPlayerEntity serverPlayer ? serverPlayer.getEntityWorld().getServer() : null;
         Comparator<TeamPlayer> comparator = switch (team.getCurrentSortType()) {
-            case ONLINE_STATUS -> Comparator.comparing((TeamPlayer member) ->
-                    server != null && server.getPlayerManager().getPlayer(member.getPlayerUuid()) != null).reversed()
+            case ONLINE_STATUS -> Comparator.comparing((TeamPlayer member) -> server != null && server.getPlayerManager().getPlayer(member.getPlayerUuid()) != null).reversed()
                     .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
             case ALPHABETICAL -> Comparator.comparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
             case RANK -> Comparator.comparingInt((TeamPlayer member) -> member.getRank().ordinal())
                     .thenComparing(member -> PlayerNameResolver.resolve(server, member.getPlayerUuid()), String.CASE_INSENSITIVE_ORDER);
         };
-        members.sort(comparator);
-        return members;
+        members.sort(comparator); return members;
     }
 
     private ItemStack createMemberHead(PlayerEntity viewer, TeamPlayer member) {
