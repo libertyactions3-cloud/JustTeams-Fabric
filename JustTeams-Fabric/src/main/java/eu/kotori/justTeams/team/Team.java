@@ -32,7 +32,7 @@ public final class Team {
     private final List<UUID> joinRequests = new ArrayList<>();
     private final List<UUID> invites = new ArrayList<>();
     private final List<BlacklistedPlayer> blacklist = new ArrayList<>();
-    private TeamSortType currentSortType = TeamSortType.JOIN_DATE;
+    private TeamSortType currentSortType = TeamSortType.ONLINE_STATUS;
     private final TeamBank bank;
     private TeamEnderChest enderChest;
 
@@ -127,8 +127,8 @@ public final class Team {
     }
     public boolean removeBlacklistEntry(UUID playerUuid) { return blacklist.removeIf(entry -> entry.getPlayerUuid().equals(playerUuid)); }
     public TeamSortType getCurrentSortType() { return currentSortType; }
-    public void setSortType(TeamSortType sortType) { currentSortType = sortType; }
-    public void cycleSortType() { currentSortType = switch (currentSortType) { case JOIN_DATE -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.ONLINE_STATUS; case ONLINE_STATUS -> TeamSortType.JOIN_DATE; }; }
+    public void setSortType(TeamSortType sortType) { currentSortType = sortType == null ? TeamSortType.ONLINE_STATUS : sortType; }
+    public void cycleSortType() { currentSortType = switch (currentSortType) { case ONLINE_STATUS -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.RANK; case RANK -> TeamSortType.ONLINE_STATUS; }; }
     public List<TeamPlayer> getSortedMembers(Comparator<TeamPlayer> comparator) { return members.stream().sorted(comparator).toList(); }
     public String getPlainName() { return stripFormatting(name); }
     public String getPlainTag() { return stripFormatting(getTag()); }
