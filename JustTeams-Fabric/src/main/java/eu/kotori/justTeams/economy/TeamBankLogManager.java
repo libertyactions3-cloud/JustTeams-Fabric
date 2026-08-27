@@ -3,17 +3,16 @@ package eu.kotori.justTeams.economy;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.util.PlayerNameResolver;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -24,10 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Persistent seven-day team-bank audit log. Entries are capped at 10,000 per
- * team and older entries are pruned on load/write.
- */
+/** Persistent seven-day team-bank audit log, capped at 10,000 entries per team. */
 public final class TeamBankLogManager {
     public static final long RETENTION_SECONDS = 7L * 24L * 60L * 60L;
     public static final int MAX_ENTRIES = 10_000;
@@ -36,11 +32,7 @@ public final class TeamBankLogManager {
 
     private TeamBankLogManager() {}
 
-    public enum Kind {
-        AUTOBANK,
-        MANUAL_WITHDRAWAL
-    }
-
+    public enum Kind { AUTOBANK, MANUAL_WITHDRAWAL }
     public record Entry(long timestampMillis, UUID playerUuid, String playerName, long amount, Kind kind, String action) {}
     public record TopSpender(UUID playerUuid, String playerName, long amount) {}
 
@@ -53,9 +45,7 @@ public final class TeamBankLogManager {
         save(team, entries);
     }
 
-    public static synchronized List<Entry> recent(Team team) {
-        return List.copyOf(load(team));
-    }
+    public static synchronized List<Entry> recent(Team team) { return List.copyOf(load(team)); }
 
     public static synchronized TopSpender topAutoBankSpender(Team team) {
         long cutoff = System.currentTimeMillis() - RETENTION_SECONDS * 1000L;
@@ -66,32 +56,42 @@ public final class TeamBankLogManager {
             totals.merge(entry.playerUuid(), entry.amount(), Long::sum);
             names.put(entry.playerUuid(), entry.playerName());
         }
-        return totals.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(e -> new TopSpender(e.getKey(), names.getOrDefault(e.getKey(), "Unknown"), e.getValue()))
-                .orElse(null);
+        return totals.entrySet().stream().max(Map.Entry.comparingByValue())
+                .map(e -> new TopSpender(e.getKey(), names.getOrDefault(e.getKey(), "Unknown"), e.getValue())).orElse(null);
     }
 
-    public static String formatTimestamp(long millis) {
-        return DISPLAY_TIME.format(Instant.ofEpochMilli(millis));
-    }
+    public static String formatTimestamp(long millis) { return DISPLAY_TIME.format(Instant.ofEpochMilli(millis)); }
 
     public static synchronized void pruneAll() {
         long now = System.currentTimeMillis();
-        for (Integer id : new ArrayList<>(CACHE.keySet())) {
-            prune(CACHE.get(id), now);
-            Team team = JustTeamsFabric.teams().getTeam(id);
-            if (team != null) save(team, CACHE.get(id));
-        }
         try {
-            Path directory = logDirectory();
-            if (!Files.exists(directory)) return;
-            try (var stream = Files.list(directory)) {
+            Files.createDirectories(logDirectory());
+            try (var stream = Files.list(logDirectory())) {
                 stream.filter(path -> path.getFileName().toString().startsWith("team-") && path.getFileName().toString().endsWith(".dat"))
-                        .forEach(path -> { /* loaded lazily; stale-file pruning is handled when the team is loaded */ });
+                        .forEach(path -> pruneFile(path, now));
             }
         } catch (IOException exception) {
-            JustTeamsFabric.LOGGER.warn("Unable to inspect JustTeams bank-log directory", exception);
+            JustTeamsFabric.LOGGER.warn("Unable to prune JustTeams bank logs", exception);
+        }
+    }
+
+    private static void pruneFile(Path path, long now) {
+        try {
+            NbtCompound root = NbtIo.read(path);
+            NbtList list = root.getListOrEmpty("entries");
+            List<Entry> entries = new ArrayList<>();
+            for (int i = 0; i < list.size(); i++) {
+                NbtCompound tag = list.getCompoundOrEmpty(i);
+                try {
+                    UUID uuid = UUID.fromString(tag.getString("uuid").orElseThrow());
+                    Kind kind = Kind.valueOf(tag.getString("kind").orElse(Kind.MANUAL_WITHDRAWAL.name()));
+                    entries.add(new Entry(tag.getLong("timestamp", 0L), uuid, tag.getString("name").orElse("Unknown"), tag.getLong("amount", 0L), kind, tag.getString("action").orElse("bank")));
+                } catch (IllegalArgumentException ignored) { }
+            }
+            prune(entries, now);
+            writeEntries(path, entries);
+        } catch (IOException exception) {
+            JustTeamsFabric.LOGGER.warn("Unable to prune bank log {}", path, exception);
         }
     }
 
@@ -122,26 +122,18 @@ public final class TeamBankLogManager {
 
     private static void save(Team team, List<Entry> entries) {
         if (team == null) return;
-        try {
-            Path path = file(team.getId());
-            Files.createDirectories(path.getParent());
-            NbtCompound root = new NbtCompound();
-            NbtList list = new NbtList();
-            for (Entry entry : entries) {
-                NbtCompound tag = new NbtCompound();
-                tag.putLong("timestamp", entry.timestampMillis());
-                tag.putString("uuid", entry.playerUuid().toString());
-                tag.putString("name", entry.playerName());
-                tag.putLong("amount", entry.amount());
-                tag.putString("kind", entry.kind().name());
-                tag.putString("action", entry.action());
-                list.add(tag);
-            }
-            root.put("entries", list);
-            NbtIo.write(root, path);
-        } catch (IOException exception) {
-            JustTeamsFabric.LOGGER.error("Unable to save bank logs for team {}", team.getId(), exception);
+        try { Path path = file(team.getId()); Files.createDirectories(path.getParent()); writeEntries(path, entries); }
+        catch (IOException exception) { JustTeamsFabric.LOGGER.error("Unable to save bank logs for team {}", team.getId(), exception); }
+    }
+
+    private static void writeEntries(Path path, List<Entry> entries) throws IOException {
+        NbtCompound root = new NbtCompound(); NbtList list = new NbtList();
+        for (Entry entry : entries) {
+            NbtCompound tag = new NbtCompound();
+            tag.putLong("timestamp", entry.timestampMillis()); tag.putString("uuid", entry.playerUuid().toString()); tag.putString("name", entry.playerName());
+            tag.putLong("amount", entry.amount()); tag.putString("kind", entry.kind().name()); tag.putString("action", entry.action()); list.add(tag);
         }
+        root.put("entries", list); NbtIo.write(root, path);
     }
 
     private static void prune(List<Entry> entries, long now) {
@@ -151,6 +143,6 @@ public final class TeamBankLogManager {
         if (entries.size() > MAX_ENTRIES) entries.subList(0, entries.size() - MAX_ENTRIES).clear();
     }
 
-    private static Path logDirectory() { return JustTeamsFabric.config().getDirectory().resolve("bank-logs"); }
+    private static Path logDirectory() { return FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("bank-logs"); }
     private static Path file(int teamId) { return logDirectory().resolve("team-" + teamId + ".dat"); }
 }
