@@ -20,18 +20,19 @@ import net.minecraft.util.Formatting;
 
 import java.util.List;
 
-/** Persistent logical two-stage disband confirmation flow using a true 27-slot chest. */
+/** Server-only two-stage disband confirmation using a separate 27-slot chest handler. */
 public final class TeamDisbandConfirmationGui {
     private TeamDisbandConfirmationGui() {}
 
-    public static void openFirst(TeamMenuHandler ignored, ServerPlayerEntity player, Team team) {
+    public static void openFirst(ServerPlayerEntity player, Team team) {
         if (player == null || team == null || !team.isOwner(player.getUuid())) return;
-        open(player, team, 1);
+        player.closeHandledScreen();
+        if (player.getEntityWorld().getServer() != null) {
+            player.getEntityWorld().getServer().execute(() -> open(player, team, 1));
+        } else {
+            open(player, team, 1);
+        }
     }
-
-    /** The confirmation uses its own 27-slot handler because vanilla chest size is fixed by ScreenHandlerType at construction. */
-    public static boolean isOpen(TeamMenuHandler ignored) { return false; }
-    public static boolean handle(TeamMenuHandler ignored, ServerPlayerEntity player, Team team, int slot) { return false; }
 
     private static void open(ServerPlayerEntity player, Team team, int stage) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
