@@ -137,7 +137,7 @@ public final class TeamCommandParityExtension {
             Team team = findTeam(teamName);
             if (team == null || !team.hasInvite(player.getUuid())) throw new IllegalStateException("You do not have a pending invite from this team.");
             team.removeInvite(player.getUuid());
-            JustTeamsFabric.storage().save(JustTeams.teams());
+            JustTeamsFabric.storage().save(JustTeamsFabric.teams());
             player.sendMessage(prefix().append(Text.literal("You have denied the invitation from " + team.getName() + ".").setStyle(white())), false);
             return 1;
         } catch (Exception e) {
