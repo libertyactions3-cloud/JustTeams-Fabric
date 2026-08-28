@@ -111,18 +111,28 @@ Completed at source level.
 - Logs use player heads and include timestamp, amount, action/type, and stored username.
 - Weekly AutoBank top-spender view is calculated from the seven-day logs.
 - Main `/team` logs button is immediately left of team warps.
-- Two-stage 27-slot disband confirmation is implemented.
+- Initial disband confirmation was implemented as a two-stage confirmation flow.
 - `/team disband` opens the first confirmation stage.
 
 ### Round 10 — exhaustive implementation pass
 Completed at source level; **not locally build-verified after these changes**.
-- Main `/team` title now uses the 2.5.3 `ᴛᴇᴀᴍ - <members>/<max_members>` format and reads `settings.max_team_size` with default 10.
+- Main `/team` title uses the 2.5.3 `ᴛᴇᴀᴍ - <members>/<max_members>` format and reads `settings.max_team_size` with default 10.
 - Combined bank permission lore includes an explanatory line plus `Bank Withdraw and Autobank enabled/disabled`.
 - AutoBank change is returned to the player using the exact 81/9/1 overpayment/change model requested.
 - Team logs title is `ᴛᴇᴀᴍ ʟᴏɢs`.
 - Core/extension command argument usage feedback was expanded for create, warp set/remove, invite, kick, promote, demote, blacklist, and unblacklist.
 - User-facing no-team errors audited in the touched command/GUI paths use the #4C9DDE `[ᴛᴇᴀᴍꜱ]` prefix and red message.
 - New-member addition path explicitly disables team-home permission.
+
+## Post-gate persistent-disband correction
+
+A subsequent user-requested source correction was made after the 10/10 corrective cycle:
+- Disband confirmation is now rendered **inside the existing 54-slot `TeamMenuHandler`** instead of opening a separate 27-slot screen.
+- Stage 1 and Stage 2 both reuse the same persistent inventory GUI/handler.
+- Slot 11 confirms/advances and slot 15 cancels/restores the previous `/team` GUI.
+- Stage 2 displays the actual team name.
+- `/team disband` entered from outside the existing GUI still opens the main persistent team handler first, then enters the persistent confirmation state.
+- The disband handler is routed before ordinary main-menu click dispatch, so confirmation clicks are consumed by the persistent disband view.
 
 ## Active layout facts
 
@@ -148,7 +158,9 @@ This is not automatically a failure. The actual Gradle task result is authoritat
 
 ## Remaining verification rule
 
-Round 10 source changes stop here. Do not make additional `src/` changes until the user has downloaded the current canonical `src/`, run:
+The current source includes the post-gate persistent-disband correction and has **not** been locally build-verified after that change.
+
+Do not make additional `src/` changes until the user has downloaded the current canonical `src/`, run:
 
 ```powershell
 ./gradlew clean build
