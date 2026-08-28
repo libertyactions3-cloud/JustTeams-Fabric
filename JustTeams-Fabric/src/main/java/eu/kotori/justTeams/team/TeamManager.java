@@ -19,8 +19,7 @@ public final class TeamManager {
                            boolean defaultPvp, boolean defaultPublic, boolean defaultGlow) {
         if (getTeam(ownerUuid) != null) throw new IllegalStateException("Player already belongs to a team");
         Team team = new Team(nextId++, name, tag, ownerUuid, defaultPvp, defaultPublic, defaultGlow);
-        team.addMember(new TeamPlayer(ownerUuid, TeamRole.OWNER, java.time.Instant.now(),
-                true, true, true, true));
+        team.addMember(new TeamPlayer(ownerUuid, TeamRole.OWNER, java.time.Instant.now(), true, true, true, true));
         teams.put(team.getId(), team);
         playerTeams.put(ownerUuid, team.getId());
         return team;
@@ -45,6 +44,7 @@ public final class TeamManager {
         if (isInTeam(player.getPlayerUuid())) throw new IllegalStateException("Player already belongs to a team");
         if (team.isBlacklisted(player.getPlayerUuid())) throw new IllegalStateException("That player is blacklisted from this team.");
         player.setCanUseAutoBank(false);
+        player.setCanUseHome(false);
         team.addMember(player);
         playerTeams.put(player.getPlayerUuid(), team.getId());
     }
