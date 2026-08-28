@@ -6,6 +6,7 @@ import eu.kotori.justTeams.commands.TeamBlacklistCommandExtension;
 import eu.kotori.justTeams.commands.TeamChatSpyCommandExtension;
 import eu.kotori.justTeams.commands.TeamCommand;
 import eu.kotori.justTeams.commands.TeamCommandAliasExtensions;
+import eu.kotori.justTeams.commands.TeamCommandParityExtension;
 import eu.kotori.justTeams.commands.TeamCreationCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInfoCommandExtensions;
 import eu.kotori.justTeams.commands.TeamInviteCommandExtension;
@@ -84,6 +85,7 @@ public final class JustTeamsFabric implements ModInitializer {
             TeamSettingsCommandExtension.register(dispatcher);
             TeamAutoBankCommandExtension.register(dispatcher);
             TeamCommandAliasExtensions.register(dispatcher);
+            TeamCommandParityExtension.register(dispatcher);
         });
         ChatInputEvents.register(); TeamChatEvents.register(); TeamFriendlyFire.register(); TeamStatsEvents.register();
         LOGGER.info("JustTeams Fabric core initialized");
