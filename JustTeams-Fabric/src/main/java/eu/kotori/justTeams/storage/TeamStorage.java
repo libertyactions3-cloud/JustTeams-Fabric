@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class TeamStorage {
-    private static final int DATA_VERSION = 8;
+    private static final int DATA_VERSION = 9;
     private final Path path = FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("teams.dat");
 
     public void load(TeamManager manager) throws IOException {
@@ -105,7 +105,7 @@ public final class TeamStorage {
         if (member.getLastKnownName() != null) tag.putString("lastKnownName", member.getLastKnownName());
         tag.putBoolean("canWithdraw", member.canWithdraw()); tag.putBoolean("canUseEnderChest", member.canUseEnderChest()); tag.putBoolean("canSetHome", member.canSetHome()); tag.putBoolean("canUseHome", member.canUseHome());
         tag.putBoolean("canEditMembers", member.canEditMembers()); tag.putBoolean("canEditCoOwners", member.canEditCoOwners()); tag.putBoolean("canKickMembers", member.canKickMembers()); tag.putBoolean("canPromoteMembers", member.canPromoteMembers()); tag.putBoolean("canDemoteMembers", member.canDemoteMembers());
-        tag.putBoolean("canInvite", member.canInvite()); tag.putBoolean("canSetWarps", member.canSetWarps()); tag.putBoolean("canUseAutoBank", member.canUseAutoBank()); tag.putBoolean("autoBankEnabled", member.isAutoBankEnabled());
+        tag.putBoolean("canInvite", member.canInvite()); tag.putBoolean("canSetWarps", member.canSetWarps()); tag.putBoolean("canUseAutoBank", member.canUseAutoBank()); tag.putBoolean("autoBankEnabled", member.isAutoBankEnabled()); tag.putBoolean("teamChatEnabled", member.isTeamChatEnabled());
         return tag;
     }
 
@@ -134,10 +134,11 @@ public final class TeamStorage {
     private TeamPlayer readMember(NbtCompound tag) {
         UUID uuid = UUID.fromString(tag.getString("uuid").orElseThrow());
         TeamRole role; try { role = TeamRole.valueOf(tag.getString("role").orElse("MEMBER")); } catch (IllegalArgumentException ignored) { role = TeamRole.MEMBER; }
-        TeamRank rank; try { rank = TeamRank.valueOf(tag.getString("rank").orElse(role == TeamRole.OWNER ? "LEADER" : role == TeamRole.CO_OWNER ? "CO_LEADER" : "MEMBER")); } catch (IllegalArgumentException ignored) { rank = role == TeamRole.OWNER ? TeamRank.LEADER : role == TeamRole.CO_OWNER ? TeamRank.CO_LEADER : TeamRank.MEMBER; }
+        TeamRank rank; try { rank = TeamRank.valueOf(tag.getString("rank").orElse(role == TeamRole.OWNER ? "LEADER" : role == TeamRole.CO_OWNER ? "CO_LEADER" : "INITIATE")); } catch (IllegalArgumentException ignored) { rank = role == TeamRole.OWNER ? TeamRank.LEADER : role == TeamRole.CO_OWNER ? TeamRank.CO_LEADER : TeamRank.INITIATE; }
         TeamPlayer member = new TeamPlayer(uuid, role, rank, Instant.ofEpochMilli(tag.getLong("joinDate", System.currentTimeMillis())), tag.getBoolean("canWithdraw").orElse(false), tag.getBoolean("canUseEnderChest").orElse(false), tag.getBoolean("canSetHome").orElse(false), tag.getBoolean("canUseHome").orElse(false), tag.getBoolean("canEditMembers").orElse(false), tag.getBoolean("canEditCoOwners").orElse(false), tag.getBoolean("canKickMembers").orElse(false), tag.getBoolean("canPromoteMembers").orElse(false), tag.getBoolean("canDemoteMembers").orElse(false), tag.getBoolean("canInvite").orElse(rank == TeamRank.LEADER || rank == TeamRank.CO_LEADER || rank == TeamRank.OFFICER || rank == TeamRank.UNDEROFFICER), tag.getBoolean("canSetWarps").orElse(true), tag.getBoolean("canUseAutoBank").orElse(false));
         tag.getString("lastKnownName").ifPresent(member::setLastKnownName);
         member.setAutoBankEnabled(tag.getBoolean("autoBankEnabled").orElse(false));
+        member.setTeamChatEnabled(tag.getBoolean("teamChatEnabled").orElse(false));
         return member;
     }
 }
