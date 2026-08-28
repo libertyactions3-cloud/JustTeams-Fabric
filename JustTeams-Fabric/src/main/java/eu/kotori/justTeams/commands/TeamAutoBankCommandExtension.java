@@ -43,7 +43,7 @@ public final class TeamAutoBankCommandExtension {
             player.sendMessage(message, false);
             return 1;
         } catch (Exception exception) {
-            source.sendMessage(prefix().append(Text.literal(exception.getMessage() == null ? "Unable to toggle AutoBank." : exception.getMessage()).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))), false);
+            source.sendMessage(prefix().append(Text.literal(exception.getMessage() == null ? "Unable to toggle AutoBank." : exception.getMessage()).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))));
             return 0;
         }
     }
