@@ -9,15 +9,17 @@ import eu.kotori.justTeams.team.Team;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 public final class TeamSettingsCommandExtension {
+    private static final int TEAM_BLUE = 0x4C9DDE;
     private TeamSettingsCommandExtension() {}
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         var team = dispatcher.getRoot().getChild("team");
         if (team == null) return;
-
         team.addChild(CommandManager.literal("settings")
                 .executes(context -> open(context.getSource()))
                 .build());
@@ -32,7 +34,7 @@ public final class TeamSettingsCommandExtension {
             }
             Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
             if (team == null) {
-                source.sendError(Text.literal("You are not in a team."));
+                source.sendError(noTeam());
                 return 0;
             }
             if (!team.hasElevatedPermissions(player.getUuid())) {
@@ -45,5 +47,10 @@ public final class TeamSettingsCommandExtension {
             source.sendError(Text.literal(exception.getMessage() == null ? "Unable to open team settings." : exception.getMessage()));
             return 0;
         }
+    }
+
+    private static Text noTeam() {
+        return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false))
+                .append(Text.literal("You are not in a team.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));
     }
 }
