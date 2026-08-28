@@ -74,7 +74,7 @@ public final class TeamCommandParityExtension {
             if (JustTeamsFabric.teams().isInTeam(target.getUuid())) throw new IllegalStateException("That player is already in a team.");
             team.addInvite(target.getUuid());
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            source.sendMessage(prefix().append(Text.literal("You have invited " + target.getName().getString() + " to your team.").setStyle(white())), false);
+            source.sendMessage(prefix().append(Text.literal("You have invited " + target.getName().getString() + " to your team.").setStyle(white())));
             MutableText received = prefix()
                     .append(Text.literal("You have been invited to join " + team.getName() + ". ").setStyle(white()))
                     .append(clickable("[Accept]", "/team accept " + team.getName(), Formatting.GREEN))
@@ -137,7 +137,7 @@ public final class TeamCommandParityExtension {
             Team team = findTeam(teamName);
             if (team == null || !team.hasInvite(player.getUuid())) throw new IllegalStateException("You do not have a pending invite from this team.");
             team.removeInvite(player.getUuid());
-            JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+            JustTeamsFabric.storage().save(JustTeams.teams());
             player.sendMessage(prefix().append(Text.literal("You have denied the invitation from " + team.getName() + ".").setStyle(white())), false);
             return 1;
         } catch (Exception e) {
@@ -224,12 +224,12 @@ public final class TeamCommandParityExtension {
     }
 
     private static int usage(ServerCommandSource source, String usage) {
-        source.sendMessage(prefix().append(Text.literal("Usage: " + usage).setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))), false);
+        source.sendMessage(prefix().append(Text.literal("Usage: " + usage).setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))));
         return 0;
     }
 
     private static int failure(ServerCommandSource source, Exception e) {
-        source.sendMessage(prefix().append(Text.literal(e.getMessage() == null ? "Command failed." : e.getMessage()).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))), false);
+        source.sendMessage(prefix().append(Text.literal(e.getMessage() == null ? "Command failed." : e.getMessage()).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))));
         return 0;
     }
 
