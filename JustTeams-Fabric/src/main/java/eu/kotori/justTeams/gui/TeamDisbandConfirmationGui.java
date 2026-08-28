@@ -24,7 +24,11 @@ import java.util.List;
 public final class TeamDisbandConfirmationGui {
     private TeamDisbandConfirmationGui() {}
 
-    public static void openFirst(ServerPlayerEntity player, Team team) {
+    /**
+     * Opens the first confirmation exactly like Flan's server-only GUI transitions:
+     * close the current container, then open the new server-side handler on the server thread.
+     */
+    public static void openFirst(TeamMenuHandler ignored, ServerPlayerEntity player, Team team) {
         if (player == null || team == null || !team.isOwner(player.getUuid())) return;
         player.closeHandledScreen();
         if (player.getEntityWorld().getServer() != null) {
@@ -33,6 +37,11 @@ public final class TeamDisbandConfirmationGui {
             open(player, team, 1);
         }
     }
+
+    /** These compatibility methods intentionally report that disband is not an in-place TeamMenuHandler view. */
+    public static boolean isOpen(TeamMenuHandler ignored) { return false; }
+    public static boolean handle(TeamMenuHandler ignored, ServerPlayerEntity player, Team team, int slot) { return false; }
+    public static void close(TeamMenuHandler ignored) { }
 
     private static void open(ServerPlayerEntity player, Team team, int stage) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
@@ -114,7 +123,12 @@ public final class TeamDisbandConfirmationGui {
             if (slot != 11) return;
 
             if (stage == 1) {
-                open(serverPlayer, team, 2);
+                serverPlayer.closeHandledScreen();
+                if (serverPlayer.getEntityWorld().getServer() != null) {
+                    serverPlayer.getEntityWorld().getServer().execute(() -> open(serverPlayer, team, 2));
+                } else {
+                    open(serverPlayer, team, 2);
+                }
             } else {
                 TeamGuiManager.performDisband(serverPlayer, team);
             }
