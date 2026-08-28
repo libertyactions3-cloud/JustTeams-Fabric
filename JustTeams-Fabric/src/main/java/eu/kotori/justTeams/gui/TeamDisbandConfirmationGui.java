@@ -62,11 +62,11 @@ public final class TeamDisbandConfirmationGui {
             for (int i = 0; i < 27; i++) menu.setStack(i, filler.copy());
             ItemStack confirm = new ItemStack(Items.GREEN_WOOL);
             confirm.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴏɴғɪʀᴍ").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withBold(true).withItalic(false)));
-            confirm.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("This action cannot be undone.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false))));
+            confirm.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("This action cannot be undone.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)))));
             menu.setStack(11, confirm);
             ItemStack cancel = new ItemStack(Items.RED_WOOL);
             cancel.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴀɴᴄᴇʟ").setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
-            cancel.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("Return to the previous menu.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))));
+            cancel.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("Return to the previous menu.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)))));
             menu.setStack(15, cancel);
         }
 
