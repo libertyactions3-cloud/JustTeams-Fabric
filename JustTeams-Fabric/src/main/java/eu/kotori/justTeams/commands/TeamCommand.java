@@ -105,7 +105,7 @@ public final class TeamCommand {
                 .then(CommandManager.literal("requests")
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS, () -> openRequests(c.getSource()))))
                 .then(CommandManager.literal("chat")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource()))));
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource())))));
     }
 
     @FunctionalInterface
