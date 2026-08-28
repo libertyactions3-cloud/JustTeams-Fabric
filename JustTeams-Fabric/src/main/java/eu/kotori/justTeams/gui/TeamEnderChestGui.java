@@ -10,13 +10,16 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.IOException;
 import java.util.UUID;
 
 /** Opens and manages the shared persistent Ender Chest belonging to a team. */
 public final class TeamEnderChestGui {
+    private static final int TEAM_BLUE = 0x4C9DDE;
     private TeamEnderChestGui() {}
 
     public static void open(PlayerEntity player, Team team) {
@@ -27,7 +30,7 @@ public final class TeamEnderChestGui {
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
         TeamPlayer member = team.getMember(player.getUuid());
         if (member == null) {
-            player.sendMessage(Text.literal("You are not in this team."), true);
+            player.sendMessage(noTeam(), false);
             return;
         }
         if (!member.canUseEnderChest()
@@ -57,7 +60,6 @@ public final class TeamEnderChestGui {
         if (!enderChest.hasViewers()) release(team);
     }
 
-    /** Removes a disconnected player's viewer registration and releases the chest when appropriate. */
     public static void handleDisconnect(ServerPlayerEntity player) {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         if (team == null) return;
@@ -67,7 +69,6 @@ public final class TeamEnderChestGui {
         if (!enderChest.hasViewers()) release(team);
     }
 
-    /** Closes one viewer before membership removal so its shared chest state is released safely. */
     public static void closeViewer(MinecraftServer server, Team team, UUID viewerUuid) {
         TeamEnderChest enderChest = team.getEnderChest();
         if (enderChest == null) return;
@@ -80,7 +81,6 @@ public final class TeamEnderChestGui {
         }
     }
 
-    /** Saves the chest and closes every tracked viewer before team removal. */
     public static void closeAndRelease(MinecraftServer server, Team team) {
         TeamEnderChest enderChest = team.getEnderChest();
         if (enderChest == null) return;
@@ -93,15 +93,15 @@ public final class TeamEnderChestGui {
         if (enderChest == null) return;
         save();
         enderChest.setSaveCallback(null);
-        // Keep the persisted inventory attached to the team so the next /team ec
-        // reuses the saved contents instead of creating a new empty inventory.
     }
 
     private static void save() {
-        try {
-            JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-        } catch (IOException exception) {
-            JustTeamsFabric.LOGGER.error("Failed to save team Ender Chest", exception);
-        }
+        try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); }
+        catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save team Ender Chest", exception); }
+    }
+
+    private static Text noTeam() {
+        return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false))
+                .append(Text.literal("You are not in a team.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));
     }
 }
