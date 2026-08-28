@@ -1,18 +1,17 @@
 package eu.kotori.justTeams.commands;
 
+import com.mojang.brigadier.CommandDispatcher;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
-import net.minecraft.server.command.CommandDispatcher;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-
-import java.io.IOException;
 
 /** Toggleable per-player use of the team bank for feature costs. */
 public final class TeamAutoBankCommandExtension {
@@ -37,7 +36,7 @@ public final class TeamAutoBankCommandExtension {
             boolean enabled = !member.isAutoBankEnabled();
             member.setAutoBankEnabled(enabled);
             JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-            Text message = prefix().append(Text.literal(enabled
+            MutableText message = prefix().append(Text.literal(enabled
                     ? "Team AutoBank enabled. Team commands that use currency will automatically withdraw from your team's bank."
                     : "Team AutoBank disabled. Team commands now use currency from your own inventory.")
                     .setStyle(Style.EMPTY.withColor(enabled ? Formatting.GREEN : Formatting.RED).withItalic(false)));
@@ -49,5 +48,5 @@ public final class TeamAutoBankCommandExtension {
         }
     }
 
-    private static Text prefix() { return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false)); }
+    private static MutableText prefix() { return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false)); }
 }
