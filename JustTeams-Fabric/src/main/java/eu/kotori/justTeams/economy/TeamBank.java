@@ -65,6 +65,21 @@ public final class TeamBank extends SimpleInventory {
         return true;
     }
 
+    /** Withdraws a feature cost and returns any denomination change directly to the player. */
+    public boolean tryWithdrawValue(PlayerEntity player, long value) {
+        if (player == null) return false;
+        if (value <= 0L) return true;
+        int[] plan = planWithdrawal(value);
+        if (plan == null) return false;
+        removeValue(Items.DEEPSLATE_EMERALD_ORE, plan[0]);
+        removeValue(Items.EMERALD_BLOCK, plan[1]);
+        removeValue(Items.EMERALD, plan[2]);
+        if (plan[3] > 0) player.getInventory().offerOrDrop(new ItemStack(Items.EMERALD_BLOCK, plan[3]));
+        if (plan[4] > 0) player.getInventory().offerOrDrop(new ItemStack(Items.EMERALD, plan[4]));
+        markDirty();
+        return true;
+    }
+
     /** plan = [takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds]. */
     private int[] planWithdrawal(long value) {
         if (value <= 0L) return new int[]{0, 0, 0, 0, 0};
@@ -124,41 +139,7 @@ public final class TeamBank extends SimpleInventory {
         long change = paid - value;
         int changeBlocks = (int) (change / 9L);
         int changeEmeralds = (int) (change % 9L);
-        if (!canApplyPlan(takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds)) return null;
         return new int[]{takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds};
-    }
-
-    private boolean canApplyPlan(int takeOre, int takeBlocks, int takeEmeralds, int changeBlocks, int changeEmeralds) {
-        List<ItemStack> simulated = new ArrayList<>(size());
-        for (int slot = 0; slot < size(); slot++) simulated.add(getStack(slot).copy());
-        simulateRemove(simulated, Items.DEEPSLATE_EMERALD_ORE, takeOre);
-        simulateRemove(simulated, Items.EMERALD_BLOCK, takeBlocks);
-        simulateRemove(simulated, Items.EMERALD, takeEmeralds);
-        return simulateAdd(simulated, Items.EMERALD_BLOCK, changeBlocks) && simulateAdd(simulated, Items.EMERALD, changeEmeralds);
-    }
-
-    private static void simulateRemove(List<ItemStack> inventory, Item item, int amount) {
-        int remaining = amount;
-        for (ItemStack stack : inventory) {
-            if (remaining <= 0) break;
-            if (stack.getItem() != item) continue;
-            int removed = Math.min(remaining, stack.getCount()); stack.decrement(removed); remaining -= removed;
-        }
-    }
-
-    private static boolean simulateAdd(List<ItemStack> inventory, Item item, int amount) {
-        int remaining = amount;
-        for (ItemStack stack : inventory) {
-            if (remaining <= 0) return true;
-            if (!stack.isEmpty() && stack.getItem() == item) {
-                int add = Math.min(remaining, stack.getMaxCount() - stack.getCount()); stack.increment(add); remaining -= add;
-            }
-        }
-        for (int i = 0; i < inventory.size() && remaining > 0; i++) {
-            if (!inventory.get(i).isEmpty()) continue;
-            int add = Math.min(remaining, 64); inventory.set(i, new ItemStack(item, add)); remaining -= add;
-        }
-        return remaining <= 0;
     }
 
     private void addCurrency(Item item, int amount) {
@@ -177,17 +158,18 @@ public final class TeamBank extends SimpleInventory {
     }
 
     private int countCurrency(Item item) {
-        int total = 0; for (int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.getItem()==item) total+=stack.getCount();} return total;
+        int total = 0; for (int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.getItem()==item)total+=stack.getCount();}return total;
     }
 
     private void removeValue(Item item, int amount) {
-        int remaining=amount; for(int slot=0;slot<size()&&remaining>0;slot++){ItemStack stack=getStack(slot);if(stack.getItem()!=item)continue;int removed=Math.min(remaining,stack.getCount());stack.decrement(removed);remaining-=removed;if(stack.isEmpty())setStack(slot,ItemStack.EMPTY);} }
+        int remaining=amount;for(int slot=0;slot<size()&&remaining>0;slot++){ItemStack stack=getStack(slot);if(stack.getItem()!=item)continue;int removed=Math.min(remaining,stack.getCount());stack.decrement(removed);remaining-=removed;if(stack.isEmpty())setStack(slot,ItemStack.EMPTY);}
+    }
 
     public NbtList toNbtList() {
-        NbtList list=new NbtList(); for(int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.isEmpty())continue;NbtElement encoded=ItemStack.CODEC.encodeStart(NbtOps.INSTANCE,stack).result().orElse(null);if(!(encoded instanceof NbtCompound entry))continue;entry.putInt("Slot",slot);list.add(entry);} return list;
+        NbtList list=new NbtList();for(int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.isEmpty())continue;NbtElement encoded=ItemStack.CODEC.encodeStart(NbtOps.INSTANCE,stack).result().orElse(null);if(!(encoded instanceof NbtCompound entry))continue;entry.putInt("Slot",slot);list.add(entry);}return list;
     }
 
     public void readNbtList(NbtList list) {
-        clear(); for(int i=0;i<list.size();i++){NbtCompound entry=list.getCompoundOrEmpty(i);int slot=entry.getInt("Slot",-1);if(slot<0||slot>=size())continue;ItemStack.CODEC.parse(NbtOps.INSTANCE,entry).result().ifPresent(stack->{if(isCurrency(stack))setStack(slot,stack);});} markDirty();
+        clear();for(int i=0;i<list.size();i++){NbtCompound entry=list.getCompoundOrEmpty(i);int slot=entry.getInt("Slot",-1);if(slot<0||slot>=size())continue;ItemStack.CODEC.parse(NbtOps.INSTANCE,entry).result().ifPresent(stack->{if(isCurrency(stack))setStack(slot,stack);});}markDirty();
     }
 }
