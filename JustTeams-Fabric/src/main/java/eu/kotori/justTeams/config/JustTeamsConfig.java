@@ -60,6 +60,7 @@ public final class JustTeamsConfig {
         changed |= putDefault("team-creation.min-name-length", "3");
         changed |= putDefault("team-creation.max-name-length", "16");
         changed |= putDefault("team-creation.max-tag-length", "6");
+        changed |= putDefault("team-creation.max-members", "10");
         changed |= putDefault("team-creation.default-pvp", "true");
         changed |= putDefault("team-creation.default-public", "false");
 
@@ -114,6 +115,7 @@ public final class JustTeamsConfig {
     public int getMinTeamNameLength() { return getInt("team-creation.min-name-length", 3, 1); }
     public int getMaxTeamNameLength() { return getInt("team-creation.max-name-length", 16, 1); }
     public int getMaxTeamTagLength() { return getInt("team-creation.max-tag-length", 6, 2); }
+    public int getMaxTeamMembers() { return getInt("team-creation.max-members", 10, 1); }
     public boolean getDefaultTeamPvp() { return Boolean.parseBoolean(properties.getProperty("team-creation.default-pvp", "true")); }
     public boolean getDefaultTeamPublic() { return Boolean.parseBoolean(properties.getProperty("team-creation.default-public", "false")); }
 
