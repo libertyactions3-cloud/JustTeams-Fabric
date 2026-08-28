@@ -3,6 +3,26 @@
 A round counts only when a change is made somewhere under `src/` in `JustTeams-Fabric`.
 Documentation, searching/auditing, planning, Gradle builds, and runtime testing do not consume rounds.
 
+## Mandatory exhaustive-request rule
+
+For every user implementation prompt, identify **every explicit requested item** and implement **all requested items** that are within scope. Do not choose only the most obvious or convenient subset.
+
+Before reporting completion:
+
+```text
+all explicit requests
+        ↓
+audit every request against current source + 2.5.3
+        ↓
+implement ALL requested items
+        ↓
+verify every changed path
+        ↓
+report each item as implemented, blocked, or runtime-unverified
+```
+
+Do not mark a request complete merely because a related feature was changed. Keep a checklist of every distinct request.
+
 ## Completed cycles
 
 ### Core parity cycle — 10 / 10
@@ -17,10 +37,10 @@ Completed at source level. Covered in-place submenu navigation, persistent setti
 ## Current corrective GUI cycle
 
 ```text
-Source-change rounds completed: 9 / 10
-Current round: Round 9 complete — member GUI/rank/sort/name persistence + AutoBank/bank economy + logs + disband/sethome routing
+Source-change rounds completed: 10 / 10
+Current round: Round 10 complete — exhaustive corrective GUI/command/economy/logging parity
 Verification: Round 7 was the last user-verified clean build
-Next verification build: Round 10 final gate
+Next step: user downloads current src/ and runs the normal clean build, then runtime-tests the remaining checklist
 ```
 
 ### Round 1 — self-head interaction + member-editor layout
@@ -38,9 +58,9 @@ Completed.
 
 ### Round 3 — AutoBank economy foundation
 Completed.
-- Added exact team-bank currency withdrawal/availability for 81/9/1 denominations.
-- FeatureCostManager can route supported feature costs through the member's team AutoBank toggle instead of player inventory.
-- `/team autobank` persists the toggle across restarts.
+- Added team-bank currency support for 81/9/1 denominations.
+- FeatureCostManager can route supported feature costs through the member's team AutoBank toggle.
+- `/team autobank` state is persisted in `teams.dat`.
 
 ### Round 4 — command permission parity
 Completed.
@@ -48,105 +68,92 @@ Completed.
 - `/team promote` and `/team demote` step through the seven-rank ladder.
 - Warp creation checks the independent warp-creation toggle.
 - Co-Leaders may remove any team warp.
-- Invite success/notification and accept/join notification paths are preserved.
+- Invite/accept notification paths are preserved.
 
 ### Round 5 — persistent GUI layout and Join Requests refresh
 Completed.
-- Main `/team` member heads used the earlier verified layout `19–25`, `28–34`, `37–43`; this was superseded by Round 9's requested `9–44` placement.
-- Join Request heads fill the persistent interior `9–44`.
+- Main `/team` member-head layout was initially `19–25`, `28–34`, `37–43`.
+- That historical layout is superseded by the requested active `9–44` placement.
+- Join Request heads fill `9–44`.
 - Accepting a join request refreshes the saved main-team member-head snapshot while remaining inside Join Requests.
 - No `Dynamic` lore line is present on request heads.
-- Main GUI click dispatch uses the verified slot map.
-- Unset Home chat feedback uses the verified 2.5.3 message.
 
 ### Round 6 — command argument coverage + warp node enforcement
 Completed.
-- Ownership transfer player arguments use plain online-name suggestions.
-- Blacklist/unblacklist player arguments use plain online-name suggestions.
-- Base passwordless `/team warp set` uses `canSetWarps`.
-- Passworded warp creation uses the same permission.
-- Base `/team warp remove` allows the owner or Co-Leader to remove any warp.
-- A dedicated command override preserves both passwordless and passworded warp creation paths.
-- Member-management GUI contains independent feature toggles.
+- Ownership transfer and blacklist-related player arguments use plain online-name suggestions where applicable.
+- Base passwordless and passworded warp creation use `canSetWarps`.
+- Base `/team warp remove` allows owner or Co-Leader removal.
 
 ### Round 7 — compile/API corrections
 Completed and locally verified.
-- Renamed the private `TeamBank.count(Item)` helper so it no longer conflicts with the public `Inventory.count(Item)` API inherited from `SimpleInventory`.
-- Corrected online-player suggestions to use the Fabric server player manager and `player.getName().getString()`, preserving plain names without `@`.
-- Corrected rank-change notification to reuse the already-resolved `ServerPlayerEntity` instead of calling `getPlayerOrThrow()` from a helper that could propagate `CommandSyntaxException`.
-- User subsequently ran `./gradlew clean build --refresh-dependencies` successfully with no compilation errors.
+- Fixed `TeamBank.count(Item)` visibility collision.
+- Fixed online-player completion against the current Fabric API.
+- Fixed checked `CommandSyntaxException` propagation in rank-change notification.
+- User ran `./gradlew clean build --refresh-dependencies` successfully.
 
-### Round 8 — member management / rank / sorting / AutoBank state separation
-Completed at source level; not yet build-verified.
-- Main `/team` member heads now start at slot 9 and fill 9–44.
-- Main member heads show `Online Status` first, `Rank` second, and Joined date after that.
-- `Role` presentation was replaced with `Rank` in the affected GUI.
-- Hopper sort modes are `Online Status` (default), `Rank`, and `Alphabetical`; clicking the hopper cycles Online Status → Rank → Alphabetical → Online Status.
-- Rank sorting is highest-to-lowest using the seven-rank ladder.
-- Member-management no longer contains the golden helmet.
-- The green dye, red dye, red wool, and beacon action names are aqua/small-caps.
-- Gold ingot at slot 37 now combines bank withdrawal and AutoBank permission; the emerald-block permission item was removed.
-- `/team autobank` now has a separate permission bit/state model: the gold-item permission gates the command, while AutoBank can be ON/OFF independently.
-- AutoBank is disabled when a member is added to or removed from a team.
-- Member-head clicks require the viewer to be Underofficer or higher and the selected target to be strictly lower rank; own/same/higher-rank heads do not open member management.
-- Persisted `lastKnownName` was added to team-member data so offline GUI entries can resolve to the real last-known in-game name rather than display a UUID.
-- A login hook updates the stored last-known username and the server UUID/name cache.
-- Team bank GUI balance display now uses lime `<amount> total emeralds` wording rather than decimal formatting.
-- `/team sethome` is the setting command; `/team home` is the use/teleport command with `home clear` retained separately.
-- `/team home` when unset uses the requested blue `[ᴛᴇᴀᴍꜱ]` tag and red warning text.
-- The main `/team` bank-log entry point is a writable-book / “book and quill” item at slot 6, directly left of the compass at slot 7.
+### Round 8 — member-management / rank / sorting / AutoBank state separation
+Completed at source level.
+- Main `/team` member heads start at slot `9` and fill `9–44`.
+- Main heads use Online Status indicator + rank symbol + username formatting.
+- Main head lore contains Rank and Joined, with no Online Status or Dynamic line.
+- Hopper modes cover Online Status, Rank, Alphabetical, and Join Date.
+- Rank order is highest-to-lowest.
+- Member-management uses aqua/small-caps action names, no golden helmet, no emerald-block permission item, and a combined gold-ingot Bank Withdraw + AutoBank control.
+- Same/higher-rank and self head clicks are blocked; Underofficer+ is the management threshold in main-GUI routing.
+- Persisted `lastKnownName` resolves offline usernames.
+- AutoBank and team-chat state persist through TeamStorage.
+- New member additions disable AutoBank and team-home use by default.
 
-### Round 9 — bank economy change + audit logs + disband confirmation
-Completed at source level; not yet build-verified.
-- Team-bank AutoBank withdrawal can use 81-value deepslate emerald ore and, when lower denominations are absent and bank space permits, convert the minimum ore into emerald blocks + emeralds as change so the requested value is removed exactly.
-- Successful AutoBank withdrawals are logged with UUID, last-known/current username, amount, action, and timestamp.
-- Manual bank withdrawals are logged too.
-- Each team's bank log is stored separately, capped at 10,000 entries, and entries older than seven days are pruned.
-- Added a persistent 54-slot bank-log GUI with a weekly calculated AutoBank top-spender view toggled from the same slot.
-- The bank-log GUI deliberately does not display UUIDs to players; it displays the stored username.
-- Main TNT disband action now enters a two-stage persistent confirmation flow.
-- `/team disband` now enters the first confirmation stage instead of immediately deleting the team.
-- The confirmed disband path remains a single final operation after the second confirmation.
+### Round 9 — bank economy + audit logs + disband confirmation
+Completed at source level.
+- AutoBank withdrawal supports 81/9/1 denominations with higher-denomination fallback and player change.
+- Bank logs are capped at 10,000 entries per team and prune entries older than seven days.
+- Logs use player heads and include timestamp, amount, action/type, and stored username.
+- Weekly AutoBank top-spender view is calculated from the seven-day logs.
+- Main `/team` logs button is immediately left of team warps.
+- Two-stage 27-slot disband confirmation is implemented.
+- `/team disband` opens the first confirmation stage.
 
-## Verified-but-not-yet-resolved parity observations
+### Round 10 — exhaustive implementation pass
+Completed at source level; **not locally build-verified after these changes**.
+- Main `/team` title now uses the 2.5.3 `ᴛᴇᴀᴍ - <members>/<max_members>` format and reads `settings.max_team_size` with default 10.
+- Combined bank permission lore includes an explanatory line plus `Bank Withdraw and Autobank enabled/disabled`.
+- AutoBank change is returned to the player using the exact 81/9/1 overpayment/change model requested.
+- Team logs title is `ᴛᴇᴀᴍ ʟᴏɢs`.
+- Core/extension command argument usage feedback was expanded for create, warp set/remove, invite, kick, promote, demote, blacklist, and unblacklist.
+- User-facing no-team errors audited in the touched command/GUI paths use the #4C9DDE `[ᴛᴇᴀᴍꜱ]` prefix and red message.
+- New-member addition path explicitly disables team-home permission.
 
-### Member-button cooldowns
-The public v2.5.2 history confirms a configurable **PvP toggle cooldown** (default 300 seconds), but I have not yet found authoritative evidence that the member-management promote/demote/permission buttons themselves use individual cooldown timers. Do not invent a cooldown duration. Trace the 2.5.3 source before implementing any such timer.
+## Active layout facts
 
-### Universal inventory-GUI persistence
-The project rule remains that inventory-GUI → inventory-GUI transitions must reuse the same 54-slot handler whenever applicable so the mouse/cursor position does not reset. Vanilla anvil text input remains a separate AnvilScreenHandler exception.
-
-### 2.5.3 disband confirmation presentation
-Two-stage disband confirmation behavior is verified from the upstream release history, and the Fabric port now provides two persistent stages. The exact 2.5.3 visual arrangement/text of the second disband confirmation has not been conclusively recovered, so do not claim pixel-perfect second-stage presentation parity yet.
-
-## Mandatory Paper → Fabric slot mapping rule
-
-Do **not** assume a Bukkit/Paper Inventory slot number equals a Fabric ScreenHandler slot ID.
-
-For every GUI:
-
-1. Determine the 2.5.3 Bukkit Inventory index.
-2. Determine the Fabric backing Inventory index.
-3. Determine the order of Fabric `ScreenHandler.addSlot(...)` calls.
-4. Determine the resulting Fabric ScreenHandler slot ID.
-5. Verify the Fabric slot x/y coordinates put it in the same visual row/column.
-
-Always distinguish:
+The current active persistent `/team` member-head layout is:
 
 ```text
-Bukkit Inventory index
-Fabric backing Inventory / Slot.index
-Fabric ScreenHandler slot ID
+9–44
 ```
 
-For the active persistent six-row handler, the 54 menu slots are added first in row-major order, so menu backing indices `0–53` correspond to ScreenHandler IDs `0–53` in that construction.
+Do not restore the historical `19–25 / 28–34 / 37–43` layout from earlier audit notes.
 
-## Verification rule
+The current active persistent team menu is 54 slots with menu slots added first in row-major order, so menu backing indices `0–53` correspond to ScreenHandler IDs `0–53` in this construction.
 
-The user's canonical verification build is:
+## Known non-fatal configure notice
+
+When compilation otherwise succeeds, Loom may print:
+
+```text
+Cannot remap modifiers because it does not exist in any of the targets [] or their parents.
+```
+
+This is not automatically a failure. The actual Gradle task result is authoritative.
+
+## Remaining verification rule
+
+Round 10 source changes stop here. Do not make additional `src/` changes until the user has downloaded the current canonical `src/`, run:
 
 ```powershell
-./gradlew clean build --refresh-dependencies
+./gradlew clean build
 ```
 
-Round 7 is the last compile-verified source state. Round 10 remains the final build gate for this corrective cycle.
+and runtime-tested the affected feature paths.
+
+Any new compiler error must be handled using the mandatory exact-error workflow and starts a new corrective cycle only after the current verification state is understood.
