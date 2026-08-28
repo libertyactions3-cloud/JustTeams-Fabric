@@ -1,9 +1,7 @@
 package eu.kotori.justTeams.team;
 
 import eu.kotori.justTeams.economy.TeamBank;
-
 import net.minecraft.util.Formatting;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -36,22 +34,10 @@ public final class Team {
     private final TeamBank bank;
     private TeamEnderChest enderChest;
 
-    public Team(int id, String name, String tag, UUID ownerUuid, boolean defaultPvpStatus, boolean defaultPublicStatus, boolean defaultGlowStatus) {
-        this(id, name, tag, ownerUuid, defaultPvpStatus, defaultPublicStatus, defaultGlowStatus, Instant.now());
-    }
-
+    public Team(int id, String name, String tag, UUID ownerUuid, boolean defaultPvpStatus, boolean defaultPublicStatus, boolean defaultGlowStatus) { this(id, name, tag, ownerUuid, defaultPvpStatus, defaultPublicStatus, defaultGlowStatus, Instant.now()); }
     public Team(int id, String name, String tag, UUID ownerUuid, boolean defaultPvpStatus, boolean defaultPublicStatus, boolean defaultGlowStatus, Instant creationDate) {
-        this.id = id;
-        this.name = name;
-        this.tag = tag;
-        this.ownerUuid = ownerUuid;
-        this.pvpEnabled = defaultPvpStatus;
-        this.publicTeam = defaultPublicStatus;
-        this.glowEnabled = defaultGlowStatus;
-        this.creationDate = creationDate;
-        this.bank = new TeamBank(this);
+        this.id = id; this.name = name; this.tag = tag; this.ownerUuid = ownerUuid; this.pvpEnabled = defaultPvpStatus; this.publicTeam = defaultPublicStatus; this.glowEnabled = defaultGlowStatus; this.creationDate = creationDate; this.bank = new TeamBank(this);
     }
-
     public int getId() { return id; }
     public String getName() { return name; }
     public String getTag() { return tag == null ? "" : tag; }
@@ -73,10 +59,7 @@ public final class Team {
     public void setEnderChest(TeamEnderChest enderChest) { this.enderChest = enderChest; }
     public void setHome(TeamLocation home) { this.home = home; }
     public void clearHome() { this.home = null; }
-    public void addWarp(TeamWarp warp) {
-        if (getWarp(warp.getName()) != null) throw new IllegalArgumentException("A warp with that name already exists.");
-        warps.add(warp);
-    }
+    public void addWarp(TeamWarp warp) { if (getWarp(warp.getName()) != null) throw new IllegalArgumentException("A warp with that name already exists."); warps.add(warp); }
     public void removeWarp(String name) { warps.removeIf(warp -> warp.getName().equalsIgnoreCase(name)); }
     public void setName(String name) { this.name = name; }
     public void setTag(String tag) { this.tag = tag; }
@@ -105,30 +88,19 @@ public final class Team {
     public TeamPlayer getMember(UUID playerUuid) { return members.stream().filter(member -> member.getPlayerUuid().equals(playerUuid)).findFirst().orElse(null); }
     public List<TeamPlayer> getCoOwners() { return members.stream().filter(member -> member.getRole() == TeamRole.CO_OWNER).toList(); }
     public boolean hasElevatedPermissions(UUID playerUuid) { TeamPlayer member = getMember(playerUuid); return member != null && (member.getRole() == TeamRole.OWNER || member.getRole() == TeamRole.CO_OWNER); }
-    public void addJoinRequest(UUID playerUuid) {
-        if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team.");
-        if (!joinRequests.contains(playerUuid)) joinRequests.add(playerUuid);
-    }
+    public void addJoinRequest(UUID playerUuid) { if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team."); if (!joinRequests.contains(playerUuid)) joinRequests.add(playerUuid); }
     public void removeJoinRequest(UUID playerUuid) { joinRequests.remove(playerUuid); }
-    public void addInvite(UUID playerUuid) {
-        if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team.");
-        if (!invites.contains(playerUuid)) invites.add(playerUuid);
-    }
+    public void addInvite(UUID playerUuid) { if (isBlacklisted(playerUuid)) throw new IllegalStateException("That player is blacklisted from this team."); if (!invites.contains(playerUuid)) invites.add(playerUuid); }
     public void removeInvite(UUID playerUuid) { invites.remove(playerUuid); }
     public boolean hasInvite(UUID playerUuid) { return invites.contains(playerUuid); }
     public boolean hasJoinRequest(UUID playerUuid) { return joinRequests.contains(playerUuid); }
     public boolean isBlacklisted(UUID playerUuid) { return blacklist.stream().anyMatch(entry -> entry.getPlayerUuid().equals(playerUuid)); }
     public BlacklistedPlayer getBlacklistedPlayer(UUID playerUuid) { return blacklist.stream().filter(entry -> entry.getPlayerUuid().equals(playerUuid)).findFirst().orElse(null); }
-    public void addBlacklistEntry(BlacklistedPlayer entry) {
-        blacklist.removeIf(existing -> existing.getPlayerUuid().equals(entry.getPlayerUuid()));
-        blacklist.add(entry);
-        joinRequests.remove(entry.getPlayerUuid());
-        invites.remove(entry.getPlayerUuid());
-    }
+    public void addBlacklistEntry(BlacklistedPlayer entry) { blacklist.removeIf(existing -> existing.getPlayerUuid().equals(entry.getPlayerUuid())); blacklist.add(entry); joinRequests.remove(entry.getPlayerUuid()); invites.remove(entry.getPlayerUuid()); }
     public boolean removeBlacklistEntry(UUID playerUuid) { return blacklist.removeIf(entry -> entry.getPlayerUuid().equals(playerUuid)); }
     public TeamSortType getCurrentSortType() { return currentSortType; }
     public void setSortType(TeamSortType sortType) { currentSortType = sortType == null ? TeamSortType.ONLINE_STATUS : sortType; }
-    public void cycleSortType() { currentSortType = switch (currentSortType) { case ONLINE_STATUS -> TeamSortType.RANK; case RANK -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.ONLINE_STATUS; }; }
+    public void cycleSortType() { currentSortType = switch (currentSortType) { case ONLINE_STATUS -> TeamSortType.RANK; case RANK -> TeamSortType.ALPHABETICAL; case ALPHABETICAL -> TeamSortType.JOIN_DATE; case JOIN_DATE -> TeamSortType.ONLINE_STATUS; }; }
     public List<TeamPlayer> getSortedMembers(Comparator<TeamPlayer> comparator) { return members.stream().sorted(comparator).toList(); }
     public String getPlainName() { return stripFormatting(name); }
     public String getPlainTag() { return stripFormatting(getTag()); }
