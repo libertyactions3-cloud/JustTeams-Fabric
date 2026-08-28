@@ -34,6 +34,7 @@ import eu.kotori.justTeams.team.TeamTeleportManager;
 import eu.kotori.justTeams.util.ChatInputEvents;
 import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -57,6 +58,8 @@ public final class JustTeamsFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.SERVER) return;
+
         try { config = new JustTeamsConfig(FabricLoader.getInstance().getConfigDir()); }
         catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams configuration", exception); }
 
