@@ -31,14 +31,13 @@ public final class TeamCreationCommandExtensions {
                 .then(CommandManager.argument("name",StringArgumentType.word())
                         .executes(context->usage(context.getSource()))
                         .then(CommandManager.argument("tag",StringArgumentType.word())
-                                .executes(context->execute(context.getSource()))));
+                                .executes(context->execute(context.getSource(),StringArgumentType.getString(context,"name"),StringArgumentType.getString(context,"tag")))));
         team.addChild(replacement.build());
     }
 
-    private static int execute(ServerCommandSource source) {
+    private static int execute(ServerCommandSource source,String name,String tag) {
         try {
-            ServerPlayerEntity player=source.getPlayerOrThrow(); String name=StringArgumentType.getString(source.currentCommandParseContext(),"name");
-            String tag=StringArgumentType.getString(source.currentCommandParseContext(),"tag"); JustTeamsConfig config=JustTeamsFabric.config();
+            ServerPlayerEntity player=source.getPlayerOrThrow(); JustTeamsConfig config=JustTeamsFabric.config();
             if(!isValid(name,config.getMinTeamNameLength(),config.getMaxTeamNameLength(),true)||!isValid(tag,2,config.getMaxTeamTagLength(),true)){source.sendError(Text.literal("Invalid team name or tag. Name: 3-16 characters; tag: 2-"+config.getMaxTeamTagLength()+". Use only letters, numbers, and underscores."));return 0;}
             Team team=JustTeamsFabric.teams().createTeam(name,tag,player.getUuid(),config.getDefaultTeamPvp(),config.getDefaultTeamPublic(),false); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); source.sendFeedback(()->Text.literal("You have successfully created the team "+team.getName()+"."),false);return 1;
         } catch(Exception exception){String message=exception.getMessage();source.sendError("You are not in a team.".equals(message)?noTeam():Text.literal(message==null?"Unable to create team.":message));JustTeamsFabric.LOGGER.error("Team creation command failed",exception);return 0;}
