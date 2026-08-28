@@ -60,7 +60,7 @@ public final class FeatureCostManager {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
         if (member != null && member.canUseAutoBank() && member.isAutoBankEnabled()) {
-            if (team.getBank().tryWithdrawValue((long) cost)) {
+            if (team.getBank().tryWithdrawValue(player, (long) cost)) {
                 TeamBankLogManager.record(player.getEntityWorld().getServer(), team, player,
                         (long) cost, TeamBankLogManager.Kind.AUTOBANK, feature);
                 return true;
