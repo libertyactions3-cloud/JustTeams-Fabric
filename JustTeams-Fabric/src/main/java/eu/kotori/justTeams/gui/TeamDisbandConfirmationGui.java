@@ -1,152 +1,138 @@
 package eu.kotori.justTeams.gui;
 
-import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.Team;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.WeakHashMap;
 
-/** Persistent two-stage disband confirmation rendered inside the existing 54-slot team GUI. */
+/** Persistent logical two-stage disband confirmation flow using a true 27-slot chest. */
 public final class TeamDisbandConfirmationGui {
-    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> SNAPSHOTS = new WeakHashMap<>();
-    private static final WeakHashMap<TeamMenuHandler, Integer> STAGES = new WeakHashMap<>();
-
     private TeamDisbandConfirmationGui() {}
 
-    public static void openFirst(TeamMenuHandler menu, ServerPlayerEntity player, Team team) {
-        if (menu == null || player == null || team == null || !team.isOwner(player.getUuid())) return;
-        snapshot(menu);
-        STAGES.put(menu, 1);
-        render(menu, team, 1);
+    public static void openFirst(TeamMenuHandler ignored, ServerPlayerEntity player, Team team) {
+        if (player == null || team == null || !team.isOwner(player.getUuid())) return;
+        open(player, team, 1);
     }
 
-    public static boolean isOpen(TeamMenuHandler menu) {
-        return menu != null && STAGES.containsKey(menu);
+    /** The confirmation uses its own 27-slot handler because vanilla chest size is fixed by ScreenHandlerType at construction. */
+    public static boolean isOpen(TeamMenuHandler ignored) { return false; }
+    public static boolean handle(TeamMenuHandler ignored, ServerPlayerEntity player, Team team, int slot) { return false; }
+
+    private static void open(ServerPlayerEntity player, Team team, int stage) {
+        player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
+                (syncId, playerInventory, ignored) -> new Handler(syncId, playerInventory, player, team, stage),
+                Text.literal(stage == 1
+                        ? "Are you sure you want to disband your team? This cannot be undone."
+                        : "Disband " + team.getName() + "?")
+                        .setStyle(Style.EMPTY.withItalic(false))
+        ));
     }
 
-    public static boolean handle(TeamMenuHandler menu, ServerPlayerEntity player, Team team, int slot) {
-        if (!isOpen(menu)) return false;
-        if (player == null || team == null || !team.isOwner(player.getUuid())) {
-            close(menu);
-            return true;
-        }
-        int stage = STAGES.getOrDefault(menu, 1);
-        if (slot == 11) {
-            if (stage == 1) {
-                STAGES.put(menu, 2);
-                render(menu, team, 2);
-            } else {
-                close(menu);
-                TeamGuiManager.performDisband(player, team);
+    private static final class Handler extends ScreenHandler {
+        private final Inventory menu = new SimpleInventory(27);
+        private final ServerPlayerEntity player;
+        private final Team team;
+        private final int stage;
+
+        Handler(int syncId, net.minecraft.entity.player.PlayerInventory playerInventory,
+                ServerPlayerEntity player, Team team, int stage) {
+            super(ScreenHandlerType.GENERIC_9X3, syncId);
+            this.player = player;
+            this.team = team;
+            this.stage = stage;
+
+            for (int i = 0; i < 27; i++) {
+                addSlot(new MenuSlot(menu, i, 8 + (i % 9) * 18, 18 + (i / 9) * 18));
             }
-            return true;
-        }
-        if (slot == 15) {
-            close(menu);
-            return true;
-        }
-        return true;
-    }
-
-    public static void close(TeamMenuHandler menu) {
-        STAGES.remove(menu);
-        ItemStack[] snapshot = SNAPSHOTS.remove(menu);
-        if (snapshot == null) return;
-        Inventory inventory = menu.getMenuInventory();
-        for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
-        menu.sendContentUpdates();
-    }
-
-    private static void snapshot(TeamMenuHandler menu) {
-        if (SNAPSHOTS.containsKey(menu)) return;
-        ItemStack[] snapshot = new ItemStack[54];
-        for (int slot = 0; slot < snapshot.length; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
-        SNAPSHOTS.put(menu, snapshot);
-    }
-
-    private static void render(TeamMenuHandler menu, Team team, int stage) {
-        Inventory inventory = menu.getMenuInventory();
-        ItemStack filler = named(Items.GRAY_STAINED_GLASS_PANE, " ", Formatting.WHITE, false);
-        for (int slot = 0; slot < 54; slot++) inventory.setStack(slot, filler.copy());
-
-        if (stage == 1) {
-            inventory.setStack(4, namedGradient(Items.TNT, "ᴅɪsʙᴀɴᴅ ᴛᴇᴀᴍ"));
-            inventory.setStack(22, itemWithLore(Items.PAPER, "ᴀʀᴇ ʏᴏᴜ sᴜʀᴇ?",
-                    List.of(line("This will permanently delete your team.", Formatting.GRAY),
-                            line("This action cannot be undone.", Formatting.DARK_RED))));
-        } else {
-            inventory.setStack(4, namedGradient(Items.TNT, "ᴅɪsʙᴀɴᴅ " + team.getName()));
-            inventory.setStack(22, itemWithLore(Items.PAPER, "ᴄᴏɴғɪʀᴍ ᴅɪsʙᴀɴᴅ?",
-                    List.of(line("Permanently delete team " + team.getName() + ".", Formatting.GRAY),
-                            line("This action cannot be undone.", Formatting.DARK_RED))));
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 9; col++) {
+                    addSlot(new Slot(playerInventory, col + row * 9 + 9,
+                            8 + col * 18, 84 + row * 18));
+                }
+            }
+            for (int col = 0; col < 9; col++) {
+                addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            }
+            populate();
         }
 
-        inventory.setStack(11, action(Items.GREEN_WOOL, "ᴄᴏɴғɪʀᴍ", Formatting.GREEN,
-                "Confirm and continue."));
-        inventory.setStack(15, action(Items.RED_WOOL, "ᴄᴀɴᴄᴇʟ", Formatting.RED,
-                "Return to your team menu."));
-        menu.sendContentUpdates();
-    }
+        private void populate() {
+            ItemStack filler = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
+            filler.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal(" ").setStyle(Style.EMPTY.withItalic(false)));
+            for (int i = 0; i < 27; i++) menu.setStack(i, filler.copy());
 
-    private static ItemStack action(net.minecraft.item.Item item, String name, Formatting color, String lore) {
-        return itemWithLore(item, name, List.of(line(lore, color)));
-    }
+            ItemStack confirm = new ItemStack(Items.GREEN_WOOL);
+            confirm.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ᴄᴏɴғɪʀᴍ").setStyle(Style.EMPTY
+                            .withColor(Formatting.GREEN).withBold(true).withItalic(false)));
+            confirm.set(DataComponentTypes.LORE,
+                    new LoreComponent(List.of(Text.literal("This action cannot be undone.")
+                            .setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)) )));
+            menu.setStack(11, confirm);
 
-    private static ItemStack itemWithLore(net.minecraft.item.Item item, String name, List<Text> lore) {
-        ItemStack stack = new ItemStack(item);
-        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withColor(name.equals("ᴄᴏɴғɪʀᴍ") ? Formatting.GREEN : name.equals("ᴄᴀɴᴄᴇʟ") ? Formatting.RED : Formatting.WHITE).withBold(true).withItalic(false)));
-        stack.set(DataComponentTypes.LORE, new LoreComponent(lore));
-        return stack;
-    }
-
-    private static ItemStack named(net.minecraft.item.Item item, String name, Formatting color, boolean bold) {
-        ItemStack stack = new ItemStack(item);
-        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(name).setStyle(Style.EMPTY.withColor(color).withBold(bold).withItalic(false)));
-        return stack;
-    }
-
-    private static ItemStack namedGradient(net.minecraft.item.Item item, String value) {
-        ItemStack stack = new ItemStack(item);
-        stack.set(DataComponentTypes.CUSTOM_NAME, gradientText(value));
-        return stack;
-    }
-
-    private static MutableText line(String text, Formatting color) {
-        return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
-    }
-
-    private static MutableText gradientText(String value) {
-        int start = 0x4C9DDE;
-        int end = 0x4C96D2;
-        MutableText result = Text.empty();
-        if (value.isEmpty()) return result;
-        int length = Math.max(1, value.codePointCount(0, value.length()) - 1);
-        int index = 0;
-        for (int offset = 0; offset < value.length();) {
-            int cp = value.codePointAt(offset);
-            double t = (double) index / length;
-            int sr = (start >> 16) & 255, sg = (start >> 8) & 255, sb = start & 255;
-            int er = (end >> 16) & 255, eg = (end >> 8) & 255, eb = end & 255;
-            int r = (int) Math.round(sr + (er - sr) * t);
-            int g = (int) Math.round(sg + (eg - sg) * t);
-            int b = (int) Math.round(sb + (eb - sb) * t);
-            result.append(Text.literal(new String(Character.toChars(cp)))
-                    .setStyle(Style.EMPTY.withColor((r << 16) | (g << 8) | b).withBold(true).withItalic(false)));
-            offset += Character.charCount(cp);
-            index++;
+            ItemStack cancel = new ItemStack(Items.RED_WOOL);
+            cancel.set(DataComponentTypes.CUSTOM_NAME,
+                    Text.literal("ᴄᴀɴᴄᴇʟ").setStyle(Style.EMPTY
+                            .withColor(Formatting.RED).withBold(true).withItalic(false)));
+            cancel.set(DataComponentTypes.LORE,
+                    new LoreComponent(List.of(Text.literal("Return to the previous menu.")
+                            .setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)) )));
+            menu.setStack(15, cancel);
         }
-        return result;
+
+        @Override
+        public void onSlotClick(int slot, int button, SlotActionType actionType, PlayerEntity clicker) {
+            if (slot < 0 || slot >= 27) return;
+            if (!(clicker instanceof ServerPlayerEntity serverPlayer)
+                    || !serverPlayer.getUuid().equals(player.getUuid())) return;
+            if (!team.isOwner(serverPlayer.getUuid())) {
+                serverPlayer.closeHandledScreen();
+                return;
+            }
+            if (slot == 15) {
+                serverPlayer.closeHandledScreen();
+                TeamGuiManager.openMain(serverPlayer);
+                return;
+            }
+            if (slot != 11) return;
+
+            if (stage == 1) {
+                open(serverPlayer, team, 2);
+            } else {
+                TeamGuiManager.performDisband(serverPlayer, team);
+            }
+        }
+
+        @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
+
+        @Override
+        public boolean canUse(PlayerEntity player) {
+            return player.getUuid().equals(this.player.getUuid()) && team.isOwner(player.getUuid());
+        }
+    }
+
+    private static final class MenuSlot extends Slot {
+        private MenuSlot(Inventory inventory, int index, int x, int y) {
+            super(inventory, index, x, y);
+        }
+
+        @Override public boolean canInsert(ItemStack stack) { return false; }
+        @Override public boolean canTakeItems(PlayerEntity player) { return false; }
     }
 }
