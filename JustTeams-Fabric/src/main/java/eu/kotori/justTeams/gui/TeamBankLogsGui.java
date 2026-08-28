@@ -19,7 +19,6 @@ import net.minecraft.util.Formatting;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 import java.util.WeakHashMap;
 
 /** Persistent 54-slot team-bank audit log view and one-week AutoBank top-spender view. */
@@ -41,7 +40,7 @@ public final class TeamBankLogsGui {
 
     private static void renderLogs(TeamMenuHandler menu, ServerPlayerEntity player, Team team) {
         Inventory inventory = menu.getMenuInventory(); clear(inventory);
-        inventory.setStack(4, named(Items.WRITABLE_BOOK, "ʙᴀɴᴋ ʟᴏɢs", Formatting.AQUA, true));
+        inventory.setStack(4, named(Items.WRITABLE_BOOK, "ᴛᴇᴀᴍ ʟᴏɢs", Formatting.AQUA, true));
         List<TeamBankLogManager.Entry> entries = new ArrayList<>(TeamBankLogManager.recent(team)); entries.sort(Comparator.comparingLong(TeamBankLogManager.Entry::timestampMillis).reversed());
         for (int i=0;i<LOG_SLOTS.length && i<entries.size();i++) inventory.setStack(LOG_SLOTS[i], logHead(player, team, entries.get(i)));
         if (entries.isEmpty()) { ItemStack empty=named(Items.PAPER,"ɴᴏ ʙᴀɴᴋ ʟᴏɢs",Formatting.GRAY,true); empty.set(DataComponentTypes.LORE,new LoreComponent(List.of(line("No team-bank withdrawals were recorded in the last 7 days.",Formatting.GRAY)))); inventory.setStack(22,empty); }
@@ -65,7 +64,7 @@ public final class TeamBankLogsGui {
         if(top==null){ItemStack empty=named(Items.PAPER,"ɴᴏ ᴛᴏᴘ sᴘᴇɴᴅᴇʀ",Formatting.GRAY,true); empty.set(DataComponentTypes.LORE,new LoreComponent(List.of(line("No AutoBank withdrawals were recorded in the last 7 days.",Formatting.GRAY)))); inventory.setStack(22,empty);} else {
             ItemStack head=new ItemStack(Items.PLAYER_HEAD); head.set(DataComponentTypes.PROFILE,ProfileComponent.ofDynamic(top.playerUuid())); TeamPlayer member=team.getMember(top.playerUuid()); ServerPlayerEntity online=player.getEntityWorld().getServer().getPlayerManager().getPlayer(top.playerUuid()); boolean isOnline=online!=null; String name=online!=null?online.getName().getString():PlayerNameResolver.resolve(player.getEntityWorld().getServer(),top.playerUuid()); if(name.equals("Unknown"))name=top.playerName(); String symbol=member==null?"+":switch(member.getRank()){case INITIATE->"+";case MEMBER->"›";case ASSOCIATE->"»";case UNDEROFFICER->"*";case OFFICER->"⁑";case CO_LEADER->"⁂";case LEADER->"★";}; MutableText title=Text.literal("●").setStyle(Style.EMPTY.withColor(isOnline?0x00FF00:0xFF4444).withItalic(false)).append(Text.literal("   ").setStyle(Style.EMPTY.withItalic(false))).append(Text.literal(symbol).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withBold(false).withItalic(false))).append(Text.literal(" ").setStyle(Style.EMPTY.withItalic(false))).append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withBold(false).withItalic(false))); head.set(DataComponentTypes.CUSTOM_NAME,title); head.set(DataComponentTypes.LORE,new LoreComponent(List.of(compose("Withdrawn: ",top.amount()+" total emeralds",Formatting.GRAY,Formatting.GREEN),line("Calculated from the last 7 days of AutoBank logs.",Formatting.GRAY)))); inventory.setStack(22,head);
         }
-        ItemStack toggle=named(Items.WRITABLE_BOOK,"ʙᴀᴄᴋ ᴛᴏ ʟᴏɢs",Formatting.AQUA,true); toggle.set(DataComponentTypes.LORE,new LoreComponent(List.of(line("Return to the bank logs.",Formatting.YELLOW)))); inventory.setStack(49,toggle); inventory.setStack(53,back()); menu.sendContentUpdates();
+        ItemStack toggle=named(Items.WRITABLE_BOOK,"ʙᴀᴄᴋ ᴛᴏ ʟᴏɢs",Formatting.AQUA,true); toggle.set(DataComponentTypes.LORE,new LoreComponent(List.of(line("Return to the team bank logs.",Formatting.YELLOW)))); inventory.setStack(49,toggle); inventory.setStack(53,back()); menu.sendContentUpdates();
     }
 
     private static void snapshot(TeamMenuHandler menu){if(SNAPSHOTS.containsKey(menu))return;ItemStack[] snapshot=new ItemStack[54];for(int i=0;i<54;i++)snapshot[i]=menu.getMenuInventory().getStack(i).copy();SNAPSHOTS.put(menu,snapshot);}
