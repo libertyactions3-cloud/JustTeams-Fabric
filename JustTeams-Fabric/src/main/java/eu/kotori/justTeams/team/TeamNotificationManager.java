@@ -4,6 +4,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -17,7 +18,7 @@ public final class TeamNotificationManager {
 
     public static void notifyJoinRequest(MinecraftServer server, Team team, UUID requesterUuid) {
         String playerName = playerName(server, requesterUuid);
-        Text message = prefix().append(Text.literal(playerName).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+        MutableText message = prefix().append(Text.literal(playerName).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal(" wants to join your team. Use ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))
                 .append(Text.literal("/team requests").setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal(" to view.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
@@ -25,7 +26,7 @@ public final class TeamNotificationManager {
     }
 
     public static void notifyJoinRequestSent(MinecraftServer server, ServerPlayerEntity requester, Team team) {
-        Text message = prefix().append(Text.literal("Your request to join ").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)))
+        MutableText message = prefix().append(Text.literal("Your request to join ").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)))
                 .append(Text.literal(team.getName()).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal(" has been sent.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)));
         requester.sendMessage(message, false);
@@ -33,7 +34,7 @@ public final class TeamNotificationManager {
 
     public static void notifyJoinRequestAccepted(MinecraftServer server, Team team, UUID playerUuid) {
         String name = playerName(server, playerUuid);
-        Text message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+        MutableText message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal("'s has joined the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcast(server, team, message);
         ServerPlayerEntity joined = server.getPlayerManager().getPlayer(playerUuid);
@@ -42,14 +43,14 @@ public final class TeamNotificationManager {
 
     public static void notifyJoinRequestDenied(MinecraftServer server, Team team, UUID playerUuid) {
         String name = playerName(server, playerUuid);
-        Text message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+        MutableText message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal("'s request to join has been denied.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcast(server, team, message);
     }
 
     public static void notifyLeave(MinecraftServer server, Team team, UUID playerUuid) {
         String name = playerName(server, playerUuid);
-        Text message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+        MutableText message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal("'s has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcast(server, team, message);
     }
@@ -62,7 +63,7 @@ public final class TeamNotificationManager {
             kicker.sendMessage(Text.literal("You have kicked " + targetName + " from the team."), false);
             playSuccessSound(kicker);
         }
-        Text message = prefix().append(Text.literal(playerName(server, targetUuid)).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+        MutableText message = prefix().append(Text.literal(playerName(server, targetUuid)).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
                 .append(Text.literal("'s has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcastExcept(server, team, message, kickerUuid, targetUuid);
         if (target != null) target.sendMessage(Text.literal("You have been kicked from the team " + team.getName() + "."), false);
@@ -81,7 +82,7 @@ public final class TeamNotificationManager {
         broadcastExcept(server, team, prefix().append(Text.literal("The team " + team.getName() + " has been disbanded.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))), ownerUuid);
     }
 
-    private static Text prefix() { return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false)); }
+    private static MutableText prefix() { return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false)); }
 
     private static void broadcast(MinecraftServer server, Team team, Text message) {
         for (TeamPlayer member : team.getMembers()) {
