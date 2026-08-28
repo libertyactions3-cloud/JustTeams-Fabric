@@ -5,87 +5,82 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.util.List;
-import java.util.WeakHashMap;
 
-/** Two-stage persistent confirmation flow for team disbanding. */
+/** Exact 27-slot, two-stage disband confirmation menus. */
 public final class TeamDisbandConfirmationGui {
-    private static final WeakHashMap<TeamMenuHandler, Integer> STAGES = new WeakHashMap<>();
-    private static final WeakHashMap<TeamMenuHandler, ItemStack[]> SNAPSHOTS = new WeakHashMap<>();
-
     private TeamDisbandConfirmationGui() {}
 
-    public static void openFirst(TeamMenuHandler menu, ServerPlayerEntity player, Team team) {
-        if (!team.isOwner(player.getUuid())) return;
-        snapshot(menu);
-        STAGES.put(menu, 1);
-        render(menu, team, 1);
+    public static void openFirst(TeamMenuHandler ignored, ServerPlayerEntity player, Team team) { openFirst(player, team); }
+
+    public static void openFirst(ServerPlayerEntity player, Team team) {
+        if (player == null || team == null || !team.isOwner(player.getUuid())) return;
+        open(player, team, 1);
     }
 
-    public static boolean isOpen(TeamMenuHandler menu) { return STAGES.containsKey(menu); }
-
-    public static void handle(TeamMenuHandler menu, ServerPlayerEntity player, Team team, int slot) {
-        Integer stage = STAGES.get(menu);
-        if (stage == null) return;
-        if (slot == 15 || slot == 49) { closeToMain(menu); return; }
-        if (slot != 11) return;
-        if (!team.isOwner(player.getUuid())) { closeToMain(menu); return; }
-        if (stage == 1) { STAGES.put(menu, 2); render(menu, team, 2); }
-        else { STAGES.remove(menu); SNAPSHOTS.remove(menu); TeamGuiManager.performDisband(player, team); }
+    private static void open(ServerPlayerEntity player, Team team, int stage) {
+        player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
+                (syncId, inventory, ignored) -> new Handler(syncId, inventory, player, team, stage),
+                Text.literal(stage == 1 ? "Are you sure you want to disband your team? This cannot be undone." : "Disband " + team.getName() + "?")
+                        .setStyle(Style.EMPTY.withItalic(false))));
     }
 
-    private static void render(TeamMenuHandler menu, Team team, int stage) {
-        Inventory inventory = menu.getMenuInventory();
-        ItemStack filler = pane();
-        for (int slot = 0; slot < 54; slot++) inventory.setStack(slot, ItemStack.EMPTY);
-        for (int slot = 0; slot < 9; slot++) inventory.setStack(slot, filler.copy());
-        for (int slot = 45; slot < 54; slot++) inventory.setStack(slot, filler.copy());
+    private static final class Handler extends ScreenHandler {
+        private final Inventory menu = new SimpleInventory(27);
+        private final ServerPlayerEntity player;
+        private final Team team;
+        private final int stage;
 
-        ItemStack warning = new ItemStack(Items.TNT);
-        warning.set(DataComponentTypes.CUSTOM_NAME, Text.literal(stage == 1 ? "ᴅɪsʙᴀɴᴅ ᴛᴇᴀᴍ" : "ᴄᴏɴғɪʀᴍ ᴅɪsʙᴀɴᴅ").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
-        warning.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                Text.literal("Team: " + team.getName()).setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)),
-                Text.literal("").setStyle(net.minecraft.text.Style.EMPTY.withItalic(false)),
-                Text.literal(stage == 1 ? "This permanently deletes the team." : "This is your final confirmation.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)),
-                Text.literal("All members, settings, warps, bank data, and team data will be removed.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.DARK_RED).withItalic(false)))));
-        inventory.setStack(13, warning);
+        Handler(int syncId, net.minecraft.entity.player.PlayerInventory playerInventory, ServerPlayerEntity player, Team team, int stage) {
+            super(ScreenHandlerType.GENERIC_9X3, syncId);
+            this.player = player; this.team = team; this.stage = stage;
+            for (int i = 0; i < 27; i++) addSlot(new MenuSlot(menu, i, 8 + (i % 9) * 18, 18 + (i / 9) * 18));
+            for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+            for (int col = 0; col < 9; col++) addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            populate();
+        }
 
-        ItemStack confirm = new ItemStack(stage == 1 ? Items.GREEN_WOOL : Items.RED_WOOL);
-        confirm.set(DataComponentTypes.CUSTOM_NAME, Text.literal(stage == 1 ? "ᴄᴏɴᴛɪɴᴜᴇ" : "ᴅɪsʙᴀɴᴅ ᴛᴇᴀᴍ").setStyle(net.minecraft.text.Style.EMPTY.withColor(stage == 1 ? Formatting.GREEN : Formatting.RED).withBold(true).withItalic(false)));
-        confirm.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal(stage == 1 ? "Continue to the final confirmation." : "Permanently delete the team.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))));
-        inventory.setStack(11, confirm);
+        private void populate() {
+            ItemStack filler = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
+            filler.set(DataComponentTypes.CUSTOM_NAME, Text.literal(" ").setStyle(Style.EMPTY.withItalic(false)));
+            for (int i = 0; i < 27; i++) menu.setStack(i, filler.copy());
 
-        ItemStack cancel = new ItemStack(Items.RED_WOOL);
-        cancel.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴀɴᴄᴇʟ").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
-        cancel.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("Return to the team menu.").setStyle(net.minecraft.text.Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))));
-        inventory.setStack(15, cancel);
-        menu.sendContentUpdates();
-    }
+            ItemStack confirm = new ItemStack(Items.GREEN_WOOL);
+            confirm.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴏɴғɪʀᴍ").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withBold(true).withItalic(false)));
+            confirm.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("This action cannot be undone.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false))));
+            menu.setStack(11, confirm);
 
-    private static void snapshot(TeamMenuHandler menu) {
-        ItemStack[] snapshot = new ItemStack[54];
-        for (int slot = 0; slot < 54; slot++) snapshot[slot] = menu.getMenuInventory().getStack(slot).copy();
-        SNAPSHOTS.put(menu, snapshot);
-    }
+            ItemStack cancel = new ItemStack(Items.RED_WOOL);
+            cancel.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴀɴᴄᴇʟ").setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
+            cancel.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("Return to the previous menu.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))));
+            menu.setStack(15, cancel);
+        }
 
-    private static void closeToMain(TeamMenuHandler menu) {
-        STAGES.remove(menu);
-        ItemStack[] snapshot = SNAPSHOTS.remove(menu);
-        if (snapshot == null) return;
-        Inventory inventory = menu.getMenuInventory();
-        for (int slot = 0; slot < snapshot.length; slot++) inventory.setStack(slot, snapshot[slot].copy());
-        menu.sendContentUpdates();
-    }
+        @Override public void onSlotClick(int slot, int button, SlotActionType actionType, PlayerEntity clicker) {
+            if (slot < 0 || slot >= 27) return;
+            if (!(clicker instanceof ServerPlayerEntity serverPlayer) || !serverPlayer.getUuid().equals(player.getUuid())) return;
+            if (!team.isOwner(serverPlayer.getUuid())) { serverPlayer.closeHandledScreen(); return; }
+            if (slot == 15) { serverPlayer.closeHandledScreen(); TeamGuiManager.openMain(serverPlayer); return; }
+            if (slot != 11) return;
+            if (stage == 1) open(serverPlayer, team, 2);
+            else TeamGuiManager.performDisband(serverPlayer, team);
+        }
 
-    private static ItemStack pane() {
-        ItemStack pane = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
-        pane.set(DataComponentTypes.CUSTOM_NAME, Text.literal(" ").setStyle(net.minecraft.text.Style.EMPTY.withItalic(false)));
-        return pane;
+        @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
+        @Override public boolean canUse(PlayerEntity player) { return player.getUuid().equals(this.player.getUuid()) && team.isOwner(player.getUuid()); }
+        private static final class MenuSlot extends Slot { MenuSlot(Inventory inventory, int index, int x, int y) { super(inventory, index, x, y); } @Override public boolean canInsert(ItemStack stack) { return false; } @Override public boolean canTakeItems(PlayerEntity player) { return false; } }
     }
 }
