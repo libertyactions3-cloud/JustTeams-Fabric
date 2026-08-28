@@ -20,6 +20,7 @@ import eu.kotori.justTeams.team.TeamWarp;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -39,45 +40,27 @@ public final class TeamCommand {
                                 .then(CommandManager.argument("tag", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CREATE,
                                                 () -> create(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "tag")))))))
-                .then(CommandManager.literal("gui")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> openGui(c.getSource()))))
-                .then(CommandManager.literal("info")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
-                .then(CommandManager.literal("leave")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
-                .then(CommandManager.literal("disband")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
-                .then(CommandManager.literal("pvp")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
-                .then(CommandManager.literal("glow")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> toggleGlow(c.getSource()))))
-                .then(CommandManager.literal("bank")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
-                .then(CommandManager.literal("enderchest")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
-                .then(CommandManager.literal("ec")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
-                .then(CommandManager.literal("sethome")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> setHome(c.getSource()))))
-                .then(CommandManager.literal("delhome")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> clearHome(c.getSource()))))
-                .then(CommandManager.literal("home")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))))
+                .then(CommandManager.literal("gui").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> openGui(c.getSource()))))
+                .then(CommandManager.literal("info").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
+                .then(CommandManager.literal("leave").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
+                .then(CommandManager.literal("disband").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
+                .then(CommandManager.literal("pvp").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
+                .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> toggleGlow(c.getSource()))))
+                .then(CommandManager.literal("bank").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
+                .then(CommandManager.literal("enderchest").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
+                .then(CommandManager.literal("ec").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
+                .then(CommandManager.literal("sethome").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> setHome(c.getSource()))))
+                .then(CommandManager.literal("delhome").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> clearHome(c.getSource()))))
+                .then(CommandManager.literal("home").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))))
                 .then(CommandManager.literal("warp")
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource())))
-                        .then(CommandManager.literal("set")
-                                .then(CommandManager.argument("name", StringArgumentType.word())
-                                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETWARP,
-                                                () -> setWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
-                        .then(CommandManager.literal("remove")
-                                .then(CommandManager.argument("name", StringArgumentType.word())
-                                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DELWARP,
-                                                () -> removeWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
-                        .then(CommandManager.literal("list")
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource()))))
+                        .then(CommandManager.literal("set").then(CommandManager.argument("name", StringArgumentType.word())
+                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETWARP, () -> setWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
+                        .then(CommandManager.literal("remove").then(CommandManager.argument("name", StringArgumentType.word())
+                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DELWARP, () -> removeWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
+                        .then(CommandManager.literal("list").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource()))))
                         .then(CommandManager.argument("name", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP,
-                                        () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), "")))
+                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP, () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), "")))
                                 .then(CommandManager.argument("password", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP,
                                                 () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "password")))))))
@@ -86,26 +69,20 @@ public final class TeamCommand {
                                 .suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                                 .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INVITE,
                                         () -> invite(c.getSource(), StringArgumentType.getString(c, "player"))))))
-                .then(CommandManager.literal("accept")
-                        .then(CommandManager.argument("team", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ACCEPT,
-                                        () -> acceptInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("deny")
-                        .then(CommandManager.argument("team", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DENY,
-                                        () -> denyInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("join")
-                        .then(CommandManager.argument("team", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_JOIN,
-                                        () -> requestJoin(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("unjoin")
-                        .then(CommandManager.argument("team", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_UNJOIN,
-                                        () -> cancelJoinRequest(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("requests")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS, () -> openRequests(c.getSource()))))
-                .then(CommandManager.literal("chat")
-                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource())))));
+                .then(CommandManager.literal("accept").then(CommandManager.argument("team", StringArgumentType.word())
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ACCEPT,
+                                () -> acceptInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
+                .then(CommandManager.literal("deny").then(CommandManager.argument("team", StringArgumentType.word())
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DENY,
+                                () -> denyInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
+                .then(CommandManager.literal("join").then(CommandManager.argument("team", StringArgumentType.word())
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_JOIN,
+                                () -> requestJoin(c.getSource(), StringArgumentType.getString(c, "team"))))))
+                .then(CommandManager.literal("unjoin").then(CommandManager.argument("team", StringArgumentType.word())
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_UNJOIN,
+                                () -> cancelJoinRequest(c.getSource(), StringArgumentType.getString(c, "team"))))))
+                .then(CommandManager.literal("requests").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS, () -> openRequests(c.getSource()))))
+                .then(CommandManager.literal("chat").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource())))));
     }
 
     @FunctionalInterface
@@ -128,7 +105,7 @@ public final class TeamCommand {
     private static int openGui(ServerCommandSource s) throws Exception { TeamGuiManager.openMain(s.getPlayerOrThrow()); return 1; }
     private static int openBank(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = requireTeam(s, p); TeamBankGui.open(p, t); return 1; }
     private static int openEnderChest(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null) { s.sendError(noTeam()); return 0; } TeamEnderChestGui.open(p, t); return 1; }
-    private static int toggleChat(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null) { s.sendError(noTeam()); return 0; } boolean enabled = TeamChatManager.toggle(p); s.sendFeedback(() -> prefix().append(Text.literal(enabled ? "Team chat enabled. Your chat messages will only be sent to team members." : "Team chat disabled. Your chat messages are public again.").setStyle(Style.EMPTY.withColor(enabled ? Formatting.GREEN : Formatting.RED).withItalic(false))), false); return 1; }
+    private static int toggleChat(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null) { s.sendError(noTeam()); return 0; } boolean enabled = TeamChatManager.toggle(p); s.sendFeedback(() -> prefix().append(Text.literal(enabled ? "Team chat enabled. Your team chat messages will now be sent to team members." : "Team chat disabled. Messages will now be public.").setStyle(Style.EMPTY.withColor(enabled ? Formatting.GREEN : Formatting.RED).withItalic(false))), false); return 1; }
     private static int create(ServerCommandSource s, String name, String tag) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().createTeam(name, tag, p.getUuid(), true, false, false); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); s.sendFeedback(() -> Text.literal("Created team " + t.getName() + " [" + t.getTag() + "]"), false); return 1; }
     private static int info(ServerCommandSource s) throws Exception { Team t = JustTeamsFabric.teams().getTeam(s.getPlayerOrThrow().getUuid()); if (t == null) { s.sendError(noTeam()); return 0; } s.sendFeedback(() -> Text.literal("Team: " + t.getName() + " [" + t.getTag() + "]"), false); s.sendFeedback(() -> Text.literal("Members: " + t.getMembers().size() + " | Friendly fire: " + (t.isPvpEnabled() ? "ON" : "OFF")), false); return 1; }
     private static int toggleGlow(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); boolean enabled = JustTeamsFabric.teams().toggleGlow(p.getUuid()); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); JustTeamsFabric.glow().refreshAll(s.getServer()); s.sendFeedback(() -> Text.literal("Team glow is now " + (enabled ? "ON" : "OFF") + "."), false); return 1; }
@@ -140,7 +117,7 @@ public final class TeamCommand {
     private static int useHome(ServerCommandSource s)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=requireTeam(s,p);TeamPlayer m=t.getMember(p.getUuid());if(m==null||!m.canUseHome()){s.sendError(Text.literal("You do not have permission to use the team home."));return 0;}if(t.getHome()==null){s.sendFeedback(()->noHomeSet(),false);return 0;}JustTeamsFabric.teleports().requestHome(p,t.getHome());return 1;}
     private static Text noTeam(){return prefix().append(Text.literal("You are not in a team.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));}
     private static Text noHomeSet(){return prefix().append(Text.literal("Your team does not have a home set. An Owner or Co-Owner can set one with /team sethome").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));}
-    private static Text prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
+    private static MutableText prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
 
     private static int setWarp(ServerCommandSource s,String name)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=requireTeam(s,p);TeamPlayer m=t.getMember(p.getUuid());if(m==null||!m.canSetWarps()){s.sendError(Text.literal("You do not have permission to create team warps."));return 0;}if(name.length()>32){s.sendError(Text.literal("Warp name must be 32 characters or fewer."));return 0;}if(t.getWarp(name)!=null){s.sendError(Text.literal("A warp with that name already exists."));return 0;}if(!FeatureCostManager.charge(p,"setwarp"))return 0;TeamLocation l=TeamLocation.fromPlayer(p);t.addWarp(new TeamWarp(name,p.getUuid(),l.getDimension(),l.getX(),l.getY(),l.getZ(),l.getYaw(),l.getPitch()));JustTeamsFabric.storage().save(JustTeamsFabric.teams());s.sendFeedback(()->Text.literal("Team warp '"+name+"' created."),false);return 1;}
     private static int removeWarp(ServerCommandSource s,String name)throws Exception{ServerPlayerEntity p=s.getPlayerOrThrow();Team t=requireTeam(s,p);TeamWarp w=t.getWarp(name);if(w==null){s.sendError(Text.literal("Warp not found."));return 0;}if(!t.isOwner(p.getUuid())&&!teamCoOwner(t,p.getUuid())){s.sendError(Text.literal("Only the team owner or Co-Leader can remove this warp."));return 0;}t.removeWarp(name);JustTeamsFabric.storage().save(JustTeamsFabric.teams());s.sendFeedback(()->Text.literal("Team warp '"+name+"' removed."),false);return 1;}
