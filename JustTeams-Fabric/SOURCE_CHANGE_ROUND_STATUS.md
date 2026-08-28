@@ -124,15 +124,14 @@ Completed at source level; **not locally build-verified after these changes**.
 - User-facing no-team errors audited in the touched command/GUI paths use the #4C9DDE `[ᴛᴇᴀᴍꜱ]` prefix and red message.
 - New-member addition path explicitly disables team-home permission.
 
-## Post-gate persistent-disband correction
-
-A subsequent user-requested source correction was made after the 10/10 corrective cycle:
-- Disband confirmation is now rendered **inside the existing 54-slot `TeamMenuHandler`** instead of opening a separate 27-slot screen.
-- Stage 1 and Stage 2 both reuse the same persistent inventory GUI/handler.
-- Slot 11 confirms/advances and slot 15 cancels/restores the previous `/team` GUI.
-- Stage 2 displays the actual team name.
-- `/team disband` entered from outside the existing GUI still opens the main persistent team handler first, then enters the persistent confirmation state.
-- The disband handler is routed before ordinary main-menu click dispatch, so confirmation clicks are consumed by the persistent disband view.
+### Post-Round-10 client mouse-pointer persistence
+Implemented at source level; **not locally build/runtime verified after this change**.
+- Added a client-scoped Mixin into `MinecraftClient.setScreen(Screen)`.
+- When Minecraft transitions directly from one `HandledScreen` container GUI to another, the real GLFW cursor X/Y are captured before the transition and restored after the new screen is installed.
+- The implementation preserves the physical client-screen mouse pointer position rather than trying to preserve a slot index; this is important because container sizes and GUI coordinates may differ.
+- The mixin only applies to handled-screen → handled-screen transitions and does not interfere with transitions to non-container screens.
+- The mod metadata now permits client loading (`environment: "*"`) and registers the new Mixin only in the client environment.
+- The existing `JustTeamsFabric` server initializer exits immediately on non-server environments so the client-loaded JAR does not run server initialization logic.
 
 ## Active layout facts
 
@@ -158,7 +157,7 @@ This is not automatically a failure. The actual Gradle task result is authoritat
 
 ## Remaining verification rule
 
-The current source includes the post-gate persistent-disband correction and has **not** been locally build-verified after that change.
+The current source includes the client mouse-pointer persistence correction and has **not** been locally build-verified after that change.
 
 Do not make additional `src/` changes until the user has downloaded the current canonical `src/`, run:
 
@@ -166,6 +165,6 @@ Do not make additional `src/` changes until the user has downloaded the current 
 ./gradlew clean build
 ```
 
-and runtime-tested the affected feature paths.
+and runtime-tested the affected feature paths, including container-to-container GUI transitions.
 
 Any new compiler error must be handled using the mandatory exact-error workflow and starts a new corrective cycle only after the current verification state is understood.
