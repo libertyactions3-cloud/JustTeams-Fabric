@@ -2,7 +2,6 @@ package eu.kotori.justTeams.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
@@ -31,9 +30,10 @@ public final class TeamMessageCommandExtension {
     private TeamMessageCommandExtension() {}
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
-        CommandNode<ServerCommandSource> root=dispatcher.getRoot().getChild("teammsg");
-        if(root==null){dispatcher.register(CommandManager.literal("teammsg").executes(c->usage(c.getSource())).then(CommandManager.argument("message",StringArgumentType.greedyString()).executes(c->execute(c.getSource(),StringArgumentType.getString(c,"message")))));return;}
-        root.addChild(CommandManager.literal("placeholder").build());
+        dispatcher.register(CommandManager.literal("teammsg")
+                .executes(context->usage(context.getSource()))
+                .then(CommandManager.argument("message",StringArgumentType.greedyString())
+                        .executes(context->execute(context.getSource(),StringArgumentType.getString(context,"message")))));
     }
 
     private static int execute(ServerCommandSource source,String message){
@@ -41,7 +41,7 @@ public final class TeamMessageCommandExtension {
             ServerPlayerEntity player=source.getPlayerOrThrow();
             if(!JustTeamsFabric.permissions().has(player,JustTeamsPermissions.USER)){source.sendError(Text.literal("You do not have permission to use team messages."));return 0;}
             if(message.isEmpty())return usage(source);
-            Team team=JustTeamsFabric.teams().getTeam(player.getUuid()); if(team==null){source.sendError(noTeam());return 0;}
+            Team team=JustTeamsFabric.teams().getTeam(player.getUuid());if(team==null){source.sendError(noTeam());return 0;}
             if(!checkSpam(player.getUuid())){source.sendError(Text.literal("You are sending team messages too quickly."));return 0;}
             if(message.length()>MAX_MESSAGE_LENGTH){source.sendError(Text.literal("Team messages may not exceed 200 characters."));return 0;}
             if(containsBlockedContent(message)){source.sendError(Text.literal("That message contains prohibited content."));return 0;}
