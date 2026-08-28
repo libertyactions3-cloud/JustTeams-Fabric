@@ -25,11 +25,14 @@ public final class TeamDisbandConfirmationGui {
     private TeamDisbandConfirmationGui() {}
 
     public static void openFirst(TeamMenuHandler ignored, ServerPlayerEntity player, Team team) { openFirst(player, team); }
-
     public static void openFirst(ServerPlayerEntity player, Team team) {
         if (player == null || team == null || !team.isOwner(player.getUuid())) return;
         open(player, team, 1);
     }
+
+    /* Compatibility hooks for the persistent 54-slot dispatcher; disband confirmations use their own 27-slot handler. */
+    public static boolean isOpen(TeamMenuHandler ignored) { return false; }
+    public static boolean handle(TeamMenuHandler ignored, ServerPlayerEntity player, Team team, int slot) { return false; }
 
     private static void open(ServerPlayerEntity player, Team team, int stage) {
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
@@ -57,12 +60,10 @@ public final class TeamDisbandConfirmationGui {
             ItemStack filler = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
             filler.set(DataComponentTypes.CUSTOM_NAME, Text.literal(" ").setStyle(Style.EMPTY.withItalic(false)));
             for (int i = 0; i < 27; i++) menu.setStack(i, filler.copy());
-
             ItemStack confirm = new ItemStack(Items.GREEN_WOOL);
             confirm.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴏɴғɪʀᴍ").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withBold(true).withItalic(false)));
             confirm.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("This action cannot be undone.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false))));
             menu.setStack(11, confirm);
-
             ItemStack cancel = new ItemStack(Items.RED_WOOL);
             cancel.set(DataComponentTypes.CUSTOM_NAME, Text.literal("ᴄᴀɴᴄᴇʟ").setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
             cancel.set(DataComponentTypes.LORE, new LoreComponent(List.of(Text.literal("Return to the previous menu.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))));
