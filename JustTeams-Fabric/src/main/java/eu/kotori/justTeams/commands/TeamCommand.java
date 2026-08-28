@@ -36,7 +36,9 @@ public final class TeamCommand {
         dispatcher.register(CommandManager.literal("team")
                 .executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> openGui(c.getSource())))
                 .then(CommandManager.literal("create")
+                        .executes(c -> usage(c.getSource(), "/team create <name> <tag>"))
                         .then(CommandManager.argument("name", StringArgumentType.word())
+                                .executes(c -> usage(c.getSource(), "/team create <name> <tag>"))
                                 .then(CommandManager.argument("tag", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CREATE,
                                                 () -> create(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "tag")))))))
@@ -54,10 +56,16 @@ public final class TeamCommand {
                 .then(CommandManager.literal("home").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))))
                 .then(CommandManager.literal("warp")
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource())))
-                        .then(CommandManager.literal("set").then(CommandManager.argument("name", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETWARP, () -> setWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
-                        .then(CommandManager.literal("remove").then(CommandManager.argument("name", StringArgumentType.word())
-                                .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DELWARP, () -> removeWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
+                        .then(CommandManager.literal("set")
+                                .executes(c -> usage(c.getSource(), "/team warp set <name>"))
+                                .then(CommandManager.argument("name", StringArgumentType.word())
+                                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETWARP,
+                                                () -> setWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
+                        .then(CommandManager.literal("remove")
+                                .executes(c -> usage(c.getSource(), "/team warp remove <name>"))
+                                .then(CommandManager.argument("name", StringArgumentType.word())
+                                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DELWARP,
+                                                () -> removeWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
                         .then(CommandManager.literal("list").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource()))))
                         .then(CommandManager.argument("name", StringArgumentType.word())
                                 .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP, () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), "")))
@@ -96,10 +104,15 @@ public final class TeamCommand {
             }
             return action.run();
         } catch (Exception e) {
-            source.sendError(Text.literal(e.getMessage() == null ? "Command failed." : e.getMessage()));
+            source.sendError("You are not in a team.".equals(e.getMessage()) ? noTeam() : Text.literal(e.getMessage() == null ? "Command failed." : e.getMessage()));
             JustTeamsFabric.LOGGER.error("JustTeams command failed", e);
             return 0;
         }
+    }
+
+    private static int usage(ServerCommandSource source, String usage) {
+        source.sendMessage(prefix().append(Text.literal("Usage: " + usage).setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))));
+        return 0;
     }
 
     private static int openGui(ServerCommandSource s) throws Exception { TeamGuiManager.openMain(s.getPlayerOrThrow()); return 1; }
