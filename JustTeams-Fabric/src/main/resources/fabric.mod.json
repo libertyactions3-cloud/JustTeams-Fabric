@@ -11,7 +11,7 @@
 		"sources": "https://github.com/kotorinet/justTeams"
 	},
 	"license": "All Rights Reserved",
-	"environment": "*",
+	"environment": "server",
 	"entrypoints": {
 		"main": [
 			"com.bba.allied.Allied",
@@ -19,11 +19,7 @@
 		]
 	},
 	"mixins": [
-		"allied.mixins.json",
-		{
-			"config": "justteams.client.mixins.json",
-			"environment": "client"
-		}
+		"allied.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.4",
