@@ -4,5 +4,6 @@ package eu.kotori.justTeams.team;
 public enum TeamSortType {
     ONLINE_STATUS,
     RANK,
-    ALPHABETICAL
+    ALPHABETICAL,
+    JOIN_DATE
 }
