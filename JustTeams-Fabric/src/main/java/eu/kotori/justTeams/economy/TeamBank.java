@@ -65,57 +65,65 @@ public final class TeamBank extends SimpleInventory {
         return true;
     }
 
-    /**
-     * Pays from emeralds first, then blocks, then ore. If a higher denomination
-     * has to cover a remainder, the excess is returned to this same bank as
-     * blocks and emeralds. This mirrors the server's 81/9/1 currency semantics.
-     *
-     * plan = [takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds]
-     */
+    /** plan = [takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds]. */
     private int[] planWithdrawal(long value) {
         if (value <= 0L) return new int[]{0, 0, 0, 0, 0};
-        long total = getTotalEmeraldValue();
-        if (total < value) return null;
+        if (getTotalEmeraldValue() < value) return null;
 
-        int ore = countCurrency(Items.DEEPSLATE_EMERALD_ORE);
-        int blocks = countCurrency(Items.EMERALD_BLOCK);
-        int emeralds = countCurrency(Items.EMERALD);
-
+        int oreAmt = countCurrency(Items.DEEPSLATE_EMERALD_ORE);
+        int blockAmt = countCurrency(Items.EMERALD_BLOCK);
+        int emeraldAmt = countCurrency(Items.EMERALD);
         long remaining = value;
-        int takeEmeralds = (int) Math.min(emeralds, remaining);
-        remaining -= takeEmeralds;
-
+        long paid = 0L;
+        int takeEmeralds = 0;
         int takeBlocks = 0;
-        int changeBlocks = 0;
-        int changeEmeralds = 0;
+        int takeOre = 0;
 
-        if (remaining > 0L && blocks > 0) {
-            int neededBlocks = (int) Math.min(Integer.MAX_VALUE, (remaining + 8L) / 9L);
-            takeBlocks = Math.min(blocks, neededBlocks);
-            long paidByBlocks = (long) takeBlocks * 9L;
-            if (paidByBlocks >= remaining) {
-                long change = paidByBlocks - remaining;
-                changeBlocks = (int) (change / 9L);
-                changeEmeralds = (int) (change % 9L);
-                remaining = 0L;
-            } else {
-                remaining -= paidByBlocks;
+        /* Emeralds: preserve one when a higher denomination exists and consuming all usable emeralds. */
+        if (remaining > 0L) {
+            int usableEmeralds = emeraldAmt;
+            if (blockAmt > 0) {
+                if (emeraldAmt >= remaining) {
+                    if (emeraldAmt == remaining && emeraldAmt >= 1) usableEmeralds = emeraldAmt - 1;
+                } else if (emeraldAmt >= 1) usableEmeralds = emeraldAmt - 1;
+            }
+            int neededEmeralds = (int) Math.min(remaining, usableEmeralds);
+            if (neededEmeralds > 0) {
+                takeEmeralds = neededEmeralds; paid += neededEmeralds; remaining -= neededEmeralds;
             }
         }
 
-        int takeOre = 0;
-        if (remaining > 0L && ore > 0) {
-            long neededOreLong = (remaining + 80L) / 81L;
-            if (neededOreLong > ore || neededOreLong > Integer.MAX_VALUE) return null;
-            takeOre = (int) neededOreLong;
-            long paidByOre = neededOreLong * 81L;
-            long change = paidByOre - remaining;
-            changeBlocks += (int) (change / 9L);
-            changeEmeralds += (int) (change % 9L);
+        /* Emerald blocks: preserve one when ore exists and using the available blocks would exhaust them. */
+        if (remaining > 0L) {
+            int usableBlocks = blockAmt;
+            if (oreAmt > 0) {
+                long blockValue = (long) blockAmt * 9L;
+                if (blockValue >= remaining) {
+                    if (blockValue == remaining && blockAmt >= 1) usableBlocks = blockAmt - 1;
+                } else if (blockAmt >= 1) usableBlocks = blockAmt - 1;
+            }
+            int neededBlocks = (int) Math.min(usableBlocks, (remaining + 8L) / 9L);
+            if (neededBlocks > 0) {
+                takeBlocks = neededBlocks;
+                long blockPaid = (long) neededBlocks * 9L;
+                paid += blockPaid;
+                remaining = Math.max(0L, remaining - blockPaid);
+            }
+        }
+
+        /* Ore is the highest denomination and final fallback. */
+        if (remaining > 0L && oreAmt > 0) {
+            long neededOre = (remaining + 80L) / 81L;
+            if (neededOre > oreAmt || neededOre > Integer.MAX_VALUE) return null;
+            takeOre = (int) neededOre;
+            paid += neededOre * 81L;
             remaining = 0L;
         }
 
-        if (remaining > 0L) return null;
+        if (remaining > 0L || paid < value) return null;
+        long change = paid - value;
+        int changeBlocks = (int) (change / 9L);
+        int changeEmeralds = (int) (change % 9L);
         if (!canApplyPlan(takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds)) return null;
         return new int[]{takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds};
     }
@@ -134,8 +142,7 @@ public final class TeamBank extends SimpleInventory {
         for (ItemStack stack : inventory) {
             if (remaining <= 0) break;
             if (stack.getItem() != item) continue;
-            int removed = Math.min(remaining, stack.getCount());
-            stack.decrement(removed); remaining -= removed;
+            int removed = Math.min(remaining, stack.getCount()); stack.decrement(removed); remaining -= removed;
         }
     }
 
@@ -144,15 +151,12 @@ public final class TeamBank extends SimpleInventory {
         for (ItemStack stack : inventory) {
             if (remaining <= 0) return true;
             if (!stack.isEmpty() && stack.getItem() == item) {
-                int add = Math.min(remaining, stack.getMaxCount() - stack.getCount());
-                stack.increment(add); remaining -= add;
+                int add = Math.min(remaining, stack.getMaxCount() - stack.getCount()); stack.increment(add); remaining -= add;
             }
         }
         for (int i = 0; i < inventory.size() && remaining > 0; i++) {
-            ItemStack stack = inventory.get(i);
-            if (!stack.isEmpty()) continue;
-            int add = Math.min(remaining, 64);
-            inventory.set(i, new ItemStack(item, add)); remaining -= add;
+            if (!inventory.get(i).isEmpty()) continue;
+            int add = Math.min(remaining, 64); inventory.set(i, new ItemStack(item, add)); remaining -= add;
         }
         return remaining <= 0;
     }
@@ -162,42 +166,28 @@ public final class TeamBank extends SimpleInventory {
         for (int slot = 0; slot < size() && remaining > 0; slot++) {
             ItemStack stack = getStack(slot);
             if (!stack.isEmpty() && stack.getItem() == item && stack.getCount() < stack.getMaxCount()) {
-                int add = Math.min(remaining, stack.getMaxCount() - stack.getCount());
-                stack.increment(add); remaining -= add;
+                int add = Math.min(remaining, stack.getMaxCount() - stack.getCount()); stack.increment(add); remaining -= add;
             }
         }
         for (int slot = 0; slot < size() && remaining > 0; slot++) {
             if (!getStack(slot).isEmpty()) continue;
-            int add = Math.min(remaining, 64);
-            setStack(slot, new ItemStack(item, add)); remaining -= add;
+            int add = Math.min(remaining, 64); setStack(slot, new ItemStack(item, add)); remaining -= add;
         }
         if (remaining > 0) throw new IllegalStateException("Not enough team-bank inventory space for currency change.");
     }
 
     private int countCurrency(Item item) {
-        int total = 0;
-        for (int slot = 0; slot < size(); slot++) { ItemStack stack = getStack(slot); if (stack.getItem() == item) total += stack.getCount(); }
-        return total;
+        int total = 0; for (int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.getItem()==item) total+=stack.getCount();} return total;
     }
 
     private void removeValue(Item item, int amount) {
-        int remaining = amount;
-        for (int slot = 0; slot < size() && remaining > 0; slot++) {
-            ItemStack stack = getStack(slot); if (stack.getItem() != item) continue;
-            int removed = Math.min(remaining, stack.getCount()); stack.decrement(removed); remaining -= removed;
-            if (stack.isEmpty()) setStack(slot, ItemStack.EMPTY);
-        }
-    }
+        int remaining=amount; for(int slot=0;slot<size()&&remaining>0;slot++){ItemStack stack=getStack(slot);if(stack.getItem()!=item)continue;int removed=Math.min(remaining,stack.getCount());stack.decrement(removed);remaining-=removed;if(stack.isEmpty())setStack(slot,ItemStack.EMPTY);} }
 
     public NbtList toNbtList() {
-        NbtList list = new NbtList();
-        for (int slot = 0; slot < size(); slot++) { ItemStack stack = getStack(slot); if (stack.isEmpty()) continue; NbtElement encoded = ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, stack).result().orElse(null); if (!(encoded instanceof NbtCompound entry)) continue; entry.putInt("Slot", slot); list.add(entry); }
-        return list;
+        NbtList list=new NbtList(); for(int slot=0;slot<size();slot++){ItemStack stack=getStack(slot);if(stack.isEmpty())continue;NbtElement encoded=ItemStack.CODEC.encodeStart(NbtOps.INSTANCE,stack).result().orElse(null);if(!(encoded instanceof NbtCompound entry))continue;entry.putInt("Slot",slot);list.add(entry);} return list;
     }
 
     public void readNbtList(NbtList list) {
-        clear();
-        for (int i = 0; i < list.size(); i++) { NbtCompound entry = list.getCompoundOrEmpty(i); int slot = entry.getInt("Slot", -1); if (slot < 0 || slot >= size()) continue; ItemStack.CODEC.parse(NbtOps.INSTANCE, entry).result().ifPresent(stack -> { if (isCurrency(stack)) setStack(slot, stack); }); }
-        markDirty();
+        clear(); for(int i=0;i<list.size();i++){NbtCompound entry=list.getCompoundOrEmpty(i);int slot=entry.getInt("Slot",-1);if(slot<0||slot>=size())continue;ItemStack.CODEC.parse(NbtOps.INSTANCE,entry).result().ifPresent(stack->{if(isCurrency(stack))setStack(slot,stack);});} markDirty();
     }
 }
