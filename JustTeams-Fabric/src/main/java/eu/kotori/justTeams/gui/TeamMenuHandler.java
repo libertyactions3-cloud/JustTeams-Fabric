@@ -8,6 +8,7 @@ import eu.kotori.justTeams.team.TeamSortType;
 import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
+import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
