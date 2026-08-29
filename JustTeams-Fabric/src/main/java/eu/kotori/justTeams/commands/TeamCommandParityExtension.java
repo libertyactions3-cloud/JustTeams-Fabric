@@ -78,7 +78,7 @@ public final class TeamCommandParityExtension {
             MutableText received = prefix()
                     .append(Text.literal("You have been invited to join " + team.getName() + ". ").setStyle(white()))
                     .append(clickable("[Accept]", "/team accept " + team.getName(), Formatting.GREEN))
-                    .append(Text.literal(" for ").setStyle(white()))
+                    .append(Text.literal(" or ").setStyle(white()))
                     .append(clickable("[Deny]", "/team deny " + team.getName(), Formatting.RED));
             target.sendMessage(received, false);
             return 1;
