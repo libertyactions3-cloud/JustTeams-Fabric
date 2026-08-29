@@ -47,6 +47,19 @@ public final class TeamLeaderboardGui {
                 Text.literal("ᴛᴏᴘ " + type.name().toLowerCase()).setStyle(Style.EMPTY.withItalic(false))));
     }
 
+    private static void openOnServerThread(ServerPlayerEntity player, Runnable open) {
+        if (player.getEntityWorld().getServer() != null) {
+            player.getEntityWorld().getServer().execute(open);
+        } else {
+            open.run();
+        }
+    }
+
+    private static void closeThenOpen(ServerPlayerEntity player, Runnable open) {
+        player.closeHandledScreen();
+        openOnServerThread(player, open);
+    }
+
     private static void fill(Inventory inventory, int size) {
         ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
         for (int i = 0; i < size; i++) inventory.setStack(i, filler.copy());
@@ -126,15 +139,15 @@ public final class TeamLeaderboardGui {
             if (!isMenuSlot(slot) || actionType == SlotActionType.QUICK_MOVE
                     || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW
                     || actionType == SlotActionType.CLONE) return;
+            if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
             if (slot == 11) {
-                TeamLeaderboardGui.openLeaderboard(player, Type.KILLS);
+                closeThenOpen(serverPlayer, () -> TeamLeaderboardGui.openLeaderboard(serverPlayer, Type.KILLS));
             } else if (slot == 13) {
-                TeamLeaderboardGui.openLeaderboard(player, Type.BALANCE);
+                closeThenOpen(serverPlayer, () -> TeamLeaderboardGui.openLeaderboard(serverPlayer, Type.BALANCE));
             } else if (slot == 15) {
-                TeamLeaderboardGui.openLeaderboard(player, Type.MEMBERS);
-            } else if (slot == 22 && player instanceof ServerPlayerEntity serverPlayer) {
-                serverPlayer.closeHandledScreen();
-                TeamGuiManager.openMain(player);
+                closeThenOpen(serverPlayer, () -> TeamLeaderboardGui.openLeaderboard(serverPlayer, Type.MEMBERS));
+            } else if (slot == 22) {
+                closeThenOpen(serverPlayer, () -> TeamGuiManager.openMain(serverPlayer));
             }
         }
     }
@@ -209,8 +222,9 @@ public final class TeamLeaderboardGui {
             if (!isMenuSlot(slot) || actionType == SlotActionType.QUICK_MOVE
                     || actionType == SlotActionType.SWAP || actionType == SlotActionType.THROW
                     || actionType == SlotActionType.CLONE) return;
+            if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
             if (slot == 49) {
-                TeamLeaderboardGui.openCategories(player);
+                closeThenOpen(serverPlayer, () -> TeamLeaderboardGui.openCategories(serverPlayer));
             }
         }
     }
