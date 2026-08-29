@@ -9,6 +9,7 @@ import eu.kotori.justTeams.team.TeamPlayer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -38,5 +39,5 @@ public final class TeamInviteCommandExtension {
     }
     private static int usage(ServerCommandSource source){source.sendMessage(prefix().append(Text.literal("Usage: /team invite <player>").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))));return 0;}
     private static Text noTeam(){return prefix().append(Text.literal("You are not in a team.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));}
-    private static Text prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
+    private static MutableText prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
 }
