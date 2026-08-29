@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.gui.TeamLeaderboardGui;
-import eu.kotori.justTeams.team.Team;
+import eu.kotori.justTeams.gui.TeamPersistentNoTeamGui;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -31,7 +31,11 @@ public final class TeamLeaderboardCommandExtensions {
     private static int openCategories(ServerCommandSource source) {
         try {
             ServerPlayerEntity player = source.getPlayerOrThrow();
-            TeamLeaderboardGui.openCategories(player);
+            if (JustTeamsFabric.teams().isInTeam(player.getUuid())) {
+                TeamLeaderboardGui.openCategories(player);
+            } else {
+                TeamPersistentNoTeamGui.openLeaderboardCategories(player);
+            }
             return 1;
         } catch (Exception exception) {
             source.sendError(Text.literal("Unable to open the team leaderboard."));
