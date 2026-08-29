@@ -14,7 +14,6 @@ import eu.kotori.justTeams.team.TeamRank;
 import eu.kotori.justTeams.team.TeamWarp;
 import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
