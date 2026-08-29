@@ -4,7 +4,6 @@ import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.BlacklistedPlayer;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamEnderChest;
-import eu.kotori.justTeams.team.TeamLocation;
 import eu.kotori.justTeams.team.TeamManager;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRank;
@@ -25,7 +24,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class TeamStorage {
-    private static final int DATA_VERSION = 10;
+    private static final int DATA_VERSION = 11;
     private final Path path = FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("teams.dat");
 
     public void load(TeamManager manager) throws IOException {
@@ -150,7 +149,7 @@ public final class TeamStorage {
             if (member.getRank() == TeamRank.LEADER || member.getRank() == TeamRank.CO_LEADER) {
                 member.setCanWithdraw(true);
                 member.setCanUseAutoBank(true);
-                member.setAutoBankEnabled(true);
+                member.setAutoBankEnabled(false);
             }
         }
     }
