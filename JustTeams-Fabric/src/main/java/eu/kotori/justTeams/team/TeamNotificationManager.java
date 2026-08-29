@@ -1,5 +1,6 @@
 package eu.kotori.justTeams.team;
 
+import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
@@ -56,17 +57,33 @@ public final class TeamNotificationManager {
     }
 
     public static void notifyKick(MinecraftServer server, Team team, UUID kickerUuid, UUID targetUuid) {
+        String kickerName = playerName(server, kickerUuid);
+        String targetName = playerName(server, targetUuid);
         ServerPlayerEntity kicker = server.getPlayerManager().getPlayer(kickerUuid);
         ServerPlayerEntity target = server.getPlayerManager().getPlayer(targetUuid);
+
+        MutableText kickerMessage = prefix()
+                .append(Text.literal("You have kicked ").setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+                .append(Text.literal(targetName).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+                .append(Text.literal(" from the team.").setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)));
         if (kicker != null) {
-            String targetName = target != null ? target.getName().getString() : playerName(server, targetUuid);
-            kicker.sendMessage(Text.literal("You have kicked " + targetName + " from the team."), false);
+            kicker.sendMessage(kickerMessage, false);
             playSuccessSound(kicker);
         }
-        MutableText message = prefix().append(Text.literal(playerName(server, targetUuid)).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
-                .append(Text.literal(" has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
-        broadcastExcept(server, team, message, kickerUuid, targetUuid);
-        if (target != null) target.sendMessage(Text.literal("You have been kicked from the team " + team.getName() + "."), false);
+
+        MutableText teamMessage = prefix()
+                .append(Text.literal(kickerName).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+                .append(Text.literal(" has kicked ").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))
+                .append(Text.literal(targetName).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+                .append(Text.literal(" from the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
+        broadcastExcept(server, team, teamMessage, kickerUuid, targetUuid);
+        if (target != null) {
+            MutableText targetMessage = prefix()
+                    .append(Text.literal("You have been kicked from the team ").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)))
+                    .append(Text.literal(team.getName()).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
+                    .append(Text.literal(".").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));
+            target.sendMessage(targetMessage, false);
+        }
     }
 
     public static void notifyDisband(MinecraftServer server, Team team, UUID ownerUuid) {
@@ -116,14 +133,6 @@ public final class TeamNotificationManager {
     }
 
     private static String playerName(MinecraftServer server, UUID uuid) {
-        ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
-        if (player != null) return player.getName().getString();
-        if (eu.kotori.justTeams.JustTeamsFabric.teams() != null) {
-            for (Team team : eu.kotori.justTeams.JustTeamsFabric.teams().getTeams()) {
-                TeamPlayer member = team.getMember(uuid);
-                if (member != null && member.getLastKnownName() != null) return member.getLastKnownName();
-            }
-        }
-        return uuid.toString();
+        return PlayerNameResolver.resolve(server, uuid);
     }
 }
