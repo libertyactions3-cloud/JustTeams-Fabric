@@ -41,8 +41,8 @@ public final class TeamPlayer {
         this.canSetHome = canSetHome;
         this.canUseHome = canUseHome;
         this.canSetWarps = true;
-        this.canUseAutoBank = false;
-        this.autoBankEnabled = false;
+        this.canUseAutoBank = defaultAutoBankPermission(this.rank);
+        this.autoBankEnabled = this.canUseAutoBank;
         this.teamChatEnabled = false;
         this.canInvite = defaultInvitePermission(this.rank);
         setDefaultEditingPermissions();
@@ -84,8 +84,8 @@ public final class TeamPlayer {
         this.canDemoteMembers = canDemoteMembers;
         this.canInvite = canInvite;
         this.canSetWarps = canSetWarps;
-        this.canUseAutoBank = canUseAutoBank;
-        this.autoBankEnabled = false;
+        this.canUseAutoBank = canUseAutoBank || defaultAutoBankPermission(this.rank);
+        this.autoBankEnabled = this.canUseAutoBank && defaultAutoBankPermission(this.rank);
         this.teamChatEnabled = false;
     }
 
@@ -100,6 +100,10 @@ public final class TeamPlayer {
     private static boolean defaultInvitePermission(TeamRank rank) {
         return rank == TeamRank.LEADER || rank == TeamRank.CO_LEADER
                 || rank == TeamRank.OFFICER || rank == TeamRank.UNDEROFFICER;
+    }
+
+    private static boolean defaultAutoBankPermission(TeamRank rank) {
+        return rank == TeamRank.LEADER || rank == TeamRank.CO_LEADER;
     }
 
     private void setDefaultEditingPermissions() {
@@ -134,6 +138,10 @@ public final class TeamPlayer {
         if (rank == TeamRank.LEADER) this.role = TeamRole.OWNER;
         else if (rank == TeamRank.CO_LEADER) this.role = TeamRole.CO_OWNER;
         else this.role = TeamRole.MEMBER;
+        if (defaultAutoBankPermission(rank)) {
+            this.canUseAutoBank = true;
+            this.autoBankEnabled = true;
+        }
     }
 
     public boolean canWithdraw() { return canWithdraw; }
