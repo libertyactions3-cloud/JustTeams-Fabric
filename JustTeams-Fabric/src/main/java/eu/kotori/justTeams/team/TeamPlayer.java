@@ -43,7 +43,7 @@ public final class TeamPlayer {
         this.canUseHome = canUseHome;
         this.canSetWarps = true;
         this.canUseAutoBank = elevatedAutoBankDefault;
-        this.autoBankEnabled = elevatedAutoBankDefault;
+        this.autoBankEnabled = false;
         this.teamChatEnabled = false;
         this.canInvite = defaultInvitePermission(this.rank);
         setDefaultEditingPermissions();
@@ -142,7 +142,6 @@ public final class TeamPlayer {
         if (defaultAutoBankPermission(rank)) {
             this.canWithdraw = true;
             this.canUseAutoBank = true;
-            this.autoBankEnabled = true;
         }
     }
 
