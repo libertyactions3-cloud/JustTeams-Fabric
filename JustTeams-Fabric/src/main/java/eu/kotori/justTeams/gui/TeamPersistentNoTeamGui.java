@@ -26,19 +26,14 @@ import net.minecraft.util.Formatting;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Persistent 54-slot inventory GUI for players who are not currently in a team. */
+/** Persistent 27-slot main/category GUI for players who are not currently in a team. */
 public final class TeamPersistentNoTeamGui {
-    private enum View { MAIN, INVITES, LEADERBOARD_CATEGORIES, LEADERBOARD_RANKED }
+    private enum View { MAIN, INVITES, LEADERBOARD_CATEGORIES }
     private enum LeaderboardType { KILLS, BALANCE, MEMBERS }
-    private static final int[] CONTENT_SLOTS = {
-            19,20,21,22,23,24,25,
-            28,29,30,31,32,33,34,
-            37,38,39,40,41,42,43
-    };
+    private static final int[] CONTENT_SLOTS = {10,11,12,13,14,15,16};
 
     private TeamPersistentNoTeamGui() {}
 
@@ -79,7 +74,20 @@ public final class TeamPersistentNoTeamGui {
             case BALANCE -> LeaderboardType.BALANCE;
             case MEMBERS -> LeaderboardType.MEMBERS;
         };
-        openOrReuse(player, View.LEADERBOARD_RANKED, localType);
+        player.closeHandledScreen();
+        if (player.getEntityWorld().getServer() != null) {
+            player.getEntityWorld().getServer().execute(() -> TeamLeaderboardGui.openLeaderboard(player, switch (localType) {
+                case KILLS -> TeamLeaderboardGui.Type.KILLS;
+                case BALANCE -> TeamLeaderboardGui.Type.BALANCE;
+                case MEMBERS -> TeamLeaderboardGui.Type.MEMBERS;
+            }));
+        } else {
+            TeamLeaderboardGui.openLeaderboard(player, switch (localType) {
+                case KILLS -> TeamLeaderboardGui.Type.KILLS;
+                case BALANCE -> TeamLeaderboardGui.Type.BALANCE;
+                case MEMBERS -> TeamLeaderboardGui.Type.MEMBERS;
+            });
+        }
     }
 
     private static void openOrReuse(ServerPlayerEntity player, View view, LeaderboardType type) {
@@ -93,7 +101,7 @@ public final class TeamPersistentNoTeamGui {
     }
 
     private static final class Handler extends ScreenHandler {
-        private final Inventory menu = new SimpleInventory(54);
+        private final Inventory menu = new SimpleInventory(27);
         private final ServerPlayerEntity viewer;
         private final UUID viewerUuid;
         private View view;
@@ -101,16 +109,16 @@ public final class TeamPersistentNoTeamGui {
 
         Handler(int syncId, net.minecraft.entity.player.PlayerInventory inventory, ServerPlayerEntity viewer,
                 View view, LeaderboardType leaderboardType) {
-            super(ScreenHandlerType.GENERIC_9X6, syncId);
+            super(ScreenHandlerType.GENERIC_9X3, syncId);
             this.viewer = viewer;
             this.viewerUuid = viewer.getUuid();
             this.view = view;
             this.leaderboardType = leaderboardType;
-            for (int row = 0; row < 6; row++) for (int col = 0; col < 9; col++)
+            for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
                 addSlot(new MenuSlot(menu, row * 9 + col, 8 + col * 18, 18 + row * 18));
             for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++)
-                addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
-            for (int col = 0; col < 9; col++) addSlot(new Slot(inventory, col, 8 + col * 18, 198));
+                addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+            for (int col = 0; col < 9; col++) addSlot(new Slot(inventory, col, 8 + col * 18, 142));
             render(view, leaderboardType);
         }
 
@@ -122,7 +130,6 @@ public final class TeamPersistentNoTeamGui {
                 case MAIN -> renderMain();
                 case INVITES -> renderInvites();
                 case LEADERBOARD_CATEGORIES -> renderLeaderboardCategories();
-                case LEADERBOARD_RANKED -> renderLeaderboardRanked();
             }
             sendContentUpdates();
         }
@@ -141,7 +148,7 @@ public final class TeamPersistentNoTeamGui {
         private void renderInvites() {
             List<Team> invites = getInvites();
             if (invites.isEmpty()) {
-                menu.setStack(22, loreItem(Items.PAPER, "No Pending Invites", List.of(
+                menu.setStack(13, loreItem(Items.PAPER, "Nᴏ ᴘᴇɴᴅɪɴɢ ɪɴᴠɪᴛᴇs", List.of(
                         plainLine("You don't have any pending team invitations.", Formatting.GRAY),
                         plainLine("", Formatting.GRAY),
                         plainLine("Team owners can invite you with", Formatting.DARK_GRAY),
@@ -156,8 +163,8 @@ public final class TeamPersistentNoTeamGui {
                             composeLine("Description: ", team.getDescription(), Formatting.GRAY, Formatting.WHITE))));
                 }
             }
-            menu.setStack(49, loreItem(Items.ARROW, "ʙᴀᴄᴋ", List.of(plainLine("Click to return to the team menu.", Formatting.YELLOW))));
-            menu.setStack(53, loreItem(Items.BARRIER, "ᴄʟᴏsᴇ", List.of(plainLine("Click to close this menu.", Formatting.RED))));
+            menu.setStack(22, loreItem(Items.ARROW, "ʙᴀᴄᴋ", List.of(plainLine("Click to return to the team menu.", Formatting.YELLOW))));
+            menu.setStack(26, loreItem(Items.BARRIER, "ᴄʟᴏsᴇ", List.of(plainLine("Click to close this menu.", Formatting.RED))));
         }
 
         private void renderLeaderboardCategories() {
@@ -166,52 +173,6 @@ public final class TeamPersistentNoTeamGui {
             menu.setStack(13, loreItem(Items.DIAMOND, "ᴛᴏᴘ ʙᴀʟᴀɴᴄᴇ", List.of(plainLine("Shows the top 10 richest teams.", Formatting.GRAY))));
             menu.setStack(15, loreItem(Items.PLAYER_HEAD, "ᴛᴏᴘ ᴍᴇᴍʙᴇʀs", List.of(plainLine("Shows the top 10 teams with the most members.", Formatting.GRAY))));
             menu.setStack(22, loreItem(Items.ARROW, "ʙᴀᴄᴋ", List.of(plainLine("Click to return to the team menu.", Formatting.YELLOW))));
-        }
-
-        private void renderLeaderboardRanked() {
-            List<Team> teams = JustTeamsFabric.teams().getTeams().stream().sorted(comparator()).limit(CONTENT_SLOTS.length).toList();
-            for (int i = 0; i < teams.size(); i++) {
-                Team team = teams.get(i);
-                String value = switch (leaderboardType) {
-                    case KILLS -> Integer.toString(team.getKills());
-                    case BALANCE -> String.format("%.2f", team.getBalance());
-                    case MEMBERS -> Integer.toString(team.getMembers().size());
-                };
-                ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-                head.set(DataComponentTypes.CUSTOM_NAME, gradientText("#" + (i + 1) + " " + team.getName()));
-                head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                        composeLine("Tag: ", team.getTag(), Formatting.GRAY, Formatting.WHITE),
-                        composeLine(label() + ": ", value, Formatting.GRAY, Formatting.WHITE))));
-                menu.setStack(CONTENT_SLOTS[i], head);
-            }
-            menu.setStack(49, loreItem(Items.ARROW, "ʙᴀᴄᴋ", List.of(plainLine("Click to return to category selection.", Formatting.YELLOW))));
-        }
-
-        private String label() { return switch (leaderboardType) { case KILLS -> "Kills"; case BALANCE -> "Balance"; case MEMBERS -> "Members"; }; }
-        private Comparator<Team> comparator() {
-            return switch (leaderboardType) {
-                case KILLS -> Comparator.comparingInt(Team::getKills).reversed().thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER);
-                case BALANCE -> Comparator.comparingDouble(Team::getBalance).reversed().thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER);
-                case MEMBERS -> Comparator.comparingInt((Team t) -> t.getMembers().size()).reversed().thenComparing(Team::getName, String.CASE_INSENSITIVE_ORDER);
-            };
-        }
-
-        private List<Team> getInvites() {
-            List<Team> invites = new ArrayList<>();
-            for (Team team : JustTeamsFabric.teams().getTeams()) if (team.hasInvite(viewerUuid)) invites.add(team);
-            return invites;
-        }
-
-        private String inviterName(Team team) {
-            ServerPlayerEntity owner = viewer.getEntityWorld().getServer().getPlayerManager().getPlayer(team.getOwnerUuid());
-            return owner == null ? team.getOwnerUuid().toString().substring(0, 8) : owner.getName().getString();
-        }
-
-        private void clear() {
-            ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
-            for (int slot = 0; slot < 54; slot++) menu.setStack(slot, ItemStack.EMPTY);
-            for (int slot = 0; slot < 9; slot++) menu.setStack(slot, filler.copy());
-            for (int slot = 45; slot < 54; slot++) menu.setStack(slot, filler.copy());
         }
 
         @Override
@@ -225,25 +186,24 @@ public final class TeamPersistentNoTeamGui {
                 }
                 case INVITES -> handleInvites(serverPlayer, slot, button);
                 case LEADERBOARD_CATEGORIES -> {
-                    if (slot == 11) render(View.LEADERBOARD_RANKED, LeaderboardType.KILLS);
-                    else if (slot == 13) render(View.LEADERBOARD_RANKED, LeaderboardType.BALANCE);
-                    else if (slot == 15) render(View.LEADERBOARD_RANKED, LeaderboardType.MEMBERS);
+                    if (slot == 11) openLeaderboard(serverPlayer, TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType.KILLS);
+                    else if (slot == 13) openLeaderboard(serverPlayer, TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType.BALANCE);
+                    else if (slot == 15) openLeaderboard(serverPlayer, TeamPersistentLeaderboardGui.TeamPersistentLeaderboardGuiType.MEMBERS);
                     else if (slot == 22) render(View.MAIN, null);
                 }
-                case LEADERBOARD_RANKED -> { if (slot == 49) render(View.LEADERBOARD_CATEGORIES, null); }
             }
         }
 
         private void handleInvites(ServerPlayerEntity player, int slot, int button) {
-            if (slot == 49) { render(View.MAIN, null); return; }
-            if (slot == 53) { player.closeHandledScreen(); return; }
+            if (slot == 22) { render(View.MAIN, null); return; }
+            if (slot == 26) { player.closeHandledScreen(); return; }
             int index = indexOf(slot);
             List<Team> invites = getInvites();
             if (index < 0 || index >= invites.size()) return;
             Team team = invites.get(index);
             if (button == 0) {
                 team.removeInvite(viewerUuid);
-                JustTeamsFabric.teams().addMember(team, new TeamPlayer(viewerUuid, TeamRole.MEMBER, Instant.now(), false, false, false, true));
+                JustTeamsFabric.teams().addMember(team, new TeamPlayer(viewerUuid, TeamRole.MEMBER, Instant.now(), false, false, false, false));
                 save();
                 TeamGuiManager.openMain(player);
             } else if (button == 1) {
@@ -285,9 +245,26 @@ public final class TeamPersistentNoTeamGui {
             }, () -> render(View.MAIN, null));
         }
 
+        private List<Team> getInvites() {
+            List<Team> invites = new ArrayList<>();
+            for (Team team : JustTeamsFabric.teams().getTeams()) if (team.hasInvite(viewerUuid)) invites.add(team);
+            return invites;
+        }
+
+        private String inviterName(Team team) {
+            ServerPlayerEntity owner = viewer.getEntityWorld().getServer().getPlayerManager().getPlayer(team.getOwnerUuid());
+            return owner == null ? team.getOwnerUuid().toString().substring(0, 8) : owner.getName().getString();
+        }
+
         private void save() {
             try { JustTeamsFabric.storage().save(JustTeamsFabric.teams()); }
             catch (IOException exception) { JustTeamsFabric.LOGGER.error("Failed to save team invitation change", exception); }
+        }
+
+        private void clear() {
+            for (int slot = 0; slot < 27; slot++) menu.setStack(slot, ItemStack.EMPTY);
+            ItemStack filler = namedPlain(Items.GRAY_STAINED_GLASS_PANE, " ");
+            for (int slot = 0; slot < 27; slot++) menu.setStack(slot, filler.copy());
         }
 
         @Override public ItemStack quickMove(PlayerEntity player, int slot) { return ItemStack.EMPTY; }
