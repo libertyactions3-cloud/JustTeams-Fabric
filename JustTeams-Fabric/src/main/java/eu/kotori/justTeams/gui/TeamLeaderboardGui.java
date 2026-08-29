@@ -42,9 +42,14 @@ public final class TeamLeaderboardGui {
     }
 
     public static void openLeaderboard(PlayerEntity player, Type type) {
+        String title = switch (type) {
+            case KILLS -> "ᴛᴏᴘ ᴋɪʟʟs";
+            case BALANCE -> "ᴛᴏᴘ ʙᴀʟᴀɴᴄᴇ";
+            case MEMBERS -> "ᴛᴏᴘ ᴍᴇᴍʙᴇʀs";
+        };
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new LeaderboardHandler(syncId, inventory, player, type),
-                Text.literal("ᴛᴏᴘ " + type.name().toLowerCase()).setStyle(Style.EMPTY.withItalic(false))));
+                Text.literal(title).setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static void openOnServerThread(ServerPlayerEntity player, Runnable open) {
@@ -65,18 +70,6 @@ public final class TeamLeaderboardGui {
         for (int i = 0; i < size; i++) inventory.setStack(i, filler.copy());
     }
 
-    private static void addPlayerInventory(ScreenHandler handler, PlayerInventory inventory, int yStart, int hotbarY) {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                ((BaseHandler) handler).addPlayerInventorySlot(
-                        new Slot(inventory, col + row * 9 + 9, 8 + col * 18, yStart + row * 18));
-            }
-        }
-        for (int col = 0; col < 9; col++) {
-            ((BaseHandler) handler).addPlayerInventorySlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
-        }
-    }
-
     private static abstract class BaseHandler extends ScreenHandler {
         protected final PlayerEntity viewer;
         protected final Inventory menu;
@@ -89,22 +82,17 @@ public final class TeamLeaderboardGui {
             this.menu = new SimpleInventory(menuSize);
             this.menuSize = menuSize;
             for (int i = 0; i < menuSize; i++) {
-                int columns = 9;
-                addSlot(new MenuSlot(menu, i, 8 + (i % columns) * 18, 18 + (i / columns) * 18));
+                addSlot(new MenuSlot(menu, i, 8 + (i % 9) * 18, 18 + (i / 9) * 18));
             }
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 9; col++) {
-                    addPlayerInventorySlot(new Slot(inventory, col + row * 9 + 9,
+                    addSlot(new Slot(inventory, col + row * 9 + 9,
                             8 + col * 18, yStart + row * 18));
                 }
             }
             for (int col = 0; col < 9; col++) {
-                addPlayerInventorySlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
+                addSlot(new Slot(inventory, col, 8 + col * 18, hotbarY));
             }
-        }
-
-        private void addPlayerInventorySlot(Slot slot) {
-            addSlot(slot);
         }
 
         protected boolean isMenuSlot(int slot) { return slot >= 0 && slot < menuSize; }
