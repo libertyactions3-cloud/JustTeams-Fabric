@@ -19,7 +19,8 @@
 		]
 	},
 	"mixins": [
-		"allied.mixins.json"
+		"allied.mixins.json",
+		"justteams.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.4",
