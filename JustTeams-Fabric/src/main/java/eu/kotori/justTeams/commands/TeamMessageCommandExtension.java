@@ -9,6 +9,7 @@ import eu.kotori.justTeams.team.TeamPlayer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -52,7 +53,7 @@ public final class TeamMessageCommandExtension {
     }
     private static int usage(ServerCommandSource source){source.sendMessage(prefix().append(Text.literal("Usage: /teammsg <message>").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false))));return 0;}
     private static Text noTeam(){return prefix().append(Text.literal("You are not in a team.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)));}
-    private static Text prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
+    private static MutableText prefix(){return Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(TEAM_BLUE).withItalic(false));}
     private static boolean checkSpam(UUID playerUuid){long now=System.currentTimeMillis();Long last=LAST_MESSAGE.get(playerUuid);if(last!=null&&now-last<MESSAGE_COOLDOWN_MILLIS)return false;MessageWindow window=MESSAGE_WINDOWS.get(playerUuid);if(window==null||now-window.windowStart>=MESSAGE_WINDOW_MILLIS)window=new MessageWindow(now,0);if(window.count>=MAX_MESSAGES_PER_MINUTE)return false;LAST_MESSAGE.put(playerUuid,now);MESSAGE_WINDOWS.put(playerUuid,new MessageWindow(window.windowStart,window.count+1));return true;}
     private static boolean containsBlockedContent(String message){String lower=message.toLowerCase(java.util.Locale.ROOT);for(String blockedTerm:BLOCKED_TERMS)if(lower.contains(blockedTerm))return true;return false;}
     private record MessageWindow(long windowStart,int count){}
