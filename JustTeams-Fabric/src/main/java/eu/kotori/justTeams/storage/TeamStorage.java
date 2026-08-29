@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class TeamStorage {
-    private static final int DATA_VERSION = 9;
+    private static final int DATA_VERSION = 10;
     private final Path path = FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("teams.dat");
 
     public void load(TeamManager manager) throws IOException {
@@ -33,14 +33,17 @@ public final class TeamStorage {
         Files.createDirectories(path.getParent());
         if (!Files.exists(path)) { save(manager); return; }
         NbtCompound root = NbtIo.read(path);
+        int dataVersion = root.getInt("dataVersion", 1);
         NbtList teams = root.getListOrEmpty("teams");
         for (int i = 0; i < teams.size(); i++) {
             NbtCompound teamTag = teams.getCompoundOrEmpty(i);
             Team team = readTeam(teamTag);
             readBank(team, teamTag);
             readEnderChest(team, teamTag);
+            if (dataVersion < 10) migrateAutoBankDefaults(team);
             manager.register(team);
         }
+        if (dataVersion < DATA_VERSION) save(manager);
     }
 
     public void save(TeamManager manager) throws IOException {
@@ -130,7 +133,7 @@ public final class TeamStorage {
     }
 
     private TeamLocation readLocation(NbtCompound tag) { return new TeamLocation(tag.getString("dimension").orElse("minecraft:overworld"), tag.getDouble("x", 0D), tag.getDouble("y", 0D), tag.getDouble("z", 0D), tag.getFloat("yaw", 0F), tag.getFloat("pitch", 0F)); }
-    private TeamWarp readWarp(NbtCompound tag) { TeamWarp warp = new TeamWarp(tag.getString("name").orElse("warp"), UUID.fromString(tag.getString("owner").orElseThrow()), tag.getString("world").orElse("minecraft:overworld"), tag.getDouble("x", 0D), tag.getDouble("y", 0D), tag.getDouble("z", 0D), tag.getFloat("yaw", 0F), tag.getFloat("pitch", 0F)); warp.setPassword(tag.getString("password").orElse("")); warp.setCost(tag.getDouble("cost", 0D)); warp.setEnabled(tag.getBoolean("enabled").orElse(true)); warp.setMembersCanUse(tag.getBoolean("membersCanUse").orElse(true)); return warp; }
+    private TeamWarp readWarp(NbtCompound tag) { TeamWarp warp = new TeamWarp(tag.getString("name").orElse("warp"), UUID.fromString(tag.getString("owner").orElseThrow()), tag.getString("world").orElse("minecraft:overworld"), tag.getDouble("x", 0D), tag.getDouble("y", 0D), tag.getDouble("z", 0D), tag.getFloat("yaw", 0F), tag.getDouble("x", 0D), tag.getFloat("yaw", 0F), tag.getFloat("pitch", 0F)); warp.setPassword(tag.getString("password").orElse("")); warp.setCost(tag.getDouble("cost", 0D)); warp.setEnabled(tag.getBoolean("enabled").orElse(true)); warp.setMembersCanUse(tag.getBoolean("membersCanUse").orElse(true)); return warp; }
     private TeamPlayer readMember(NbtCompound tag) {
         UUID uuid = UUID.fromString(tag.getString("uuid").orElseThrow());
         TeamRole role; try { role = TeamRole.valueOf(tag.getString("role").orElse("MEMBER")); } catch (IllegalArgumentException ignored) { role = TeamRole.MEMBER; }
@@ -140,5 +143,15 @@ public final class TeamStorage {
         member.setAutoBankEnabled(tag.getBoolean("autoBankEnabled").orElse(false));
         member.setTeamChatEnabled(tag.getBoolean("teamChatEnabled").orElse(false));
         return member;
+    }
+
+    private void migrateAutoBankDefaults(Team team) {
+        for (TeamPlayer member : team.getMembers()) {
+            if (member.getRank() == TeamRank.LEADER || member.getRank() == TeamRank.CO_LEADER) {
+                member.setCanWithdraw(true);
+                member.setCanUseAutoBank(true);
+                member.setAutoBankEnabled(true);
+            }
+        }
     }
 }
