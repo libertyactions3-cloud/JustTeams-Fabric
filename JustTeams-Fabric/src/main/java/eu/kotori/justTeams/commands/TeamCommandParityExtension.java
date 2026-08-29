@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.chat.TeamChatCustomClickActions;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamNotificationManager;
@@ -85,6 +86,14 @@ public final class TeamCommandParityExtension {
         } catch (Exception e) {
             return failure(source, e);
         }
+    }
+
+    public static int executeAcceptFromCustomClick(ServerPlayerEntity player, String teamName) {
+        return executeAccept(player.getCommandSource(), teamName);
+    }
+
+    public static int executeDenyFromCustomClick(ServerPlayerEntity player, String teamName) {
+        return executeDeny(player.getCommandSource(), teamName);
     }
 
     private static int executeLeave(ServerCommandSource source, String teamName) {
@@ -242,6 +251,15 @@ public final class TeamCommandParityExtension {
     }
 
     private static MutableText clickable(String text, String command, Formatting color) {
-        return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false).withClickEvent(new ClickEvent.RunCommand(command)));
+        String prefix = "/team accept ";
+        ClickEvent event;
+        if (command.startsWith(prefix)) {
+            event = TeamChatCustomClickActions.acceptInvite(command.substring(prefix.length()));
+        } else if (command.startsWith("/team deny ")) {
+            event = TeamChatCustomClickActions.denyInvite(command.substring("/team deny ".length()));
+        } else {
+            event = new ClickEvent.RunCommand(command);
+        }
+        return Text.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false).withClickEvent(event));
     }
 }
