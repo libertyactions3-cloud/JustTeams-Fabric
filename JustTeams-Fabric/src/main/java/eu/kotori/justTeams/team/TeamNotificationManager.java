@@ -35,7 +35,7 @@ public final class TeamNotificationManager {
     public static void notifyJoinRequestAccepted(MinecraftServer server, Team team, UUID playerUuid) {
         String name = playerName(server, playerUuid);
         MutableText message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
-                .append(Text.literal("'s has joined the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
+                .append(Text.literal(" has joined the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcast(server, team, message);
         ServerPlayerEntity joined = server.getPlayerManager().getPlayer(playerUuid);
         if (joined != null) playSuccessSound(joined);
@@ -51,7 +51,7 @@ public final class TeamNotificationManager {
     public static void notifyLeave(MinecraftServer server, Team team, UUID playerUuid) {
         String name = playerName(server, playerUuid);
         MutableText message = prefix().append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
-                .append(Text.literal("'s has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
+                .append(Text.literal(" has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcast(server, team, message);
     }
 
@@ -64,7 +64,7 @@ public final class TeamNotificationManager {
             playSuccessSound(kicker);
         }
         MutableText message = prefix().append(Text.literal(playerName(server, targetUuid)).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withItalic(false)))
-                .append(Text.literal("'s has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
+                .append(Text.literal(" has left the team.").setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
         broadcastExcept(server, team, message, kickerUuid, targetUuid);
         if (target != null) target.sendMessage(Text.literal("You have been kicked from the team " + team.getName() + "."), false);
     }
