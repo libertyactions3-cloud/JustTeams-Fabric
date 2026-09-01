@@ -12,8 +12,6 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtOps;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 /** Team-owned item bank backed by a real Minecraft inventory. */
@@ -52,30 +50,21 @@ public final class TeamBank extends SimpleInventory {
         return planWithdrawal(value) != null;
     }
 
+    /**
+     * Withdraws a feature cost from the team bank. Denomination change remains in the team bank.
+     * The operation is planned completely before any inventory mutation occurs.
+     */
     public boolean tryWithdrawValue(long value) {
         if (value <= 0L) return true;
         int[] plan = planWithdrawal(value);
         if (plan == null) return false;
+        if (!canFitChange(plan[3], plan[4])) return false;
+
         removeValue(Items.DEEPSLATE_EMERALD_ORE, plan[0]);
         removeValue(Items.EMERALD_BLOCK, plan[1]);
         removeValue(Items.EMERALD, plan[2]);
         addCurrency(Items.EMERALD_BLOCK, plan[3]);
         addCurrency(Items.EMERALD, plan[4]);
-        markDirty();
-        return true;
-    }
-
-    /** Withdraws a feature cost and returns any denomination change directly to the player. */
-    public boolean tryWithdrawValue(PlayerEntity player, long value) {
-        if (player == null) return false;
-        if (value <= 0L) return true;
-        int[] plan = planWithdrawal(value);
-        if (plan == null) return false;
-        removeValue(Items.DEEPSLATE_EMERALD_ORE, plan[0]);
-        removeValue(Items.EMERALD_BLOCK, plan[1]);
-        removeValue(Items.EMERALD, plan[2]);
-        if (plan[3] > 0) player.getInventory().offerOrDrop(new ItemStack(Items.EMERALD_BLOCK, plan[3]));
-        if (plan[4] > 0) player.getInventory().offerOrDrop(new ItemStack(Items.EMERALD, plan[4]));
         markDirty();
         return true;
     }
@@ -126,7 +115,7 @@ public final class TeamBank extends SimpleInventory {
             }
         }
 
-        /* Ore is the highest denomination and final fallback. */
+        /* Deepslate emerald ore is the highest denomination and final fallback. */
         if (remaining > 0L && oreAmt > 0) {
             long neededOre = (remaining + 80L) / 81L;
             if (neededOre > oreAmt || neededOre > Integer.MAX_VALUE) return null;
@@ -140,6 +129,24 @@ public final class TeamBank extends SimpleInventory {
         int changeBlocks = (int) (change / 9L);
         int changeEmeralds = (int) (change % 9L);
         return new int[]{takeOre, takeBlocks, takeEmeralds, changeBlocks, changeEmeralds};
+    }
+
+    private boolean canFitChange(int blocks, int emeralds) {
+        int emptySlots = 0;
+        int blockSpace = 0;
+        int emeraldSpace = 0;
+        for (int slot = 0; slot < size(); slot++) {
+            ItemStack stack = getStack(slot);
+            if (stack.isEmpty()) {
+                emptySlots++;
+                continue;
+            }
+            if (stack.getItem() == Items.EMERALD_BLOCK) blockSpace += stack.getMaxCount() - stack.getCount();
+            if (stack.getItem() == Items.EMERALD) emeraldSpace += stack.getMaxCount() - stack.getCount();
+        }
+        int blockStacksNeeded = Math.max(0, blocks - blockSpace + 63) / 64;
+        int emeraldStacksNeeded = Math.max(0, emeralds - emeraldSpace + 63) / 64;
+        return blockStacksNeeded + emeraldStacksNeeded <= emptySlots;
     }
 
     private void addCurrency(Item item, int amount) {
