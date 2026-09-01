@@ -60,7 +60,9 @@ public final class FeatureCostManager {
         Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
         TeamPlayer member = team == null ? null : team.getMember(player.getUuid());
         if (member != null && member.canUseAutoBank() && member.isAutoBankEnabled()) {
-            if (team.getBank().tryWithdrawValue(player, (long) cost)) {
+            // AutoBank is a transaction against the team's item bank. Any denomination
+            // overpayment/change stays in the team bank, exactly like bank-side currency handling.
+            if (team.getBank().tryWithdrawValue((long) cost)) {
                 TeamBankLogManager.record(player.getEntityWorld().getServer(), team, player,
                         (long) cost, TeamBankLogManager.Kind.AUTOBANK, feature);
                 return true;
