@@ -4,6 +4,7 @@ import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.BlacklistedPlayer;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamEnderChest;
+import eu.kotori.justTeams.team.TeamLocation;
 import eu.kotori.justTeams.team.TeamManager;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRank;
