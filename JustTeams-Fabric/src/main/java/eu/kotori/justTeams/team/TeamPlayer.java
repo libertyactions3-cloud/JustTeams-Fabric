@@ -27,6 +27,7 @@ public final class TeamPlayer {
     private boolean canSetWarps;
     private boolean canUseAutoBank;
     private boolean autoBankEnabled;
+    private boolean canTogglePvp;
     private boolean teamChatEnabled;
 
     public TeamPlayer(UUID playerUuid, TeamRole role, Instant joinDate,
@@ -44,6 +45,7 @@ public final class TeamPlayer {
         this.canSetWarps = true;
         this.canUseAutoBank = elevatedAutoBankDefault;
         this.autoBankEnabled = false;
+        this.canTogglePvp = this.rank == TeamRank.LEADER;
         this.teamChatEnabled = false;
         this.canInvite = defaultInvitePermission(this.rank);
         setDefaultEditingPermissions();
@@ -87,6 +89,7 @@ public final class TeamPlayer {
         this.canSetWarps = canSetWarps;
         this.canUseAutoBank = canUseAutoBank;
         this.autoBankEnabled = false;
+        this.canTogglePvp = this.rank == TeamRank.LEADER;
         this.teamChatEnabled = false;
     }
 
@@ -143,6 +146,7 @@ public final class TeamPlayer {
             this.canWithdraw = true;
             this.canUseAutoBank = true;
         }
+        if (rank == TeamRank.LEADER) this.canTogglePvp = true;
     }
 
     public boolean canWithdraw() { return canWithdraw; }
@@ -171,6 +175,8 @@ public final class TeamPlayer {
     public void setCanUseAutoBank(boolean value) { canUseAutoBank = value; if (!value) autoBankEnabled = false; }
     public boolean isAutoBankEnabled() { return autoBankEnabled; }
     public void setAutoBankEnabled(boolean value) { autoBankEnabled = canUseAutoBank && value; }
+    public boolean canTogglePvp() { return canTogglePvp; }
+    public void setCanTogglePvp(boolean value) { canTogglePvp = value; }
     public boolean isTeamChatEnabled() { return teamChatEnabled; }
     public void setTeamChatEnabled(boolean value) { teamChatEnabled = value; }
 
