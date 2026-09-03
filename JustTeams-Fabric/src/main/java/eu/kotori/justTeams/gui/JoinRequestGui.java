@@ -44,7 +44,7 @@ public final class JoinRequestGui {
         }
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, inventory, ignored) -> new Handler(syncId, inventory, player, team),
-                Text.literal("ᴊᴏɪɴ ʀᴇǫᴜᴇs").setStyle(Style.EMPTY.withItalic(false))));
+                Text.literal("ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs").setStyle(Style.EMPTY.withItalic(false))));
     }
 
     private static final class Handler extends ScreenHandler {
@@ -68,7 +68,7 @@ public final class JoinRequestGui {
         private void populate() {
             for (int i = 0; i < 54; i++) menu.setStack(i, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
 
-            ItemStack header = namedBold(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇs", PRIMARY_START, PRIMARY_END);
+            ItemStack header = namedBold(Items.SOUL_LANTERN, "ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛs", PRIMARY_START, PRIMARY_END);
             menu.setStack(4, header);
 
             requests.clear();
