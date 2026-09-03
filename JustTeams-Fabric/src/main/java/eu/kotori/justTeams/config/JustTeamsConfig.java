@@ -32,7 +32,7 @@ public final class JustTeamsConfig {
         changed|=putDefault("bank.currency-items",DEFAULT_CURRENCY_ITEMS);
         changed|=putDefault("glow.colors.owner","RED"); changed|=putDefault("glow.colors.co-owner","DARK_RED"); changed|=putDefault("glow.colors.member","WHITE");
         changed|=putDefault("enderchest.enabled","true"); changed|=putDefault("enderchest.rows","3");
-        changed|=putDefault("feature-costs.enabled","true"); changed|=putDefault("feature-costs.sethome","100"); changed|=putDefault("feature-costs.home","50"); changed|=putDefault("feature-costs.enderchest","25"); changed|=putDefault("feature-costs.setwarp","200"); changed|=putDefault("feature-costs.warp","75"); changed|=putDefault("feature-costs.bank-withdraw","10"); changed|=putDefault("feature-costs.rename","500");
+        changed|=putDefault("feature-costs.enabled","true"); changed|=putDefault("feature-costs.sethome","50"); changed|=putDefault("feature-costs.home","25"); changed|=putDefault("feature-costs.enderchest","25"); changed|=putDefault("feature-costs.setwarp","200"); changed|=putDefault("feature-costs.warp","75"); changed|=putDefault("feature-costs.bank-withdraw","10"); changed|=putDefault("feature-costs.rename","500");
         changed|=putDefault("team-creation.min-name-length","3"); changed|=putDefault("team-creation.max-name-length","16"); changed|=putDefault("team-creation.max-tag-length","6");
         changed|=putDefault("settings.max_team_size","10");
         changed|=putDefault("team-creation.default-pvp","true"); changed|=putDefault("team-creation.default-public","false");
