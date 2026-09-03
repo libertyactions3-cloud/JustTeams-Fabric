@@ -24,6 +24,7 @@ public final class FeatureCostManager {
 
     public static boolean canAfford(ServerPlayerEntity player, double cost, String feature) {
         if (player == null) return false;
+        if (!JustTeamsFabric.config().isFeatureCostsEnabled()) return true;
         if (cost <= 0.0D) return true;
         if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
             player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
@@ -51,6 +52,7 @@ public final class FeatureCostManager {
 
     public static boolean charge(ServerPlayerEntity player, double cost, String feature) {
         if (player == null) return false;
+        if (!JustTeamsFabric.config().isFeatureCostsEnabled()) return true;
         if (cost <= 0.0D) return true;
         if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
             player.sendMessage(Text.literal("The configured cost for " + feature + " is invalid for the item economy."), true);
