@@ -1,7 +1,6 @@
 package eu.kotori.justTeams.team;
 
 import eu.kotori.justTeams.JustTeamsFabric;
-import eu.kotori.justTeams.economy.EconomyTransactionResult;
 import eu.kotori.justTeams.economy.FeatureCostManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.particle.ParticleEffect;
@@ -9,7 +8,6 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -67,14 +65,14 @@ public final class TeamTeleportManager {
 
     public boolean requestHome(ServerPlayerEntity player, TeamLocation location) {
         if (checkHomeCooldown(player)) return false;
-        if (!FeatureCostManager.canAfford(player, "home")) return false;
         double cost = JustTeamsFabric.config().getFeatureCost("home");
+        if (!FeatureCostManager.canAfford(player, cost, "home")) return false;
         return startWarmup(player, location, Type.HOME, cost, JustTeamsFabric.config().getHomeWarmupSeconds());
     }
 
     public boolean requestWarp(ServerPlayerEntity player, TeamLocation location, double cost) {
         if (checkWarpCooldown(player)) return false;
-        if (!canAffordAmount(player, cost)) return false;
+        if (!FeatureCostManager.canAfford(player, cost, "warp")) return false;
         return startWarmup(player, location, Type.WARP, cost, JustTeamsFabric.config().getWarpWarmupSeconds());
     }
 
@@ -165,11 +163,11 @@ public final class TeamTeleportManager {
             return;
         }
 
-        if (warmup.cost > 0.0D) {
-            EconomyTransactionResult payment = JustTeamsFabric.economy().withdraw(player, warmup.cost);
-            if (!payment.successful()) {
-                player.sendMessage(Text.literal("Teleport succeeded, but the item economy could not collect the teleport cost."), true);
-            }
+        String feature = warmup.type == Type.HOME ? "home" : "warp";
+        if (!FeatureCostManager.charge(player, warmup.cost, feature)) {
+            player.sendMessage(Text.literal("Teleport succeeded, but the teleport cost could not be collected."), true);
+            playErrorSound(player);
+            return;
         }
 
         String destination = warmup.type == Type.HOME ? "your team home" : "your team warp";
@@ -179,23 +177,6 @@ public final class TeamTeleportManager {
         }
         spawnSuccessParticles(player);
         setCooldown(player, warmup.type);
-    }
-
-    private boolean canAffordAmount(ServerPlayerEntity player, double cost) {
-        if (cost <= 0.0D) return true;
-        if (!Double.isFinite(cost) || cost != Math.rint(cost)) {
-            player.sendMessage(Text.literal("This warp has an invalid item-economy cost."), true);
-            return false;
-        }
-        if (!JustTeamsFabric.economy().isAvailable()) {
-            player.sendMessage(Text.literal("The item economy is unavailable."), true);
-            return false;
-        }
-        if (JustTeamsFabric.economy().getBalance(player) >= cost) return true;
-        player.sendMessage(Text.literal(
-                "You do not have enough " + JustTeamsFabric.economy().getCurrencyName()
-                        + " (cost: " + JustTeamsFabric.economy().format(cost) + ")."), true);
-        return false;
     }
 
     private boolean isOnCooldown(ServerPlayerEntity player, Type type) {
