@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 /** Entry point for the server-side JustTeams inventory GUI system. */
 public final class TeamGuiManager {
@@ -35,6 +36,20 @@ public final class TeamGuiManager {
         int maxMembers=JustTeamsFabric.config().getMaxTeamMembers();
         player.openHandledScreen(new net.minecraft.screen.SimpleNamedScreenHandlerFactory((syncId,inventory,ignored)->new TeamMenuHandler(syncId,inventory,player.getUuid(),team,TeamGuiManager::handleMainClick),Text.literal("ᴛᴇᴀᴍ - "+team.getMembers().size()+"/"+maxMembers).setStyle(Style.EMPTY.withItalic(false))));
         if(player.currentScreenHandler instanceof TeamMenuHandler menu){TeamInPlaceGui.refreshMainMembers(menu,player,team);TeamInPlaceGui.updateMainSortItem(menu,team);TeamInPlaceGui.updateMainPvpItem(menu,team);}
+    }
+
+    public static void openMemberEditor(ServerPlayerEntity player,Team team,UUID targetUuid){
+        if(player==null||team==null||targetUuid==null||!team.isOwner(player.getUuid()))return;
+        TeamPlayer target=team.getMember(targetUuid);if(target==null||targetUuid.equals(player.getUuid()))return;
+        openMain(player);
+        if(!(player.currentScreenHandler instanceof TeamMenuHandler menu))return;
+        List<TeamPlayer> displayedMembers=orderedMembers(player,team);
+        for(int i=0;i<displayedMembers.size()&&i<MEMBER_SLOTS.length;i++){
+            if(displayedMembers.get(i).getPlayerUuid().equals(targetUuid)){
+                TeamInPlaceMemberGui.enter(menu,player,team,target,MEMBER_SLOTS[i]);
+                return;
+            }
+        }
     }
 
     public static void openPersistentView(ServerPlayerEntity player,TeamInPlaceGui.View view){Team team=JustTeamsFabric.teams().getTeam(player.getUuid());if(team==null){TeamPersistentNoTeamGui.openMain(player);return;}TeamMenuHandler menu;if(player.currentScreenHandler instanceof TeamMenuHandler existing&&existing.getTeam().getId()==team.getId()&&team.isMember(player.getUuid()))menu=existing;else{openMain(player);if(!(player.currentScreenHandler instanceof TeamMenuHandler opened))return;menu=opened;}TeamPersistentWarpManagementGui.close(menu);TeamPersistentBlacklistGui.close(menu);TeamPersistentLeaderboardGui.close(menu);TeamBankLogsGui.close(menu);TeamDisbandConfirmationGui.close(menu);switch(view){case MAIN->TeamInPlaceGui.returnToMain(menu);case JOIN_REQUESTS->TeamInPlaceGui.enterJoinRequests(menu,player,team);case WARPS->TeamInPlaceGui.enterWarps(menu,player,team);case SETTINGS->TeamInPlaceGui.enterSettings(menu,player,team);}}
@@ -56,8 +71,8 @@ public final class TeamGuiManager {
     }
 
     private static List<TeamPlayer> orderedMembers(PlayerEntity viewer,Team team){List<TeamPlayer> members=new ArrayList<>(team.getMembers());var server=viewer instanceof ServerPlayerEntity sp?sp.getEntityWorld().getServer():null;Comparator<TeamPlayer> c=switch(team.getCurrentSortType()){case ONLINE_STATUS->Comparator.comparing((TeamPlayer m)->server!=null&&server.getPlayerManager().getPlayer(m.getPlayerUuid())!=null).reversed().thenComparingInt(m->m.getRank().ordinal()).thenComparing(m->PlayerNameResolver.resolve(server,m.getPlayerUuid()),String.CASE_INSENSITIVE_ORDER);case RANK->Comparator.comparingInt((TeamPlayer m)->m.getRank().ordinal()).thenComparing(m->PlayerNameResolver.resolve(server,m.getPlayerUuid()),String.CASE_INSENSITIVE_ORDER);case ALPHABETICAL->Comparator.comparing(m->PlayerNameResolver.resolve(server,m.getPlayerUuid()),String.CASE_INSENSITIVE_ORDER);case JOIN_DATE->Comparator.comparing(TeamPlayer::getJoinDate,Comparator.nullsLast(Comparator.naturalOrder()));};members.sort(c);return members;}
-    private static void useHome(PlayerEntity player,Team team){if(!(player instanceof ServerPlayerEntity sp))return;TeamPlayer member=team.getMember(player.getUuid());if(member==null||!member.canUseHome()){player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("You do not have permission to use the team home.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))),false);return;}if(team.getHome()==null){player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("Your team does not have a home set.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))),false);return;}JustTeamsFabric.teleports().requestHome(sp,team.getHome());}
     private static void togglePvp(PlayerEntity player,Team team,TeamMenuHandler menu){TeamPlayer member=team.getMember(player.getUuid());if(member==null||!member.canTogglePvp()){player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("You do not have permission to change PvP.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))),false);return;}team.setPvpEnabled(!team.isPvpEnabled());save();TeamInPlaceGui.updateMainPvpItem(menu,team);player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal(team.isPvpEnabled()?"Team PvP has been enabled.":"Team PvP has been disabled.").setStyle(Style.EMPTY.withColor(team.isPvpEnabled()?Formatting.GREEN:Formatting.RED).withItalic(false))),false);}
+    private static void useHome(PlayerEntity player,Team team){if(!(player instanceof ServerPlayerEntity sp))return;TeamPlayer member=team.getMember(player.getUuid());if(member==null||!member.canUseHome()){player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("You do not have permission to use the team home.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))),false);return;}if(team.getHome()==null){player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("Your team does not have a home set.").setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false))),false);return;}JustTeamsFabric.teleports().requestHome(sp,team.getHome());}
     private static void leaveTeam(PlayerEntity player,Team team){TeamPlayer member=team.getMember(player.getUuid());if(member!=null){member.setAutoBankEnabled(false);member.setTeamChatEnabled(false);}JustTeamsFabric.teams().removeMember(team,player.getUuid());save();if(player instanceof ServerPlayerEntity sp){TeamEnderChestGui.closeViewer(sp.getEntityWorld().getServer(),team,player.getUuid());JustTeamsFabric.glow().stopGlowForPlayer(sp.getEntityWorld().getServer(),player.getUuid());TeamNotificationManager.notifyLeave(sp.getEntityWorld().getServer(),team,player.getUuid());}close(player);}
     public static void performDisband(ServerPlayerEntity player,Team team){if(player==null||team==null||!team.isOwner(player.getUuid()))return;var server=player.getEntityWorld().getServer();TeamEnderChestGui.closeAndRelease(server,team);for(TeamPlayer member:team.getMembers()){TeamChatManager.disable(member.getPlayerUuid());JustTeamsFabric.glow().stopGlowForPlayer(server,member.getPlayerUuid());}JustTeamsFabric.teams().unregister(team);save();player.closeHandledScreen();player.sendMessage(Text.literal("[ᴛᴇᴀᴍꜱ] ").setStyle(Style.EMPTY.withColor(0x4C9DDE).withItalic(false)).append(Text.literal("You have successfully disbanded your team.").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false))),false);}
     private static void close(PlayerEntity player){if(player instanceof ServerPlayerEntity sp)sp.closeHandledScreen();}
