@@ -18,10 +18,15 @@ public final class TeamBankGui {
             return;
         }
 
-        if (player instanceof ServerPlayerEntity serverPlayer
-                && !JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK)) {
-            player.sendMessage(Text.literal("You do not have permission to use the team bank."), true);
-            return;
+        if (player instanceof ServerPlayerEntity serverPlayer) {
+            if (!team.hasElevatedPermissions(serverPlayer.getUuid())) {
+                player.sendMessage(Text.literal("Only the Leader or Co-Leader can use the team bank."), true);
+                return;
+            }
+            if (!JustTeamsFabric.permissions().has(serverPlayer, JustTeamsPermissions.COMMAND_BANK)) {
+                player.sendMessage(Text.literal("You do not have permission to use the team bank."), true);
+                return;
+            }
         }
 
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
