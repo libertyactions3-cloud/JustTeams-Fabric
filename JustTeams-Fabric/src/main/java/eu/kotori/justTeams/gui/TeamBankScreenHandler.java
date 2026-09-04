@@ -50,4 +50,10 @@ public final class TeamBankScreenHandler extends GenericContainerScreenHandler {
             return member != null && member.canWithdraw();
         }
     }
+
+    @Override
+    public boolean canUse(PlayerEntity player) {
+        return player.getUuid().equals(((PlayerInventory)player.getInventory()).player.getUuid())
+                && team.hasElevatedPermissions(player.getUuid());
+    }
 }
