@@ -34,23 +34,24 @@ public final class TeamInPlaceMemberGui {
     private static final WeakHashMap<TeamMenuHandler, ItemStack[]> MAIN_SNAPSHOTS = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, TeamPlayer> TARGETS = new WeakHashMap<>();
     private static final WeakHashMap<TeamMenuHandler, Integer> MAIN_SLOTS = new WeakHashMap<>();
-    private static final WeakHashMap<TeamMenuHandler, Boolean> TRANSFER_CONFIRM = new WeakHashMap<>();
     private TeamInPlaceMemberGui() {}
 
     public static boolean isOpen(TeamMenuHandler menu) { return TARGETS.containsKey(menu); }
-    public static void enter(TeamMenuHandler menu, PlayerEntity viewer, Team team, TeamPlayer target, int mainSlot) { snapshot(menu); TARGETS.put(menu,target); MAIN_SLOTS.put(menu,mainSlot); TRANSFER_CONFIRM.put(menu,false); renderEditor(menu,viewer,team,target); }
-    public static void back(TeamMenuHandler menu) { restore(menu); TARGETS.remove(menu); MAIN_SLOTS.remove(menu); TRANSFER_CONFIRM.remove(menu); }
+    public static void enter(TeamMenuHandler menu, PlayerEntity viewer, Team team, TeamPlayer target, int mainSlot) { snapshot(menu); TARGETS.put(menu,target); MAIN_SLOTS.put(menu,mainSlot); renderEditor(menu,viewer,team,target); }
+    public static void back(TeamMenuHandler menu) { restore(menu); TARGETS.remove(menu); MAIN_SLOTS.remove(menu); }
+    public static void discard(TeamMenuHandler menu) { TARGETS.remove(menu); MAIN_SLOTS.remove(menu); MAIN_SNAPSHOTS.remove(menu); }
 
     public static boolean handle(TeamMenuHandler menu, PlayerEntity player, Team team, int slot) {
-        TeamPlayer target=TARGETS.get(menu); if(target==null)return false; boolean confirming=Boolean.TRUE.equals(TRANSFER_CONFIRM.get(menu));
-        if(confirming){if(slot==21){applyTransfer(menu,player,team,target);return true;}if(slot==23){TRANSFER_CONFIRM.put(menu,false);renderEditor(menu,player,team,target);return true;}if(slot==49){back(menu);return true;}return true;}
-        if(slot==49){back(menu);return true;} if(!(player instanceof ServerPlayerEntity serverPlayer))return true; if(!team.isOwner(player.getUuid())||target.getPlayerUuid().equals(player.getUuid()))return true;
+        TeamPlayer target=TARGETS.get(menu); if(target==null)return false;
+        if(slot==49){back(menu);return true;}
+        if(!(player instanceof ServerPlayerEntity serverPlayer))return true;
+        if(!team.isOwner(player.getUuid())||target.getPlayerUuid().equals(player.getUuid()))return true;
         switch(slot){
             case 19->{TeamRank next=target.getRank().promote();if(next!=target.getRank()){target.setRank(next);notifyRankChange(serverPlayer,team,target,true);}}
             case 20->{TeamRank next=target.getRank().demote();if(next!=target.getRank()){target.setRank(next);notifyRankChange(serverPlayer,team,target,false);}}
-            case 22->{TeamChatManager.disable(target.getPlayerUuid());TeamEnderChestGui.closeViewer(serverPlayer.getEntityWorld().getServer(),team,target.getPlayerUuid());JustTeamsFabric.glow().stopGlowForPlayer(serverPlayer.getEntityWorld().getServer(),target.getPlayerUuid());JustTeamsFabric.teams().removeMember(team,target.getPlayerUuid());save();TeamNotificationManager.notifyKick(serverPlayer.getEntityWorld().getServer(),team,player.getUuid(),target.getPlayerUuid());TARGETS.remove(menu);MAIN_SLOTS.remove(menu);TRANSFER_CONFIRM.remove(menu);MAIN_SNAPSHOTS.remove(menu);TeamGuiManager.openMain(serverPlayer);return true;}
+            case 22->{discard(menu);TeamKickConfirmationGui.openFirst(menu,serverPlayer,team,target.getPlayerUuid());return true;}
             case 24->{target.setCanTogglePvp(!target.canTogglePvp());}
-            case 25->{TRANSFER_CONFIRM.put(menu,true);renderTransferConfirmation(menu,player,team,target);return true;}
+            case 25->{discard(menu);TeamTransferOwnershipConfirmationGui.openFirst(menu,serverPlayer,team,target.getPlayerUuid());return true;}
             case 37->{boolean enable=!(target.canWithdraw()&&target.canUseAutoBank());target.setCanWithdraw(enable);target.setCanUseAutoBank(enable);if(!enable)target.setAutoBankEnabled(false);}
             case 38->target.setCanSetWarps(!target.canSetWarps());
             case 39->target.setCanUseEnderChest(!target.canUseEnderChest());
@@ -60,6 +61,31 @@ public final class TeamInPlaceMemberGui {
             default-> {return true;}
         }
         save();renderEditor(menu,player,team,target);return true;
+    }
+
+    public static void performKick(ServerPlayerEntity serverPlayer,Team team,UUID targetUuid){
+        if(serverPlayer==null||team==null||targetUuid==null||!team.isOwner(serverPlayer.getUuid())||serverPlayer.getUuid().equals(targetUuid))return;
+        TeamPlayer target=team.getMember(targetUuid);if(target==null)return;
+        var server=serverPlayer.getEntityWorld().getServer();
+        TeamChatManager.disable(targetUuid);
+        TeamEnderChestGui.closeViewer(server,team,targetUuid);
+        JustTeamsFabric.glow().stopGlowForPlayer(server,targetUuid);
+        JustTeamsFabric.teams().removeMember(team,targetUuid);
+        save();
+        TeamNotificationManager.notifyKick(server,team,serverPlayer.getUuid(),targetUuid);
+        TeamGuiManager.openMain(serverPlayer);
+    }
+
+    public static void performTransfer(ServerPlayerEntity serverPlayer,Team team,UUID targetUuid){
+        if(serverPlayer==null||team==null||targetUuid==null||!team.isOwner(serverPlayer.getUuid())||serverPlayer.getUuid().equals(targetUuid))return;
+        TeamPlayer target=team.getMember(targetUuid);if(target==null)return;
+        TeamPlayer oldOwner=team.getMember(serverPlayer.getUuid());if(oldOwner==null)return;
+        team.setOwnerUuid(targetUuid);
+        target.setRank(TeamRank.LEADER);setOwnerPermissions(target);
+        oldOwner.setRank(TeamRank.CO_LEADER);setMemberPermissions(oldOwner);
+        save();
+        JustTeamsFabric.glow().refreshAll(serverPlayer.getEntityWorld().getServer());
+        TeamGuiManager.openMain(serverPlayer);
     }
 
     private static void renderEditor(TeamMenuHandler menu,PlayerEntity viewer,Team team,TeamPlayer target){
@@ -80,8 +106,6 @@ public final class TeamInPlaceMemberGui {
     }
 
     private static ItemStack bankPermissionItem(boolean withdrawEnabled,boolean autoBankPermission){ItemStack stack=new ItemStack(Items.GOLD_INGOT);stack.set(DataComponentTypes.CUSTOM_NAME,Text.literal("ʙᴀɴᴋ ᴡɪᴛʜᴅʀᴀᴡ ᴀɴᴅ ᴜsᴇ ᴀᴜᴛᴏʙᴀɴᴋ").setStyle(Style.EMPTY.withColor(Formatting.AQUA).withBold(true).withItalic(false)));boolean enabled=withdrawEnabled&&autoBankPermission;stack.set(DataComponentTypes.LORE,new LoreComponent(List.of(plainLine("Allows this member to withdraw from the",Formatting.GRAY),plainLine("team bank and use Team AutoBank.",Formatting.GRAY),plainLine("Bank Withdraw and AutoBank "+(enabled?"enabled":"disabled"),enabled?Formatting.GREEN:Formatting.RED))));return stack;}
-    private static void renderTransferConfirmation(TeamMenuHandler menu,PlayerEntity viewer,Team team,TeamPlayer target){Inventory inventory=menu.getMenuInventory();clear(inventory);inventory.setStack(4,actionItem(Items.BEACON,"ᴛʀᴀɴsғᴇʀ ᴏᴡɴᴇʀsʜɪᴘ",List.of(plainLine("Transfer ownership to "+resolveName(viewer,target)+"?",Formatting.WHITE))));inventory.setStack(21,actionItem(Items.GREEN_WOOL,"ᴄᴏɴғɪʀᴍ",List.of(plainLine("Transfer ownership.",Formatting.YELLOW))));inventory.setStack(23,actionItem(Items.RED_WOOL,"ᴄᴀɴᴄᴇʟ",List.of(plainLine("Return to member management.",Formatting.YELLOW))));inventory.setStack(49,backItem());menu.sendContentUpdates();}
-    private static void applyTransfer(TeamMenuHandler menu,PlayerEntity player,Team team,TeamPlayer target){if(!(player instanceof ServerPlayerEntity serverPlayer)||!team.isOwner(player.getUuid())||target.getPlayerUuid().equals(player.getUuid()))return;TeamPlayer oldOwner=team.getMember(player.getUuid());if(oldOwner==null)return;team.setOwnerUuid(target.getPlayerUuid());target.setRank(TeamRank.LEADER);setOwnerPermissions(target);oldOwner.setRank(TeamRank.CO_LEADER);setMemberPermissions(oldOwner);save();JustTeamsFabric.glow().refreshAll(serverPlayer.getEntityWorld().getServer());TARGETS.remove(menu);MAIN_SLOTS.remove(menu);TRANSFER_CONFIRM.remove(menu);TeamInPlaceGui.returnToMain(menu);TeamInPlaceGui.refreshMainMembers(menu,player,team);}
     private static void setOwnerPermissions(TeamPlayer member){member.setRole(TeamRole.OWNER);member.setCanWithdraw(true);member.setCanUseEnderChest(true);member.setCanSetHome(true);member.setCanUseHome(true);member.setCanEditMembers(true);member.setCanEditCoOwners(true);member.setCanKickMembers(true);member.setCanPromoteMembers(true);member.setCanDemoteMembers(true);member.setCanInvite(true);member.setCanSetWarps(true);member.setCanUseAutoBank(true);member.setCanTogglePvp(true);}
     private static void setMemberPermissions(TeamPlayer member){member.setRole(TeamRole.CO_OWNER);member.setCanWithdraw(false);member.setCanUseEnderChest(true);member.setCanSetHome(false);member.setCanUseHome(false);member.setCanEditMembers(false);member.setCanEditCoOwners(false);member.setCanKickMembers(false);member.setCanPromoteMembers(false);member.setCanDemoteMembers(false);member.setCanUseAutoBank(false);member.setAutoBankEnabled(false);member.setCanTogglePvp(false);}
     private static void notifyRankChange(ServerPlayerEntity actor,Team team,TeamPlayer target,boolean promoted){var server=actor.getEntityWorld().getServer();ServerPlayerEntity targetPlayer=server.getPlayerManager().getPlayer(target.getPlayerUuid());String name=PlayerNameResolver.resolve(server,target.getPlayerUuid());String text=(promoted?"promoted to ":"demoted to ")+target.getRank().getDisplayName();actor.sendMessage(Text.literal("You "+text+": "+name+"."),false);if(targetPlayer!=null)targetPlayer.sendMessage(Text.literal("You were "+text+" in "+team.getName()+"."),false);}
