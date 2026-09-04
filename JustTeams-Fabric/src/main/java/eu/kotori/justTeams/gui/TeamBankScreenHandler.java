@@ -53,7 +53,6 @@ public final class TeamBankScreenHandler extends GenericContainerScreenHandler {
 
     @Override
     public boolean canUse(PlayerEntity player) {
-        return player.getUuid().equals(((PlayerInventory)player.getInventory()).player.getUuid())
-                && team.hasElevatedPermissions(player.getUuid());
+        return player.getUuid() != null && team.hasElevatedPermissions(player.getUuid());
     }
 }
