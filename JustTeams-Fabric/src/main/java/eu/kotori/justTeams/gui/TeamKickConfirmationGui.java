@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.team.Team;
+import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
@@ -37,19 +38,12 @@ public final class TeamKickConfirmationGui {
     }
 
     private static void open(ServerPlayerEntity player, Team team, UUID targetUuid) {
-        String targetName = team.getMember(targetUuid) == null ? "Unknown" : team.getMember(targetUuid).getPlayerUuid().toString();
-        TeamPlayerName target = new TeamPlayerName(targetName);
+        String targetName = PlayerNameResolver.resolve(player.getEntityWorld().getServer(), targetUuid);
         player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
                 (syncId, playerInventory, ignored) -> new Handler(syncId, playerInventory, player, team, targetUuid),
-                Text.literal("Kick " + target.name + "?").setStyle(Style.EMPTY.withItalic(false))
+                Text.literal("Kick " + targetName + "?").setStyle(Style.EMPTY.withItalic(false))
         ));
     }
-
-    private static String resolveName(ServerPlayerEntity player, UUID uuid) {
-        return eu.kotori.justTeams.util.PlayerNameResolver.resolve(player.getEntityWorld().getServer(), uuid);
-    }
-
-    private record TeamPlayerName(String name) {}
 
     private static final class Handler extends ScreenHandler {
         private final Inventory menu = new SimpleInventory(27);
