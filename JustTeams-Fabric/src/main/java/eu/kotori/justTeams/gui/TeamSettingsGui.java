@@ -65,7 +65,7 @@ public final class TeamSettingsGui {
                     plainLine("", Formatting.GRAY),
                     plainLine("Click to change the team tag.", Formatting.YELLOW)
             )));
-            menu.setStack(11, tag);
+            menu.setStack(13, tag);
 
             ItemStack description = namedGradient(Items.OAK_SIGN, "ᴄʜᴀɴɢᴇ ᴛᴇᴀᴍ ᴅᴇsᴄʀɪᴘᴛɪᴏɴ");
             description.set(DataComponentTypes.LORE, new LoreComponent(List.of(
@@ -73,10 +73,10 @@ public final class TeamSettingsGui {
                     plainLine("", Formatting.GRAY),
                     plainLine("Click to change the team description.", Formatting.YELLOW)
             )));
-            menu.setStack(13, description);
+            menu.setStack(15, description);
 
             ItemStack status = namedGradient(Items.ENDER_EYE, "ᴛᴇᴀᴍ sᴛᴀᴛᴜs");
-            menu.setStack(15, status);
+            menu.setStack(17, status);
 
             ItemStack back = namedPlain(Items.ARROW, "ʙᴀᴄᴋ");
             back.set(DataComponentTypes.CUSTOM_NAME,
@@ -98,7 +98,7 @@ public final class TeamSettingsGui {
             if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
 
             switch (slot) {
-                case 11 -> ChatInputManager.begin(serverPlayer,
+                case 13 -> ChatInputManager.begin(serverPlayer,
                         "Enter the new team tag (1-4 characters, or type cancel):", input -> {
                             try {
                                 JustTeamsFabric.teams().setTag(serverPlayer.getUuid(), input);
@@ -109,7 +109,7 @@ public final class TeamSettingsGui {
                                 serverPlayer.sendMessage(Text.literal(exception.getMessage()), false);
                             }
                         });
-                case 13 -> ChatInputManager.begin(serverPlayer,
+                case 15 -> ChatInputManager.begin(serverPlayer,
                         "Enter the new team description (1-256 characters, or type cancel):", input -> {
                             try {
                                 JustTeamsFabric.teams().setDescription(serverPlayer.getUuid(), input);
@@ -120,7 +120,7 @@ public final class TeamSettingsGui {
                                 serverPlayer.sendMessage(Text.literal(exception.getMessage()), false);
                             }
                         });
-                case 15 -> {
+                case 17 -> {
                     try {
                         boolean enabled = JustTeamsFabric.teams().togglePublic(serverPlayer.getUuid());
                         save();
