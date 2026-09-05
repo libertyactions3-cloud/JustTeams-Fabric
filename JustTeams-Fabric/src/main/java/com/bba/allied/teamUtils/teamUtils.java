@@ -13,7 +13,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.scoreboard.ServerScoreboard;
-import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
@@ -48,129 +47,8 @@ public class teamUtils {
     }
 
     public static void register() {
-        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((signedMessage, player, params) -> {
-            String rawText = signedMessage.getContent().getString();
-            Text formatted = formatTeamChat(player, rawText);
-
-            UUID uuid = player.getUuid();
-
-            if (teamChatManager.isEnabled(uuid)) {
-                String teamName = datManager.get().getTeam(uuid);
-
-                if (teamName != null) {
-                    NbtCompound teamData = datManager.get().getData()
-                            .getCompoundOrEmpty("teams")
-                            .getCompoundOrEmpty(teamName);
-
-                    teamData.getString("owner").ifPresent(ownerStr -> {
-                        try {
-                            ServerPlayerEntity owner = player.getEntityWorld().getServer().getPlayerManager()
-                                    .getPlayer(UUID.fromString(ownerStr));
-                            if (owner != null) owner.sendMessage(formatted, false);
-                        } catch (Exception ignored) {}
-                    });
-
-                    var members = teamData.getListOrEmpty("members");
-                    for (int i = 0; i < members.size(); i++) {
-                        members.getString(i).ifPresent(memberStr -> {
-                            try {
-                                ServerPlayerEntity member = player.getEntityWorld().getServer().getPlayerManager()
-                                        .getPlayer(UUID.fromString(memberStr));
-                                if (member != null) member.sendMessage(formatted, false);
-                            } catch (Exception ignored) {}
-                        });
-                    }
-                }
-            } else {
-                MinecraftServer server = player.getEntityWorld().getServer();
-                if (server != null) {
-                    server.getPlayerManager().getPlayerList().forEach(p -> p.sendMessage(formatted, false));
-                }
-                LOGGER.info("{}", formatted.getString());
-            }
-
-            return false;
-        });
-
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> teamUtils.handleFriendlyFire(entity, source));
         ServerTickEvents.END_WORLD_TICK.register(world -> updateHighlight(world.getServer()));
-    }
-
-    private static Text formatTeamChat(ServerPlayerEntity player, String originalMessage) {
-        NbtCompound teams = datManager.get().getData().getCompoundOrEmpty("teams");
-        String playerUuid = player.getUuid().toString();
-
-        for (String teamName : teams.getKeys()) {
-            NbtCompound team = teams.getCompoundOrEmpty(teamName);
-
-            if (team.getString("owner").orElse("").equals(playerUuid)) {
-                return buildChatMessage(player, originalMessage, team, teamName);
-            }
-
-            var members = team.getListOrEmpty("members");
-            for (int i = 0; i < members.size(); i++) {
-                if (members.getString(i).orElse("").equals(playerUuid)) {
-                    return buildChatMessage(player, originalMessage, team, teamName);
-                }
-            }
-        }
-        return Text.literal("<")
-                .append(player.getDisplayName())
-                .append("> ")
-                .append(originalMessage).formatted(Formatting.WHITE);
-    }
-
-    private static Text buildChatMessage(
-            ServerPlayerEntity player,
-            String message,
-            NbtCompound team,
-            String internalTeamName
-    ) {
-        boolean useTag = team
-                .getCompoundOrEmpty("settings")
-                .getBoolean("chatUseTag")
-                .orElse(false);
-
-        String colorStr = team
-                .getString("tagColor")
-                .orElse("WHITE");
-
-        Formatting color;
-        try {
-            color = Formatting.valueOf(colorStr.toUpperCase());
-        } catch (Exception e) {
-            color = Formatting.WHITE;
-        }
-
-        Team scoreboardTeam = player.getScoreboardTeam();
-
-        Text prefix = Text.empty();
-        Text playerName = Text.literal(player.getName().getString()).formatted(Formatting.WHITE);
-
-        if (scoreboardTeam != null) {
-            prefix = scoreboardTeam.getPrefix();
-        }
-        Text teamName = Text.literal("[").formatted(Formatting.WHITE)
-                .append(Text.literal(internalTeamName).formatted(color))
-                .append(Text.literal("] ")).formatted(Formatting.WHITE);
-
-        prefix = useTag ? prefix : teamName;
-
-        UUID uuid = player.getUuid();
-        boolean teamChatEnabled = teamChatManager.isEnabled(uuid);
-
-        if (teamChatEnabled) {
-            prefix = Text.literal("[").formatted(Formatting.WHITE)
-                    .append(Text.literal("TEAM").formatted(Formatting.AQUA))
-                    .append(Text.literal("] ")).formatted(Formatting.WHITE);
-        }
-
-        return Text.empty()
-                .append(prefix)
-                .append(Text.literal("<"))
-                .append(playerName)
-                .append(Text.literal("> "))
-                .append(Text.literal(message));
     }
 
     public static void rebuildTeams(
