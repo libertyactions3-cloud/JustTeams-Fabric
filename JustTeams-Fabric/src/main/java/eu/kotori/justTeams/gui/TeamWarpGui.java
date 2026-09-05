@@ -128,7 +128,7 @@ public final class TeamWarpGui {
                 empty.set(DataComponentTypes.LORE, new LoreComponent(List.of(
                         plainLine("Your team has not set any warps yet.", Formatting.GRAY),
                         plainLine("", Formatting.GRAY),
-                        plainLine("Use /team setwarp <name> to create one.", Formatting.DARK_GRAY)
+                        plainLine("Use /team setwarp <name> to create one.", Formatting.WHITE)
                 )));
                 menuInventory.setStack(22, empty);
             } else {
