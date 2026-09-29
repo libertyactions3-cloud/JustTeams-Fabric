@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.BlacklistedPlayer;
 import eu.kotori.justTeams.team.Team;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
