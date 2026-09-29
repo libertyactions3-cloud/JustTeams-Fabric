@@ -1,4 +1,5 @@
 package eu.kotori.justTeams.gui;
+import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.chat.TeamChatManager;
@@ -90,7 +91,7 @@ public final class TeamInPlaceMemberGui {
 
     private static void renderEditor(TeamMenuHandler menu,PlayerEntity viewer,Team team,TeamPlayer target){
         Inventory inventory=menu.getMenuInventory();clear(inventory);
-        ItemStack head=new ItemStack(Items.PLAYER_HEAD);head.set(DataComponentTypes.PROFILE,ProfileComponent.ofDynamic(target.getPlayerUuid()));head.set(DataComponentTypes.CUSTOM_NAME,Text.literal(resolveName(viewer,target)).setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true).withItalic(false)));head.set(DataComponentTypes.LORE,new LoreComponent(List.of(composeLine("Rank: ",target.getRank().getDisplayName(),Formatting.GRAY,Formatting.WHITE),composeLine("Joined: ",formatDate(target),Formatting.GRAY,Formatting.WHITE))));inventory.setStack(4,head);
+        String playerName=resolveName(viewer,target);ItemStack head=new ItemStack(Items.PLAYER_HEAD);head.set(DataComponentTypes.PROFILE,ProfileComponent.ofStatic(new GameProfile(target.getPlayerUuid(),playerName)));head.set(DataComponentTypes.CUSTOM_NAME,Text.literal(playerName).setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true).withItalic(false)));head.set(DataComponentTypes.LORE,new LoreComponent(List.of(composeLine("Rank: ",target.getRank().getDisplayName(),Formatting.GRAY,Formatting.WHITE),composeLine("Joined: ",formatDate(target),Formatting.GRAY,Formatting.WHITE))));inventory.setStack(4,head);
         inventory.setStack(19,target.getRank()==TeamRank.CO_LEADER||target.getRank()==TeamRank.LEADER?lockedItem(Items.GRAY_DYE,"ʟᴏᴄᴋᴇᴅ","This rank cannot be promoted further."):actionItem(Items.LIME_DYE,"ᴘʀᴏᴍᴏᴛᴇ ᴛᴏ "+smallCaps(target.getRank().promote().getDisplayName()),List.of(plainLine("Move this player one rank higher.",Formatting.GRAY),plainLine("",Formatting.GRAY),plainLine("Click to promote.",Formatting.YELLOW))));
         inventory.setStack(20,target.getRank()==TeamRank.LEADER||target.getRank()==TeamRank.INITIATE?lockedItem(Items.RED_DYE,"ʟᴏᴄᴋᴇᴅ","This player cannot be demoted any further."):actionItem(Items.RED_DYE,"ᴅᴇᴍᴏᴛᴇ ᴛᴏ "+smallCaps(target.getRank().demote().getDisplayName()),List.of(plainLine("Move this player one rank lower.",Formatting.GRAY),plainLine("",Formatting.GRAY),plainLine("Click to demote.",Formatting.YELLOW))));
         inventory.setStack(22,actionItem(Items.RED_WOOL,"ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀ",List.of(plainLine("Removes this player from the team.",Formatting.GRAY),plainLine("",Formatting.GRAY),plainLine("Click to kick.",Formatting.YELLOW))));
