@@ -59,7 +59,7 @@ public final class TeamChatEvents {
                             Style.EMPTY.withColor(TEAM_BLUE).withItalic(false)));
 
             for (ServerPlayerEntity recipient : serverPlayer.getEntityWorld().getServer().getPlayerManager().getPlayerList()) {
-                boolean teamMember = team.isMember(recipient.getUuid());
+                boolean teamMember = recipient.getUuid().equals(serverPlayer.getUuid()) || team.isMember(recipient.getUuid());
                 boolean spy = JustTeamsFabric.permissions().has(recipient, JustTeamsPermissions.CHAT_SPY)
                         && TeamChatManager.isSpyEnabled(recipient.getUuid())
                         && !teamMember;
