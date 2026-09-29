@@ -1,4 +1,6 @@
 package eu.kotori.justTeams.gui;
+
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
@@ -114,6 +116,7 @@ public final class JoinRequestGui {
                 if (target != null) playerName = target.getName().getString();
             }
 
+            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(uuid, playerName)));
             head.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(uuid, playerName)));
             MutableText name = gradientTextStatic(playerName, true, PRIMARY_START, PRIMARY_END);
             MutableText rebuilt = Text.empty();
