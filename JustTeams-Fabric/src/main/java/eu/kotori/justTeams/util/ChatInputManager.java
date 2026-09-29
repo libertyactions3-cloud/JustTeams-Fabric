@@ -23,9 +23,16 @@ public final class ChatInputManager {
     }
 
     public static void begin(ServerPlayerEntity player, String prompt, Consumer<String> consumer, Runnable cancelled) {
+        begin(player, prompt, consumer, cancelled, true);
+    }
+
+    public static void begin(ServerPlayerEntity player, String prompt, Consumer<String> consumer,
+                             Runnable cancelled, boolean includeInstruction) {
         SESSIONS.put(player.getUuid(), new Session(consumer, cancelled));
         player.sendMessage(Text.literal(prompt), false);
-        player.sendMessage(Text.literal("Type your response in chat, or type cancel."), false);
+        if (includeInstruction) {
+            player.sendMessage(Text.literal("Type your response in chat, or type cancel."), false);
+        }
     }
 
     public static boolean isWaiting(UUID playerUuid) {
