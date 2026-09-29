@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.gui;
 
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.util.ChatInputManager;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamPlayer;
 import eu.kotori.justTeams.team.TeamRole;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /** Persistent 27-slot main/category GUI for players who are not currently in a team. */
@@ -216,33 +218,109 @@ public final class TeamPersistentNoTeamGui {
         private int indexOf(int slot) { for (int i = 0; i < CONTENT_SLOTS.length; i++) if (CONTENT_SLOTS[i] == slot) return i; return -1; }
 
         private void beginCreation(ServerPlayerEntity player) {
-            TeamStringInputGui.open(player, "Create Team", "Enter your new team's name (1-16 characters)", name -> {
-                String cleanName = name.trim();
-                if (cleanName.isBlank() || cleanName.length() > 16 || cleanName.contains(" ")) {
-                    player.sendMessage(Text.literal("Invalid team name. Use 1-16 non-space characters."), false);
-                    render(View.MAIN, null);
-                    return;
+            player.closeHandledScreen();
+            ChatInputManager.begin(
+                    player,
+                    "Please type your desired team name in chat, or type 'cancel' to abort.",
+                    teamName -> {
+                        String cleanName = teamName.trim();
+                        String nameError = validateTeamName(cleanName);
+                        if (nameError != null) {
+                            player.sendMessage(Text.literal(nameError).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)), false);
+                            TeamPersistentNoTeamGui.openMain(player);
+                            return;
+                        }
+
+                        ChatInputManager.begin(
+                                player,
+                                "Please type your desired team tag in chat, or type 'cancel' to abort.",
+                                teamTag -> {
+                                    String cleanTag = teamTag.trim();
+                                    String tagError = validateTeamTag(cleanTag);
+                                    if (tagError != null) {
+                                        player.sendMessage(Text.literal(tagError).setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)), false);
+                                        TeamPersistentNoTeamGui.openMain(player);
+                                        return;
+                                    }
+
+                                    try {
+                                        if (JustTeamsFabric.teams().isInTeam(player.getUuid())) {
+                                            player.sendMessage(Text.literal("You are already in a team. Leave your current one first.")
+                                                    .setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)), false);
+                                            return;
+                                        }
+                                        JustTeamsFabric.teams().createTeam(
+                                                cleanName,
+                                                cleanTag,
+                                                player.getUuid(),
+                                                JustTeamsFabric.config().getDefaultTeamPvp(),
+                                                JustTeamsFabric.config().getDefaultTeamPublic(),
+                                                false
+                                        );
+                                        JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+                                        player.sendMessage(Text.literal("Team created successfully.")
+                                                .setStyle(Style.EMPTY.withColor(Formatting.GREEN).withItalic(false)), false);
+                                        TeamGuiManager.openMain(player);
+                                    } catch (IllegalStateException | IOException exception) {
+                                        JustTeamsFabric.LOGGER.error("Failed to create team", exception);
+                                        player.sendMessage(Text.literal("Unable to create the team.")
+                                                .setStyle(Style.EMPTY.withColor(Formatting.RED).withItalic(false)), false);
+                                        TeamPersistentNoTeamGui.openMain(player);
+                                    }
+                                },
+                                () -> TeamPersistentNoTeamGui.openMain(player),
+                                false
+                        );
+                    },
+                    () -> TeamPersistentNoTeamGui.openMain(player),
+                    false
+            );
+        }
+
+        private static String validateTeamName(String name) {
+            int minimum = JustTeamsFabric.config().getMinTeamNameLength();
+            int maximum = JustTeamsFabric.config().getMaxTeamNameLength();
+            if (name == null || name.length() < minimum) {
+                return "The team name must be at least " + minimum + " characters long.";
+            }
+            if (name.length() > maximum) {
+                return "The team name must be at most " + maximum + " characters long.";
+            }
+            if (!name.matches("^[a-zA-Z0-9_]+$")) {
+                return "Invalid team name. Use only letters, numbers, and underscores.";
+            }
+            if (name.matches("^[0-9_]+$")) {
+                return "Invalid team name. Include at least one letter.";
+            }
+
+            String lower = name.toLowerCase(Locale.ROOT);
+            String[] blocked = {"admin", "mod", "staff", "owner", "server", "minecraft", "bukkit", "spigot", "console", "system", "root"};
+            for (String word : blocked) {
+                if (lower.contains(word)) {
+                    return "Invalid team name. That name contains a reserved word.";
                 }
-                TeamStringInputGui.open(player, "Create Team", "Enter your team's tag (1-4 characters)", tag -> {
-                    String cleanTag = tag.trim();
-                    if (cleanTag.isBlank() || cleanTag.length() > 4 || cleanTag.contains(" ")) {
-                        player.sendMessage(Text.literal("Invalid team tag. Use 1-4 non-space characters."), false);
-                        render(View.MAIN, null);
-                        return;
-                    }
-                    try {
-                        if (JustTeamsFabric.teams().isInTeam(player.getUuid())) return;
-                        JustTeamsFabric.teams().createTeam(cleanName, cleanTag, player.getUuid(), true, false, false);
-                        JustTeamsFabric.storage().save(JustTeamsFabric.teams());
-                        player.sendMessage(Text.literal("Team created successfully."), false);
-                        TeamGuiManager.openMain(player);
-                    } catch (IllegalStateException | IOException exception) {
-                        JustTeamsFabric.LOGGER.error("Failed to create team", exception);
-                        player.sendMessage(Text.literal("Unable to create the team."), false);
-                        render(View.MAIN, null);
-                    }
-                }, () -> render(View.MAIN, null));
-            }, () -> render(View.MAIN, null));
+            }
+
+            for (Team team : JustTeamsFabric.teams().getTeams()) {
+                if (team.getName().equalsIgnoreCase(name)) {
+                    return "A team with that name already exists.";
+                }
+            }
+            return null;
+        }
+
+        private static String validateTeamTag(String tag) {
+            int maximum = JustTeamsFabric.config().getMaxTeamTagLength();
+            if (tag == null || tag.length() < 2) {
+                return "The team tag must be at least 2 characters long.";
+            }
+            if (tag.length() > maximum) {
+                return "The team tag must be at most " + maximum + " characters long.";
+            }
+            if (!tag.matches("^[a-zA-Z0-9_]+$") || tag.matches("^[0-9_]+$")) {
+                return "Invalid team tag. Use letters, numbers, and underscores.";
+            }
+            return null;
         }
 
         private List<Team> getInvites() {
