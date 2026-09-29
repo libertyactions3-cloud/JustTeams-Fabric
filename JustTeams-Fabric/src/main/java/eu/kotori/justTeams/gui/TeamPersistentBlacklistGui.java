@@ -1,4 +1,6 @@
 package eu.kotori.justTeams.gui;
+
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
