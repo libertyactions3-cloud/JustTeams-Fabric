@@ -1,4 +1,6 @@
 package eu.kotori.justTeams.gui;
+
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.economy.TeamBankLogManager;
@@ -53,7 +55,7 @@ public final class TeamBankLogsGui {
     private static ItemStack logHead(ServerPlayerEntity viewer, Team team, TeamBankLogManager.Entry entry) {
         ItemStack head=new ItemStack(Items.PLAYER_HEAD);
         ServerPlayerEntity online=viewer.getEntityWorld().getServer().getPlayerManager().getPlayer(entry.playerUuid()); boolean isOnline=online!=null; TeamPlayer member=team.getMember(entry.playerUuid());
-        String name=entry.playerName(); if (online!=null) name=online.getName().getString(); else { String resolved=PlayerNameResolver.resolve(viewer.getEntityWorld().getServer(),entry.playerUuid()); if (!resolved.equals("Unknown")) name=resolved; } head.set(DataComponentTypes.PROFILE,ProfileComponent.ofStatic(new GameProfile(entry.playerUuid(),name)));
+        String name=entry.playerName(); if (online!=null) name=online.getName().getString(); else { String resolved=PlayerNameResolver.resolve(viewer.getEntityWorld().getServer(),entry.playerUuid()); if (!resolved.equals("Unknown")) name=resolved; } head.set(DataComponentTypes.PROFILE,ProfileComponent.ofStatic(new GameProfile(entry.playerUuid(),name))); head.set(DataComponentTypes.PROFILE,ProfileComponent.ofStatic(new GameProfile(entry.playerUuid(),name)));
         String symbol=member==null?"+":switch(member.getRank()){case INITIATE->"+";case MEMBER->"›";case ASSOCIATE->"»";case UNDEROFFICER->"*";case OFFICER->"⁑";case CO_LEADER->"⁂";case LEADER->"★";};
         MutableText title=Text.literal("●").setStyle(Style.EMPTY.withColor(isOnline?0x00FF00:0xFF4444).withItalic(false)).append(Text.literal("   ").setStyle(Style.EMPTY.withItalic(false))).append(Text.literal(symbol).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withBold(false).withItalic(false))).append(Text.literal(" ").setStyle(Style.EMPTY.withItalic(false))).append(Text.literal(name).setStyle(Style.EMPTY.withColor(Formatting.WHITE).withBold(false).withItalic(false))); head.set(DataComponentTypes.CUSTOM_NAME,title);
         head.set(DataComponentTypes.LORE,new LoreComponent(List.of(compose("Date: ",TeamBankLogManager.formatTimestamp(entry.timestampMillis()),Formatting.GRAY,Formatting.WHITE),compose("Amount: ",entry.amount()+" total emeralds",Formatting.GRAY,Formatting.GREEN),compose("Type: ",entry.kind()==TeamBankLogManager.Kind.AUTOBANK?"AutoBank":"Manual withdrawal",Formatting.GRAY,Formatting.WHITE),compose("Action: ",entry.action(),Formatting.GRAY,Formatting.WHITE)))); return head;
