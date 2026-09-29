@@ -1,5 +1,7 @@
 package eu.kotori.justTeams.gui;
 
+import com.mojang.authlib.GameProfile;
+
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.Team;
 import net.minecraft.component.DataComponentTypes;
@@ -64,7 +66,7 @@ public final class TeamPersistentLeaderboardGui {
             Team team = teams.get(i);
             int rank = i + 1;
             ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(team.getOwnerUuid()));
+            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(team.getOwnerUuid(), team.getName())));
             head.set(DataComponentTypes.CUSTOM_NAME, gradientText("#" + rank + " " + team.getName(), true));
             String statisticName;
             String statisticValue;
