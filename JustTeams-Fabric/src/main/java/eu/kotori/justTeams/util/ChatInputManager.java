@@ -19,7 +19,11 @@ public final class ChatInputManager {
     private ChatInputManager() {}
 
     public static void begin(ServerPlayerEntity player, String prompt, Consumer<String> consumer) {
-        SESSIONS.put(player.getUuid(), new Session(consumer));
+        begin(player, prompt, consumer, () -> player.sendMessage(Text.literal("Input cancelled."), false));
+    }
+
+    public static void begin(ServerPlayerEntity player, String prompt, Consumer<String> consumer, Runnable cancelled) {
+        SESSIONS.put(player.getUuid(), new Session(consumer, cancelled));
         player.sendMessage(Text.literal(prompt), false);
         player.sendMessage(Text.literal("Type your response in chat, or type cancel."), false);
     }
@@ -32,7 +36,7 @@ public final class ChatInputManager {
         Session session = SESSIONS.remove(player.getUuid());
         if (session == null) return false;
         if (!message.equalsIgnoreCase("cancel")) session.consumer.accept(message);
-        else player.sendMessage(Text.literal("Input cancelled."), false);
+        else session.cancelled.run();
         return true;
     }
 
@@ -40,5 +44,5 @@ public final class ChatInputManager {
         SESSIONS.remove(playerUuid);
     }
 
-    private record Session(Consumer<String> consumer) {}
+    private record Session(Consumer<String> consumer, Runnable cancelled) {}
 }
