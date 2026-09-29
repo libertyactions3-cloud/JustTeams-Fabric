@@ -65,8 +65,22 @@ public final class TeamChatEvents {
                         && !teamMember;
                 if (teamMember || spy) {
                     if (spy) {
-                        recipient.sendMessage(Text.literal("[SPY] [" + team.getName() + "] "
-                                + username + ": " + content), false);
+                        Text spyFormatted = Text.empty()
+                                .append(Text.literal("[TEAM SPY] ").setStyle(
+                                        Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))
+                                .append(Text.literal("[").setStyle(
+                                        Style.EMPTY.withColor(Formatting.DARK_GRAY).withItalic(false)))
+                                .append(Text.literal(rankName).setStyle(
+                                        Style.EMPTY.withColor(rankColor).withItalic(false)))
+                                .append(Text.literal("] ").setStyle(
+                                        Style.EMPTY.withColor(Formatting.DARK_GRAY).withItalic(false)))
+                                .append(Text.literal(username).setStyle(
+                                        Style.EMPTY.withColor(rankColor).withItalic(false)))
+                                .append(Text.literal(": ").setStyle(
+                                        Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)))
+                                .append(Text.literal(content).setStyle(
+                                        Style.EMPTY.withColor(Formatting.GRAY).withItalic(false)));
+                        recipient.sendMessage(spyFormatted, false);
                     } else {
                         recipient.sendMessage(formatted, false);
                     }
