@@ -1,4 +1,5 @@
 package eu.kotori.justTeams.gui;
+import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.chat.TeamChatManager;
@@ -67,8 +68,8 @@ public final class MemberManagementGui {
             for (int i = 0; i < 27; i++) menu.setStack(i, namedPlain(Items.GRAY_STAINED_GLASS_PANE, " "));
 
             ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(target.getPlayerUuid()));
             String playerName = resolveName(viewer, target);
+            head.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(target.getPlayerUuid(), playerName)));
             head.set(DataComponentTypes.CUSTOM_NAME,
                     Text.literal(playerName).setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true).withItalic(false)));
             head.set(DataComponentTypes.LORE, new LoreComponent(List.of(
