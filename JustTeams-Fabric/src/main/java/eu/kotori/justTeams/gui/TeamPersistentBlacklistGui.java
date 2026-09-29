@@ -1,4 +1,5 @@
 package eu.kotori.justTeams.gui;
+import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.BlacklistedPlayer;
@@ -100,7 +101,7 @@ public final class TeamPersistentBlacklistGui {
 
     private static ItemStack playerItem(BlacklistedPlayer entry) {
         ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
-        stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(entry.getPlayerUuid()));
+        stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(new GameProfile(entry.getPlayerUuid(),entry.getPlayerName())));
         stack.set(DataComponentTypes.CUSTOM_NAME,
                 Text.literal(entry.getPlayerName()).setStyle(Style.EMPTY.withColor(Formatting.RED).withBold(true).withItalic(false)));
         stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(
