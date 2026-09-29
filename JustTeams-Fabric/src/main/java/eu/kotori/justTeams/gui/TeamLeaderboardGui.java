@@ -1,7 +1,9 @@
 package eu.kotori.justTeams.gui;
+import com.mojang.authlib.GameProfile;
 
 import eu.kotori.justTeams.JustTeamsFabric;
 import eu.kotori.justTeams.team.Team;
+import eu.kotori.justTeams.util.PlayerNameResolver;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.ProfileComponent;
@@ -161,7 +163,9 @@ public final class TeamLeaderboardGui {
                 Team team = teams.get(i);
                 int rank = i + 1;
                 ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-                head.set(DataComponentTypes.PROFILE, ProfileComponent.ofDynamic(team.getOwnerUuid()));
+                ServerPlayerEntity owner = viewer instanceof ServerPlayerEntity sp ? sp.getEntityWorld().getServer().getPlayerManager().getPlayer(team.getOwnerUuid()) : null;
+                String ownerName = owner != null ? owner.getName().getString() : PlayerNameResolver.resolve(viewer instanceof ServerPlayerEntity sp ? sp.getEntityWorld().getServer() : null, team.getOwnerUuid());
+                head.set(DataComponentTypes.PROFILE, owner != null ? ProfileComponent.ofStatic(owner.getGameProfile()) : ProfileComponent.ofStatic(new GameProfile(team.getOwnerUuid(), ownerName)));
                 head.set(DataComponentTypes.CUSTOM_NAME,
                         gradientText("#" + rank + " " + team.getName(), true));
                 String statisticName;
