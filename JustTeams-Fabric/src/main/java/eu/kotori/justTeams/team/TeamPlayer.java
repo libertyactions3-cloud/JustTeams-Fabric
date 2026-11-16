@@ -29,6 +29,7 @@ public final class TeamPlayer {
     private boolean autoBankEnabled;
     private boolean canTogglePvp;
     private boolean teamChatEnabled;
+    private boolean friendlyFireEnabled;
 
     public TeamPlayer(UUID playerUuid, TeamRole role, Instant joinDate,
                       boolean canWithdraw, boolean canUseEnderChest,
@@ -179,6 +180,8 @@ public final class TeamPlayer {
     public void setCanTogglePvp(boolean value) { canTogglePvp = value; }
     public boolean isTeamChatEnabled() { return teamChatEnabled; }
     public void setTeamChatEnabled(boolean value) { teamChatEnabled = value; }
+    public boolean isFriendlyFireEnabled() { return friendlyFireEnabled; }
+    public void setFriendlyFireEnabled(boolean value) { friendlyFireEnabled = value; }
 
     public boolean canEditPlayer(TeamPlayer target) {
         if (target == null || playerUuid.equals(target.playerUuid)) return false;
