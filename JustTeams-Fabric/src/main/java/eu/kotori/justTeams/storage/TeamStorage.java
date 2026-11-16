@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class TeamStorage {
-    private static final int DATA_VERSION = 11;
+    private static final int DATA_VERSION = 12;
     private final Path path = FabricLoader.getInstance().getConfigDir().resolve("justteams").resolve("teams.dat");
 
     public void load(TeamManager manager) throws IOException {
@@ -40,7 +40,7 @@ public final class TeamStorage {
             Team team = readTeam(teamTag);
             readBank(team, teamTag);
             readEnderChest(team, teamTag);
-            if (dataVersion < DATA_VERSION) migrateAutoBankDefaults(team);
+            if (dataVersion < 11) migrateAutoBankDefaults(team);
             manager.register(team);
         }
         if (dataVersion < DATA_VERSION) save(manager);
@@ -108,7 +108,7 @@ public final class TeamStorage {
         if (member.getLastKnownName() != null) tag.putString("lastKnownName", member.getLastKnownName());
         tag.putBoolean("canWithdraw", member.canWithdraw()); tag.putBoolean("canUseEnderChest", member.canUseEnderChest()); tag.putBoolean("canSetHome", member.canSetHome()); tag.putBoolean("canUseHome", member.canUseHome());
         tag.putBoolean("canEditMembers", member.canEditMembers()); tag.putBoolean("canEditCoOwners", member.canEditCoOwners()); tag.putBoolean("canKickMembers", member.canKickMembers()); tag.putBoolean("canPromoteMembers", member.canPromoteMembers()); tag.putBoolean("canDemoteMembers", member.canDemoteMembers());
-        tag.putBoolean("canInvite", member.canInvite()); tag.putBoolean("canSetWarps", member.canSetWarps()); tag.putBoolean("canUseAutoBank", member.canUseAutoBank()); tag.putBoolean("autoBankEnabled", member.isAutoBankEnabled()); tag.putBoolean("canTogglePvp", member.canTogglePvp()); tag.putBoolean("teamChatEnabled", member.isTeamChatEnabled());
+        tag.putBoolean("canInvite", member.canInvite()); tag.putBoolean("canSetWarps", member.canSetWarps()); tag.putBoolean("canUseAutoBank", member.canUseAutoBank()); tag.putBoolean("autoBankEnabled", member.isAutoBankEnabled()); tag.putBoolean("canTogglePvp", member.canTogglePvp()); tag.putBoolean("teamChatEnabled", member.isTeamChatEnabled()); tag.putBoolean("friendlyFireEnabled", member.isFriendlyFireEnabled());
         return tag;
     }
 
@@ -143,6 +143,7 @@ public final class TeamStorage {
         member.setCanTogglePvp(tag.getBoolean("canTogglePvp").orElse(rank == TeamRank.LEADER));
         member.setAutoBankEnabled(tag.getBoolean("autoBankEnabled").orElse(false));
         member.setTeamChatEnabled(tag.getBoolean("teamChatEnabled").orElse(false));
+        member.setFriendlyFireEnabled(tag.getBoolean("friendlyFireEnabled").orElse(false));
         return member;
     }
 
