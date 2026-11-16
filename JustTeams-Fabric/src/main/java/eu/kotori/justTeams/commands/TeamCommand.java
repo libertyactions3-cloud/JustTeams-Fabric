@@ -47,6 +47,7 @@ public final class TeamCommand {
                 .then(CommandManager.literal("leave").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
                 .then(CommandManager.literal("disband").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
                 .then(CommandManager.literal("pvp").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
+                .then(CommandManager.literal("friendlyfire").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_FRIENDLYFIRE, () -> toggleFriendlyFire(c.getSource()))))
                 .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> toggleGlow(c.getSource()))))
                 .then(CommandManager.literal("bank").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
                 .then(CommandManager.literal("enderchest").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
@@ -124,6 +125,28 @@ public final class TeamCommand {
     private static int toggleGlow(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); boolean enabled = JustTeamsFabric.teams().toggleGlow(p.getUuid()); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); JustTeamsFabric.glow().refreshAll(s.getServer()); s.sendFeedback(() -> Text.literal("Team glow is now " + (enabled ? "ON" : "OFF") + "."), false); return 1; }
     private static int leave(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null) { s.sendError(noTeam()); return 0; } if (t.isOwner(p.getUuid())) { s.sendError(Text.literal("The owner cannot leave the team. Use /team disband.")); return 0; } TeamChatManager.disable(p.getUuid()); JustTeamsFabric.glow().stopGlowForPlayer(s.getServer(), p.getUuid()); p.closeHandledScreen(); JustTeamsFabric.teams().removeMember(t, p.getUuid()); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); TeamNotificationManager.notifyLeave(s.getServer(), t, p.getUuid()); return 1; }
     private static int disband(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null || !t.isOwner(p.getUuid())) { s.sendError(Text.literal("You do not own a team.")); return 0; } if (p.currentScreenHandler instanceof eu.kotori.justTeams.gui.TeamMenuHandler menu) TeamDisbandConfirmationGui.openFirst(menu, p, t); else { TeamGuiManager.openMain(p); if (p.currentScreenHandler instanceof eu.kotori.justTeams.gui.TeamMenuHandler menu) TeamDisbandConfirmationGui.openFirst(menu, p, t); } return 1; }
+    private static int toggleFriendlyFire(ServerCommandSource s) throws Exception {
+        ServerPlayerEntity player = s.getPlayerOrThrow();
+        Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
+        if (team == null) {
+            s.sendError(noTeam());
+            return 0;
+        }
+        TeamPlayer member = team.getMember(player.getUuid());
+        if (member == null) {
+            s.sendError(noTeam());
+            return 0;
+        }
+        boolean enabled = !member.isFriendlyFireEnabled();
+        member.setFriendlyFireEnabled(enabled);
+        JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+        s.sendFeedback(() -> prefix().append(Text.literal(
+                "Your friendly fire is now " + (enabled ? "ON" : "OFF")
+                        + ". Teammate damage requires both players to have friendly fire enabled.")
+                .setStyle(Style.EMPTY.withColor(enabled ? Formatting.GREEN : Formatting.RED).withItalic(false))), false);
+        return 1;
+    }
+
     private static int togglePvp(ServerCommandSource s) throws Exception { ServerPlayerEntity p = s.getPlayerOrThrow(); Team t = JustTeamsFabric.teams().getTeam(p.getUuid()); if (t == null || !t.isOwner(p.getUuid())) { s.sendError(t == null ? noTeam() : Text.literal("Only the team owner can change friendly fire.")); return 0; } t.setPvpEnabled(!t.isPvpEnabled()); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); s.sendFeedback(() -> prefix().append(Text.literal(t.isPvpEnabled() ? "Team PvP has been enabled." : "Team PvP has been disabled.").setStyle(Style.EMPTY.withColor(t.isPvpEnabled() ? Formatting.GREEN : Formatting.RED).withItalic(false))), false); return 1; }
     private static int setHome(ServerCommandSource s) throws Exception { ServerPlayerEntity p=s.getPlayerOrThrow(); Team t=requireTeam(s,p); TeamPlayer m=t.getMember(p.getUuid()); if(m==null||!m.canSetHome()){s.sendError(Text.literal("You do not have permission to set the team home."));return 0;} if(!FeatureCostManager.charge(p,"sethome"))return 0; t.setHome(TeamLocation.fromPlayer(p)); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); s.sendFeedback(()->Text.literal("Team home set at your current location."),false); return 1; }
     private static int clearHome(ServerCommandSource s) throws Exception { ServerPlayerEntity p=s.getPlayerOrThrow(); Team t=requireTeam(s,p); TeamPlayer m=t.getMember(p.getUuid()); if(m==null||!m.canSetHome()){s.sendError(Text.literal("You do not have permission to delete the team home."));return 0;} if(t.getHome()==null){s.sendError(noHomeSet());return 0;} t.clearHome(); JustTeamsFabric.storage().save(JustTeamsFabric.teams()); s.sendFeedback(()->Text.literal("Team home deleted."),false); return 1; }
