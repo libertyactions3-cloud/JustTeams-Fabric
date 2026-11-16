@@ -11,6 +11,7 @@ base {
 }
 
 repositories {
+	mavenCentral()
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -35,6 +36,9 @@ dependencies {
 
 	// LuckPerms developer API. LuckPerms itself remains an optional runtime mod.
 	compileOnly "net.luckperms:api:5.5"
+
+	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 processResources {
@@ -43,6 +47,10 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
 	}
+}
+
+tasks.withType(Test).configureEach {
+	useJUnitPlatform()
 }
 
 tasks.withType(JavaCompile).configureEach {
