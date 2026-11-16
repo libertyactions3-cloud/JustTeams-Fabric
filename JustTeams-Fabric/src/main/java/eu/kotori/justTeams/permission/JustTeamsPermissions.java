@@ -36,6 +36,7 @@ public final class JustTeamsPermissions {
     public static final String COMMAND_PROMOTE = "justteams.command.promote";
     public static final String COMMAND_DEMOTE = "justteams.command.demote";
     public static final String COMMAND_PVP = "justteams.command.pvp";
+    public static final String COMMAND_FRIENDLYFIRE = "justteams.command.friendlyfire";
     public static final String COMMAND_BANK = "justteams.command.bank";
     public static final String COMMAND_ENDERCHEST = "justteams.command.enderchest";
     public static final String COMMAND_TOP = "justteams.command.top";
@@ -54,7 +55,7 @@ public final class JustTeamsPermissions {
             COMMAND_CREATE, COMMAND_DISBAND, COMMAND_INVITE, COMMAND_ACCEPT, COMMAND_DENY,
             COMMAND_LEAVE, COMMAND_KICK, COMMAND_INFO, COMMAND_CHAT, COMMAND_SETHOME,
             COMMAND_HOME, COMMAND_SETTAG, COMMAND_SETDESCRIPTION, COMMAND_TRANSFER,
-            COMMAND_PROMOTE, COMMAND_DEMOTE, COMMAND_PVP, COMMAND_BANK, COMMAND_ENDERCHEST,
+            COMMAND_PROMOTE, COMMAND_DEMOTE, COMMAND_PVP, COMMAND_FRIENDLYFIRE, COMMAND_BANK, COMMAND_ENDERCHEST,
             COMMAND_TOP, COMMAND_TEAMMSG, COMMAND_JOIN, COMMAND_UNJOIN, COMMAND_PUBLIC,
             COMMAND_REQUESTS, COMMAND_SETWARP, COMMAND_DELWARP, COMMAND_WARP, COMMAND_WARPS
     );
