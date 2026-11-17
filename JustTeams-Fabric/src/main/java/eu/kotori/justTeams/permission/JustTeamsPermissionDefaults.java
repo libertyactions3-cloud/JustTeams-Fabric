@@ -59,6 +59,13 @@ public final class JustTeamsPermissionDefaults {
             Function<String, Boolean> explicit,
             boolean operator
     ) {
+        // Treat an explicit global wildcard grant as a root grant. Check it before an individual
+        // command or intermediate parent because LuckPerms providers can return a negative result
+        // for a child before this resolver has walked the JustTeams parent tree.
+        if (Boolean.TRUE.equals(explicit.apply(JustTeamsPermissions.ALL))) {
+            return true;
+        }
+
         Boolean value = explicitValue(permission, explicit, new HashSet<>());
         return value != null ? value : grantedByDefault(permission, operator, new HashSet<>());
     }
