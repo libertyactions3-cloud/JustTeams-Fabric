@@ -74,6 +74,32 @@ class JustTeamsPermissionDefaultsTest {
     }
 
     @Test
+    void globalWildcardGrantAuthorizesAllTeamPermissionsBeforeChildDenials()
+    {
+        Function<String, Boolean> wildcard = explicit(Map.of(
+                JustTeamsPermissions.ALL, true,
+                JustTeamsPermissions.USER, false,
+                JustTeamsPermissions.ADMIN, false,
+                JustTeamsPermissions.COMMAND_CREATE, false,
+                JustTeamsPermissions.COMMAND_INFO, false
+        ));
+
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", wildcard, false));
+    }
+
+    @Test
+    void everyDeclaredUserCommandIsGrantedByTheUserParent()
+    {
+        Function<String, Boolean> user = explicit(Map.of(JustTeamsPermissions.USER, true));
+        for (String permission : JustTeamsPermissions.USER_COMMANDS) {
+            assertTrue(JustTeamsPermissionDefaults.resolve(permission, user, false), permission);
+        }
+    }
+
+    @Test
     void unknownPermissionsKeepTheOperatorOnlyFallback() {
         assertFalse(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, true));
