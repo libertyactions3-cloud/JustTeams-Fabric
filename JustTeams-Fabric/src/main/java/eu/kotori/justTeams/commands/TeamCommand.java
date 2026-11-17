@@ -10,6 +10,7 @@ import eu.kotori.justTeams.gui.TeamDisbandConfirmationGui;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.gui.TeamGuiManager;
 import eu.kotori.justTeams.gui.TeamInPlaceGui;
+import eu.kotori.justTeams.gui.TeamMenuHandler;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
@@ -140,6 +141,9 @@ public final class TeamCommand {
         boolean enabled = !member.isFriendlyFireEnabled();
         member.setFriendlyFireEnabled(enabled);
         JustTeamsFabric.storage().save(JustTeamsFabric.teams());
+        if (player.currentScreenHandler instanceof TeamMenuHandler menu) {
+            TeamInPlaceGui.updateMainFriendlyFireItem(menu, member);
+        }
         s.sendFeedback(() -> prefix().append(Text.literal(
                 "Your friendly fire is now " + (enabled ? "ON" : "OFF")
                         + ". Teammate damage requires both players to have friendly fire enabled.")
