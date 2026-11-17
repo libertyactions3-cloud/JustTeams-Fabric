@@ -95,11 +95,18 @@ public final class JustTeamsFabric implements ModInitializer {
     }
 
     private static PermissionService createPermissionService() {
-        if (FabricLoader.getInstance().isModLoaded("luckperms")) {
-            try { LOGGER.info("LuckPerms detected; enabling JustTeams LuckPerms permissions"); return new LuckPermsPermissionService(); }
-            catch (RuntimeException exception) { LOGGER.warn("LuckPerms was detected but its API could not be initialized; using default JustTeams permissions", exception); }
+        try {
+            Class.forName(
+                    "net.luckperms.api.LuckPermsProvider",
+                    false,
+                    JustTeamsFabric.class.getClassLoader()
+            );
+            LOGGER.info("LuckPerms API detected; JustTeams permission integration is enabled.");
+            return new LuckPermsPermissionService();
+        } catch (ClassNotFoundException | LinkageError ignored) {
+            LOGGER.info("LuckPerms API not found; using built-in JustTeams permission defaults.");
+            return PermissionService.defaults();
         }
-        return PermissionService.defaults();
     }
 
     private void loadTeamData(MinecraftServer server) { try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); } }

@@ -1,54 +1,48 @@
 package eu.kotori.justTeams.permission;
 
-import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.util.Tristate;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-/** LuckPerms-backed implementation of the canonical JustTeams permission model. */
-public final class LuckPermsPermissionService implements PermissionService {
-    private final LuckPerms luckPerms;
+import java.util.UUID;
 
-    public LuckPermsPermissionService() {
-        this.luckPerms = LuckPermsProvider.get();
-    }
+/**
+ * LuckPerms-backed permission resolver.
+ *
+ * The provider is looked up when a permission is checked, not during mod initialization. This
+ * matches GriefPrevention's Fabric integration and avoids depending on LuckPerms having published
+ * its singleton before JustTeams initializes.
+ */
+public final class LuckPermsPermissionService implements PermissionService {
 
     @Override
     public boolean has(ServerPlayerEntity player, String permission) {
-        User user = luckPerms.getUserManager().getUser(player.getUuid());
-        if (user == null) {
-            return false;
-        }
-
-        if (check(user, permission)) {
-            return true;
-        }
-
-        // Mirror plugin.yml child permissions: user -> standard commands.
-        if (JustTeamsPermissions.USER_COMMANDS.contains(permission)) {
-            return check(user, JustTeamsPermissions.USER)
-                    || check(user, JustTeamsPermissions.ALL);
-        }
-
-        // Mirror plugin.yml child permissions: admin -> admin commands/bypasses.
-        if (permission.equals(JustTeamsPermissions.COMMAND_ADMIN)
-                || permission.equals(JustTeamsPermissions.COMMAND_RELOAD)
-                || permission.startsWith("justteams.bypass.")) {
-            return check(user, JustTeamsPermissions.ADMIN)
-                    || check(user, JustTeamsPermissions.ALL);
-        }
-
-        if (permission.equals(JustTeamsPermissions.USER)
-                || permission.equals(JustTeamsPermissions.ADMIN)) {
-            return check(user, JustTeamsPermissions.ALL);
-        }
-
-        return false;
+        UUID playerId = player.getUuid();
+        boolean operator = player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS));
+        return JustTeamsPermissionDefaults.resolve(
+                permission,
+                node -> permissionValue(playerId, node),
+                operator
+        );
     }
 
-    private boolean check(User user, String permission) {
-        Tristate result = user.getCachedData().getPermissionData().checkPermission(permission);
-        return result == Tristate.TRUE;
+    private Boolean permissionValue(UUID playerId, String permission) {
+        try {
+            User user = LuckPermsProvider.get().getUserManager().getUser(playerId);
+            if (user == null) {
+                return null;
+            }
+
+            Tristate value = user.getCachedData()
+                    .getPermissionData()
+                    .checkPermission(permission);
+            return value == Tristate.UNDEFINED ? null : value.asBoolean();
+        } catch (IllegalStateException ignored) {
+            // LuckPerms may be present before its API singleton is ready during server startup.
+            return null;
+        }
     }
 }
