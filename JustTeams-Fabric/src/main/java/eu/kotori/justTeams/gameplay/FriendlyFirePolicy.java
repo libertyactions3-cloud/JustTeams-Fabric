@@ -11,6 +11,6 @@ public final class FriendlyFirePolicy {
             boolean attackerFriendlyFireEnabled,
             boolean victimFriendlyFireEnabled) {
         if (!sameTeam) return true;
-        return teamPvpEnabled && attackerFriendlyFireEnabled && victimFriendlyFireEnabled;
+        return teamPvpEnabled || (attackerFriendlyFireEnabled && victimFriendlyFireEnabled);
     }
 }
