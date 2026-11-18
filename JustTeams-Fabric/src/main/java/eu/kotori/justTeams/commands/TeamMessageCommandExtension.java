@@ -40,7 +40,7 @@ public final class TeamMessageCommandExtension {
     private static int execute(ServerCommandSource source,String message){
         try{
             ServerPlayerEntity player=source.getPlayerOrThrow();
-            if(!JustTeamsFabric.permissions().has(player,JustTeamsPermissions.USER)){source.sendError(Text.literal("You do not have permission to use team messages."));return 0;}
+            if(!JustTeamsFabric.permissions().has(player,JustTeamsPermissions.COMMAND_TEAMMSG)){source.sendError(Text.literal("You do not have permission to use team messages."));return 0;}
             if(message.isEmpty())return usage(source);
             Team team=JustTeamsFabric.teams().getTeam(player.getUuid());if(team==null){source.sendError(noTeam());return 0;}
             if(!checkSpam(player.getUuid())){source.sendError(Text.literal("You are sending team messages too quickly."));return 0;}

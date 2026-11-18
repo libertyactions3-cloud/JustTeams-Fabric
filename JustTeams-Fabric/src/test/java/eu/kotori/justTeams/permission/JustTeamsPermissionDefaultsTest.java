@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,23 +13,31 @@ class JustTeamsPermissionDefaultsTest {
     private static final Function<String, Boolean> UNDEFINED = permission -> null;
 
     @Test
-    void ordinaryUserPermissionsAreGrantedByDefault() {
-        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, UNDEFINED, false));
+    void parentGroupsAreOperatorDefaultButIndividualUserCommandsArePublicByDefault() {
+        assertEquals("op", JustTeamsPermissionDefaults.declaredDefault(JustTeamsPermissions.ALL));
+        assertEquals("op", JustTeamsPermissionDefaults.declaredDefault(JustTeamsPermissions.USER));
+        assertEquals("op", JustTeamsPermissionDefaults.declaredDefault(JustTeamsPermissions.ADMIN));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, UNDEFINED, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, UNDEFINED, true));
+
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_FRIENDLYFIRE, UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_WARP, UNDEFINED, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_AUTOBANK, UNDEFINED, false));
     }
 
     @Test
-    void administrativePermissionsAreOperatorOnlyByDefault() {
+    void administrativeDefaultsAreOperatorOnly() {
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN, UNDEFINED, false));
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_ADMIN, UNDEFINED, false));
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, UNDEFINED, false));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN_PERFORMANCE, UNDEFINED, false));
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.BYPASS_HOME_COOLDOWN, UNDEFINED, false));
 
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN, UNDEFINED, true));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_RELOAD, UNDEFINED, true));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, UNDEFINED, true));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN_PERFORMANCE, UNDEFINED, true));
     }
 
     @Test
@@ -37,14 +46,16 @@ class JustTeamsPermissionDefaultsTest {
 
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, user, false));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_WARPS, user, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_AUTOBANK, user, false));
     }
 
     @Test
-    void denyingUserParentDeniesChildCommands() {
+    void denyingUserParentDeniesChildCommandsEvenForOperators() {
         Function<String, Boolean> noUser = explicit(Map.of(JustTeamsPermissions.USER, false));
 
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, noUser, true));
         assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_HOME, noUser, true));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_SETTINGS, noUser, true));
     }
 
     @Test
@@ -63,44 +74,56 @@ class JustTeamsPermissionDefaultsTest {
     }
 
     @Test
-    void adminParentGrantsAdministrativeChildrenAndWildcardDenialBlocksAll() {
+    void adminParentGrantsOnlyItsDeclaredAdministrativeChildren() {
         Function<String, Boolean> admin = explicit(Map.of(JustTeamsPermissions.ADMIN, true));
-        Function<String, Boolean> noWildcard = explicit(Map.of(JustTeamsPermissions.ALL, false));
 
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_RELOAD, admin, false));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.BYPASS_WARP_COOLDOWN, admin, false));
-        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, noWildcard, true));
-        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_ADMIN, noWildcard, true));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, admin, false));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN_PERFORMANCE, admin, false));
     }
 
     @Test
-    void globalWildcardGrantAuthorizesAllTeamPermissionsBeforeChildDenials()
-    {
-        Function<String, Boolean> wildcard = explicit(Map.of(
-                JustTeamsPermissions.ALL, true,
-                JustTeamsPermissions.USER, false,
-                JustTeamsPermissions.ADMIN, false,
-                JustTeamsPermissions.COMMAND_CREATE, false,
-                JustTeamsPermissions.COMMAND_INFO, false
-        ));
+    void globalWildcardGrantFlowsThroughItsDeclaredParents() {
+        Function<String, Boolean> wildcard = explicit(Map.of(JustTeamsPermissions.ALL, true));
 
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN, wildcard, false));
         assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, wildcard, false));
-        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, wildcard, false));
-        assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_RELOAD, wildcard, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.BYPASS_BANK_WITHDRAW, wildcard, false));
+
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.CHAT_SPY, wildcard, false));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.ADMIN_PERFORMANCE, wildcard, false));
+        assertFalse(JustTeamsPermissionDefaults.resolve("justteams.unlisted", wildcard, false));
     }
 
     @Test
-    void everyDeclaredUserCommandIsGrantedByTheUserParent()
-    {
+    void explicitChildDenialOverridesWildcardAndGroupGrants() {
+        Function<String, Boolean> permissions = explicit(Map.of(
+                JustTeamsPermissions.ALL, true,
+                JustTeamsPermissions.USER, true,
+                JustTeamsPermissions.COMMAND_CREATE, false
+        ));
+
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.USER, permissions, false));
+        assertFalse(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_CREATE, permissions, false));
+        assertTrue(JustTeamsPermissionDefaults.resolve(JustTeamsPermissions.COMMAND_INFO, permissions, false));
+    }
+
+    @Test
+    void everyDeclaredUserCommandHasTheCorrectParentAndDefault() {
         Function<String, Boolean> user = explicit(Map.of(JustTeamsPermissions.USER, true));
         for (String permission : JustTeamsPermissions.USER_COMMANDS) {
+            assertEquals("true", JustTeamsPermissionDefaults.declaredDefault(permission), permission);
+            assertEquals(java.util.List.of(JustTeamsPermissions.USER),
+                    JustTeamsPermissionDefaults.declaredParents(permission), permission);
             assertTrue(JustTeamsPermissionDefaults.resolve(permission, user, false), permission);
         }
     }
 
     @Test
-    void unknownPermissionsKeepTheOperatorOnlyFallback() {
+    void unlistedPermissionsKeepTheOperatorOnlyFallback() {
         assertFalse(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, true));
     }

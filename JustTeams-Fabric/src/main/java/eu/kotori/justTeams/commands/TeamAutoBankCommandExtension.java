@@ -27,7 +27,7 @@ public final class TeamAutoBankCommandExtension {
     private static int execute(ServerCommandSource source) {
         try {
             ServerPlayerEntity player = source.getPlayerOrThrow();
-            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) throw new IllegalStateException("You do not have permission to use this command.");
+            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_AUTOBANK)) throw new IllegalStateException("You do not have permission to use this command.");
             Team team = JustTeamsFabric.teams().getTeam(player.getUuid());
             if (team == null) throw new IllegalStateException("You are not in a team.");
             TeamPlayer member = team.getMember(player.getUuid());

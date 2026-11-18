@@ -35,7 +35,7 @@ public final class TeamCommand {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("team")
-                .executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> openGui(c.getSource())))
+                .executes(c -> run(c.getSource(), null, () -> openGui(c.getSource())))
                 .then(CommandManager.literal("create")
                         .executes(c -> usage(c.getSource(), "/team create <name> <tag>"))
                         .then(CommandManager.argument("name", StringArgumentType.word())
@@ -43,13 +43,13 @@ public final class TeamCommand {
                                 .then(CommandManager.argument("tag", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CREATE,
                                                 () -> create(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "tag")))))))
-                .then(CommandManager.literal("gui").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> openGui(c.getSource()))))
+                .then(CommandManager.literal("gui").executes(c -> run(c.getSource(), null, () -> openGui(c.getSource()))))
                 .then(CommandManager.literal("info").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
                 .then(CommandManager.literal("leave").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
                 .then(CommandManager.literal("disband").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
                 .then(CommandManager.literal("pvp").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
                 .then(CommandManager.literal("friendlyfire").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_FRIENDLYFIRE, () -> toggleFriendlyFire(c.getSource()))))
-                .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.USER, () -> toggleGlow(c.getSource()))))
+                .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_GLOW, () -> toggleGlow(c.getSource()))))
                 .then(CommandManager.literal("bank").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
                 .then(CommandManager.literal("enderchest").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
                 .then(CommandManager.literal("ec").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
@@ -100,7 +100,7 @@ public final class TeamCommand {
 
     private static int run(ServerCommandSource source, String permission, CommandAction action) {
         try {
-            if (source.getEntity() instanceof ServerPlayerEntity p && !JustTeamsFabric.permissions().has(p, permission)) {
+            if (permission != null && source.getEntity() instanceof ServerPlayerEntity p && !JustTeamsFabric.permissions().has(p, permission)) {
                 source.sendError(Text.literal("You do not have permission to use this command."));
                 return 0;
             }

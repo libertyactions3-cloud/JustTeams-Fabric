@@ -11,18 +11,18 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * JustTeams permission defaults and parent relationships.
+ * Fabric-side equivalent of the permission hierarchy declared by the Paper JustTeams descriptor.
  *
- * LuckPerms on Fabric accepts arbitrary permission nodes, but it does not read Bukkit plugin.yml
- * declarations. This class applies the same child/default semantics explicitly: a node's own value
- * wins, then an explicitly-set parent, then the declared defaults.
+ * LuckPerms on Fabric accepts arbitrary permission identifiers but does not import Bukkit's
+ * plugin.yml defaults or child relationships. This resolver mirrors those rules: an explicit value
+ * on the requested node wins, then an explicit value on a declared parent, then the defaults.
  */
 public final class JustTeamsPermissionDefaults {
     private static final Map<String, Node> NODES = new HashMap<>();
 
     static {
         node(JustTeamsPermissions.ALL, Default.OP);
-        node(JustTeamsPermissions.USER, Default.TRUE, JustTeamsPermissions.ALL);
+        node(JustTeamsPermissions.USER, Default.OP, JustTeamsPermissions.ALL);
         node(JustTeamsPermissions.ADMIN, Default.OP, JustTeamsPermissions.ALL);
 
         for (String child : JustTeamsPermissions.USER_COMMANDS) {
@@ -32,8 +32,6 @@ public final class JustTeamsPermissionDefaults {
         for (String child : Arrays.asList(
                 JustTeamsPermissions.COMMAND_ADMIN,
                 JustTeamsPermissions.COMMAND_RELOAD,
-                JustTeamsPermissions.CHAT_SPY,
-                JustTeamsPermissions.ADMIN_PERFORMANCE,
                 JustTeamsPermissions.BYPASS_BANK_WITHDRAW,
                 JustTeamsPermissions.BYPASS_ENDERCHEST_USE,
                 JustTeamsPermissions.BYPASS_HOME_COOLDOWN,
@@ -41,14 +39,19 @@ public final class JustTeamsPermissionDefaults {
         )) {
             node(child, Default.OP, JustTeamsPermissions.ADMIN);
         }
+
+        // These are operator-only individually in the Paper descriptor; they are not children
+        // of justteams.admin and therefore must not be inherited from that group.
+        node(JustTeamsPermissions.CHAT_SPY, Default.OP);
+        node(JustTeamsPermissions.ADMIN_PERFORMANCE, Default.OP);
     }
 
     private JustTeamsPermissionDefaults() {
     }
 
     /**
-     * Resolves a permission in the same order as GriefPrevention's Fabric permission resolver:
-     * explicit node, explicit parent, then node and inherited defaults.
+     * Resolves in the same order as GriefPrevention's Fabric implementation: explicit node,
+     * explicit parent, then node and inherited defaults.
      *
      * @param permission the node being checked
      * @param explicit the LuckPerms value, or null when LuckPerms has no value for that node
@@ -59,13 +62,6 @@ public final class JustTeamsPermissionDefaults {
             Function<String, Boolean> explicit,
             boolean operator
     ) {
-        // Treat an explicit global wildcard grant as a root grant. Check it before an individual
-        // command or intermediate parent because LuckPerms providers can return a negative result
-        // for a child before this resolver has walked the JustTeams parent tree.
-        if (Boolean.TRUE.equals(explicit.apply(JustTeamsPermissions.ALL))) {
-            return true;
-        }
-
         Boolean value = explicitValue(permission, explicit, new HashSet<>());
         return value != null ? value : grantedByDefault(permission, operator, new HashSet<>());
     }

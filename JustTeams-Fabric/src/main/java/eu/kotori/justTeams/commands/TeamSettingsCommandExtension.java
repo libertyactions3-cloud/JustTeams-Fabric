@@ -28,7 +28,7 @@ public final class TeamSettingsCommandExtension {
     private static int open(ServerCommandSource source) {
         try {
             ServerPlayerEntity player = source.getPlayerOrThrow();
-            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) {
+            if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_SETTINGS)) {
                 source.sendError(Text.literal("You do not have permission to use this command."));
                 return 0;
             }

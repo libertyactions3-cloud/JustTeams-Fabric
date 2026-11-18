@@ -23,7 +23,7 @@ public final class TeamInvitesCommandExtension {
             source.sendError(Text.literal("A player is required to run this command here."));
             return 0;
         }
-        if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.USER)) {
+        if (!JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_INVITES)) {
             source.sendError(Text.literal("You do not have permission to use this command."));
             return 0;
         }

@@ -2,7 +2,7 @@ package eu.kotori.justTeams.permission;
 
 import java.util.Set;
 
-/** Canonical permission nodes mirrored from the Paper JustTeams plugin.yml. */
+/** Canonical permission nodes mirrored from the Paper JustTeams descriptor. */
 public final class JustTeamsPermissions {
     private JustTeamsPermissions() {
     }
@@ -51,12 +51,21 @@ public final class JustTeamsPermissions {
     public static final String COMMAND_WARPS = "justteams.command.warps";
     public static final String ADMIN_PERFORMANCE = "justteams.admin.performance";
 
+    // Fabric-only command extensions receive individual nodes instead of sharing justteams.user.
+    public static final String COMMAND_GLOW = "justteams.command.glow";
+    public static final String COMMAND_INVITES = "justteams.command.invites";
+    public static final String COMMAND_BLACKLIST = "justteams.command.blacklist";
+    public static final String COMMAND_SETTINGS = "justteams.command.settings";
+    public static final String COMMAND_AUTOBANK = "justteams.command.autobank";
+
     public static final Set<String> USER_COMMANDS = Set.of(
             COMMAND_CREATE, COMMAND_DISBAND, COMMAND_INVITE, COMMAND_ACCEPT, COMMAND_DENY,
             COMMAND_LEAVE, COMMAND_KICK, COMMAND_INFO, COMMAND_CHAT, COMMAND_SETHOME,
             COMMAND_HOME, COMMAND_SETTAG, COMMAND_SETDESCRIPTION, COMMAND_TRANSFER,
-            COMMAND_PROMOTE, COMMAND_DEMOTE, COMMAND_PVP, COMMAND_FRIENDLYFIRE, COMMAND_BANK, COMMAND_ENDERCHEST,
-            COMMAND_TOP, COMMAND_TEAMMSG, COMMAND_JOIN, COMMAND_UNJOIN, COMMAND_PUBLIC,
-            COMMAND_REQUESTS, COMMAND_SETWARP, COMMAND_DELWARP, COMMAND_WARP, COMMAND_WARPS
+            COMMAND_PROMOTE, COMMAND_DEMOTE, COMMAND_PVP, COMMAND_FRIENDLYFIRE, COMMAND_BANK,
+            COMMAND_ENDERCHEST, COMMAND_TOP, COMMAND_TEAMMSG, COMMAND_JOIN, COMMAND_UNJOIN,
+            COMMAND_PUBLIC, COMMAND_REQUESTS, COMMAND_SETWARP, COMMAND_DELWARP, COMMAND_WARP,
+            COMMAND_WARPS, COMMAND_GLOW, COMMAND_INVITES, COMMAND_BLACKLIST, COMMAND_SETTINGS,
+            COMMAND_AUTOBANK
     );
 }
