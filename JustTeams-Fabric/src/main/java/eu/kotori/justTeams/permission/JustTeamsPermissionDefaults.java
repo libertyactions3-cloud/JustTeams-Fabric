@@ -1,9 +1,11 @@
 package eu.kotori.justTeams.permission;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,8 +52,8 @@ public final class JustTeamsPermissionDefaults {
     }
 
     /**
-     * Resolves in the same order as GriefPrevention's Fabric implementation: explicit node,
-     * explicit parent, then node and inherited defaults.
+     * Resolves explicit permission values using the Optional-based Fabric Permissions API lookup
+     * used by Essential Commands, then applies JustTeams' declared parent relationships and defaults.
      *
      * @param permission the node being checked
      * @param explicit the LuckPerms value, or null when LuckPerms has no value for that node
@@ -116,6 +118,29 @@ public final class JustTeamsPermissionDefaults {
     /** Declared nodes and their defaults, for permission integration tests and diagnostics. */
     public static Set<String> declared() {
         return Collections.unmodifiableSet(NODES.keySet());
+    }
+
+    /**
+     * Builds the LuckPerms suggestion nodes for all declared permissions, including each nested
+     * wildcard prefix, following Essential Commands' permission registration pattern.
+     */
+    public static Set<String> wildcardNodes(Collection<String> permissions) {
+        Set<String> wildcardNodes = new LinkedHashSet<>();
+        String prefix = "justteams.";
+
+        for (String permission : permissions) {
+            if (permission == null || !permission.startsWith(prefix)) {
+                continue;
+            }
+
+            String[] segments = permission.substring(prefix.length()).split("\\.");
+            for (int segmentCount = 1; segmentCount < segments.length; segmentCount++) {
+                wildcardNodes.add(prefix + String.join(".", Arrays.copyOf(segments, segmentCount)) + ".*");
+            }
+        }
+
+        wildcardNodes.add(JustTeamsPermissions.ALL);
+        return Collections.unmodifiableSet(wildcardNodes);
     }
 
     public static String declaredDefault(String permission) {
