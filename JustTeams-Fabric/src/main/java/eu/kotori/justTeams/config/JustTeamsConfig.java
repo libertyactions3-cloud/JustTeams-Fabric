@@ -28,6 +28,7 @@ public final class JustTeamsConfig {
     public void load() throws IOException {
         if(Files.exists(file)){try(InputStream input=Files.newInputStream(file)){properties.load(input);}}
         boolean changed=false;
+        changed|=putDefault("use_permissions_api","false");
         changed|=putDefault("bank.enabled","true");
         changed|=putDefault("bank.currency-items",DEFAULT_CURRENCY_ITEMS);
         changed|=putDefault("glow.colors.owner","RED"); changed|=putDefault("glow.colors.co-owner","DARK_RED"); changed|=putDefault("glow.colors.member","WHITE");
@@ -45,6 +46,7 @@ public final class JustTeamsConfig {
     }
     private boolean putDefault(String key,String value){if(properties.containsKey(key))return false;properties.setProperty(key,value);return true;}
     public void save() throws IOException{try(OutputStream output=Files.newOutputStream(file)){properties.store(output,"JustTeams Fabric configuration");}}
+    public boolean isUsePermissionsApi(){return Boolean.parseBoolean(properties.getProperty("use_permissions_api","false"));}
     public boolean isBankEnabled(){return Boolean.parseBoolean(properties.getProperty("bank.enabled","true"));}
     public boolean isEnderChestEnabled(){return Boolean.parseBoolean(properties.getProperty("enderchest.enabled","true"));}
     public int getEnderChestRows(){int rows;try{rows=Integer.parseInt(properties.getProperty("enderchest.rows","3"));}catch(NumberFormatException ignored){rows=3;}return Math.max(1,Math.min(6,rows));}

@@ -31,8 +31,6 @@ public final class JustTeamsPermissions {
     @SuppressWarnings({"checkstyle:constantname", "checkstyle:staticvariablename"})
     public static final class Registry {
         public static final String all = "justteams.*";
-        public static final String user = "justteams.user";
-        public static final String admin = "justteams.admin";
         public static final String chat_spy = "justteams.chatspy";
         public static final String admin_performance = "justteams.admin.performance";
 
@@ -41,6 +39,7 @@ public final class JustTeamsPermissions {
         public static final String bypass_home_cooldown = "justteams.bypass.home.cooldown";
         public static final String bypass_warp_cooldown = "justteams.bypass.warp.cooldown";
 
+        public static final String command_gui = "justteams.command.gui";
         public static final String command_admin = "justteams.command.admin";
         public static final String command_reload = "justteams.command.reload";
         public static final String command_create = "justteams.command.create";
@@ -81,7 +80,7 @@ public final class JustTeamsPermissions {
 
         public static final class Group {
             public static final String[] user_commands = {
-                    command_create, command_disband, command_invite, command_accept, command_deny,
+                    command_gui, command_create, command_disband, command_invite, command_accept, command_deny,
                     command_leave, command_kick, command_info, command_chat, command_sethome,
                     command_home, command_settag, command_setdescription, command_transfer,
                     command_promote, command_demote, command_pvp, command_friendlyfire,
@@ -99,8 +98,6 @@ public final class JustTeamsPermissions {
     }
 
     public static final String ALL = Registry.all;
-    public static final String ADMIN = Registry.admin;
-    public static final String USER = Registry.user;
     public static final String CHAT_SPY = Registry.chat_spy;
 
     public static final String BYPASS_BANK_WITHDRAW = Registry.bypass_bank_withdraw;
@@ -108,6 +105,7 @@ public final class JustTeamsPermissions {
     public static final String BYPASS_HOME_COOLDOWN = Registry.bypass_home_cooldown;
     public static final String BYPASS_WARP_COOLDOWN = Registry.bypass_warp_cooldown;
 
+    public static final String COMMAND_GUI = Registry.command_gui;
     public static final String COMMAND_ADMIN = Registry.command_admin;
     public static final String COMMAND_RELOAD = Registry.command_reload;
     public static final String COMMAND_CREATE = Registry.command_create;
@@ -234,31 +232,36 @@ public final class JustTeamsPermissions {
     }
 
     /**
-     * Tests one permission with the same explicit-node-first, permission-level-fallback behavior
-     * used by Essential Commands. A declared group node is checked only when the specific command
-     * node has no explicit value.
+     * Checks one permission using the same API toggle and operator fallback behavior as
+     * Essential Commands' ECPerms implementation.
      */
     public static boolean check(
             @NotNull ServerCommandSource source,
             @NotNull String permission,
             int defaultRequireLevel
     ) {
-        boolean operatorFallback = source.getPermissions().hasPermission(
-                new Permission.Level(PermissionLevel.fromLevel(Math.max(2, defaultRequireLevel)))
-        );
-
-        try {
-            boolean fallback = groupFallback(source, permission, operatorFallback);
-            return Permissions.getPermissionValue(source, permission).orElse(fallback);
-        } catch (Exception exception) {
-            eu.kotori.justTeams.JustTeamsFabric.LOGGER.error(
-                    "Unable to check JustTeams permission " + permission,
-                    exception
-            );
-            return false;
+        if (eu.kotori.justTeams.JustTeamsFabric.config().isUsePermissionsApi()) {
+            try {
+                return Permissions.getPermissionValue(source, permission).orElse(
+                        source.getPermissions().hasPermission(
+                                new Permission.Level(PermissionLevel.fromLevel(Math.max(2, defaultRequireLevel)))
+                        )
+                );
+            } catch (Exception exception) {
+                eu.kotori.justTeams.JustTeamsFabric.LOGGER.error(
+                        "Unable to check JustTeams permission " + permission,
+                        exception
+                );
+                return false;
+            }
         }
+
+        return source.getPermissions().hasPermission(
+                new Permission.Level(PermissionLevel.fromLevel(defaultRequireLevel))
+        );
     }
 
+    /** Uses the same default require level as ECPerms.check(source, permission, 2). */
     public static boolean checkWithOperatorFallback(
             @NotNull ServerCommandSource source,
             @NotNull String permission
@@ -303,38 +306,6 @@ public final class JustTeamsPermissions {
             int defaultRequireLevel
     ) {
         return source -> checkAny(source, permissions, defaultRequireLevel);
-    }
-
-    private static boolean groupFallback(
-            ServerCommandSource source,
-            String permission,
-            boolean operatorFallback
-    ) {
-        String parent = parentGroup(permission);
-        if (parent != null) {
-            return Permissions.getPermissionValue(source, parent).orElse(
-                    Permissions.getPermissionValue(source, ALL).orElse(operatorFallback)
-            );
-        }
-
-        return Permissions.getPermissionValue(source, ALL).orElse(operatorFallback);
-    }
-
-    /** Returns the declared parent group for a command node, or null for group/root nodes. */
-    public static String parentGroup(String permission) {
-        if (USER_COMMANDS.contains(permission)) {
-            return USER;
-        }
-        if (ADMIN_COMMANDS.contains(permission)) {
-            return ADMIN;
-        }
-        if (USER.equals(permission) || ADMIN.equals(permission)) {
-            return ALL;
-        }
-        if (ALL.equals(permission)) {
-            return null;
-        }
-        return null;
     }
 
     /** Returns every concrete node in the registry, including nodes stored in group arrays. */

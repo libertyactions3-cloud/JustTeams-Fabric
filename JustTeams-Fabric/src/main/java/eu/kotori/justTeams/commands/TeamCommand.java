@@ -37,15 +37,11 @@ public final class TeamCommand {
         dispatcher.register(CommandManager.literal("team")
                 .executes(c -> {
                     ServerCommandSource source = c.getSource();
-                    if (!JustTeamsFabric.permissions().hasAny(
-                            source,
-                            JustTeamsPermissions.USER,
-                            JustTeamsPermissions.ADMIN
-                    )) {
+                    if (!JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_GUI)) {
                         source.sendError(Text.literal("You do not have permission to use this command."));
                         return 0;
                     }
-                    return run(source, null, () -> openGui(source));
+                    return run(source, JustTeamsPermissions.COMMAND_GUI, () -> openGui(source));
                 })
                 .then(CommandManager.literal("create")
                         .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CREATE))
@@ -56,12 +52,8 @@ public final class TeamCommand {
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CREATE,
                                                 () -> create(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "tag")))))))
                 .then(CommandManager.literal("gui")
-                        .requires(source -> JustTeamsFabric.permissions().hasAny(
-                                source,
-                                JustTeamsPermissions.USER,
-                                JustTeamsPermissions.ADMIN
-                        ))
-                        .executes(c -> run(c.getSource(), null, () -> openGui(c.getSource()))))
+                        .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_GUI))
+                        .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_GUI, () -> openGui(c.getSource()))))
                 .then(CommandManager.literal("info").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INFO)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
                 .then(CommandManager.literal("leave").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_LEAVE)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
                 .then(CommandManager.literal("disband").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DISBAND)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))

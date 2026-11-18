@@ -34,7 +34,7 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// Fabric Permissions API provides the same command-source permission checks used by Multiverse 1.21.11.
+	// Fabric Permissions API v0 is the permission bridge used by Essential Commands and LuckPerms.
 	include(modImplementation("me.lucko:fabric-permissions-api:0.6.1"))
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
