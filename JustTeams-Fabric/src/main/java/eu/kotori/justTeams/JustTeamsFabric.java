@@ -46,6 +46,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public final class JustTeamsFabric implements ModInitializer {
     public static final String MOD_ID = "justteams";
@@ -67,8 +72,11 @@ public final class JustTeamsFabric implements ModInitializer {
 
         teamManager = new TeamManager(); teamStorage = new TeamStorage(); permissionService = new FabricPermissionService(); glowManager = new GlowManager(); teleportManager = new TeamTeleportManager(); economyProvider = new ItemEconomyProvider();
 
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> { loadTeamData(server); TeamBankLogManager.pruneAll(); });
-        ServerLifecycleEvents.SERVER_STARTED.register(JustTeamsFabric::registerPermissionNodes);
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            loadTeamData(server);
+            TeamBankLogManager.pruneAll();
+            registerPermissionNodes(server);
+        });
         ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> saveTeamData(server, false));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> saveTeamData(server, true));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> PlayerNameResolver.remember(server, handler.getPlayer()));
@@ -102,12 +110,54 @@ public final class JustTeamsFabric implements ModInitializer {
             return;
         }
 
-        int registered = 0;
-        for (String permission : JustTeamsPermissionDefaults.declared()) {
-            Permissions.check(server.getCommandSource(), permission, false);
-            registered++;
+        Set<String> permissionNodes = new LinkedHashSet<>();
+        collectPermissionNodes(JustTeamsPermissions.class, permissionNodes);
+        permissionNodes.addAll(JustTeamsPermissionDefaults.declared());
+
+        Set<String> wildcardNodes = new LinkedHashSet<>();
+        for (String permission : permissionNodes) {
+            String prefix = "justteams.";
+            if (!permission.startsWith(prefix)) {
+                continue;
+            }
+
+            String[] segments = permission.substring(prefix.length()).split("\\.");
+            for (int segmentCount = 1; segmentCount < segments.length; segmentCount++) {
+                wildcardNodes.add(prefix + String.join(".", Arrays.copyOf(segments, segmentCount)) + ".*");
+            }
         }
-        LOGGER.info("Published {} JustTeams permission nodes to LuckPerms tab completions.", registered);
+
+        permissionNodes.addAll(wildcardNodes);
+        permissionNodes.add(JustTeamsPermissions.ALL);
+
+        for (String permission : permissionNodes) {
+            Permissions.getPermissionValue(server.getCommandSource(), permission);
+        }
+
+        LOGGER.info(
+                "Published {} JustTeams permission nodes to LuckPerms tab completions.",
+                permissionNodes.size()
+        );
+    }
+
+    private static void collectPermissionNodes(Class<?> owner, Set<String> permissionNodes) {
+        for (Field field : owner.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers()) || field.getType() != String.class) {
+                continue;
+            }
+
+            try {
+                String permission = (String) field.get(null);
+                if (permission != null && permission.startsWith("justteams.")) {
+                    permissionNodes.add(permission);
+                }
+            } catch (IllegalAccessException exception) {
+                throw new IllegalStateException(
+                        "Unable to read JustTeams permission registry field " + field.getName(),
+                        exception
+                );
+            }
+        }
     }
 
     private void loadTeamData(MinecraftServer server) { try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); } }
