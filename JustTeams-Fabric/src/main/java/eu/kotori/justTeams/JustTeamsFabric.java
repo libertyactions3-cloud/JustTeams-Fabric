@@ -27,7 +27,6 @@ import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.FabricPermissionService;
 import eu.kotori.justTeams.permission.JustTeamsPermissionDefaults;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import eu.kotori.justTeams.permission.PermissionService;
 import eu.kotori.justTeams.storage.TeamStorage;
 import eu.kotori.justTeams.team.GlowManager;
@@ -35,8 +34,9 @@ import eu.kotori.justTeams.team.TeamManager;
 import eu.kotori.justTeams.team.TeamTeleportManager;
 import eu.kotori.justTeams.util.ChatInputEvents;
 import eu.kotori.justTeams.util.PlayerNameResolver;
-import net.fabricmc.api.ModInitializer;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -104,12 +104,11 @@ public final class JustTeamsFabric implements ModInitializer {
 
         int registered = 0;
         for (String permission : JustTeamsPermissionDefaults.declared()) {
-            Permissions.getPermissionValue(server.getCommandSource(), permission);
+            Permissions.check(server.getCommandSource(), permission, false);
             registered++;
         }
         LOGGER.info("Published {} JustTeams permission nodes to LuckPerms tab completions.", registered);
     }
-
 
     private void loadTeamData(MinecraftServer server) { try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); } }
     private void saveTeamData(MinecraftServer server, boolean logSuccess) { try { teamStorage.save(teamManager); if (logSuccess) LOGGER.info("Saved {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { LOGGER.error("Unable to save JustTeams data", exception); } }
