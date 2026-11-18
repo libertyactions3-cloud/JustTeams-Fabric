@@ -32,6 +32,7 @@ public final class TeamMessageCommandExtension {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
         dispatcher.register(CommandManager.literal("teammsg")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_TEAMMSG))
                 .executes(context->usage(context.getSource()))
                 .then(CommandManager.argument("message",StringArgumentType.greedyString())
                         .executes(context->execute(context.getSource(),StringArgumentType.getString(context,"message")))));
