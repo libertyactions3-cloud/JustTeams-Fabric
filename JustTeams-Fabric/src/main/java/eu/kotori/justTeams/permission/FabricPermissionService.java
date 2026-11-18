@@ -1,15 +1,16 @@
 package eu.kotori.justTeams.permission;
 
 import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.command.permission.Permission;
 import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.command.ServerCommandSource;
 
 /**
- * Resolves JustTeams permissions using the same explicit-value lookup pattern as EssentialCommands.
+ * Resolves JustTeams permissions using the same tri-state permission lookup used by EssentialCommands.
  *
- * The Optional returned by Fabric Permissions API distinguishes an explicit grant or denial from
- * an unset node. Unset values are then resolved through JustTeams' declared parent groups/defaults.
+ * Unset nodes remain distinct from explicit denials, allowing JustTeams' declared parent groups
+ * and defaults to be applied only when the permission provider has no answer.
  */
 public final class FabricPermissionService implements PermissionService {
 
@@ -20,7 +21,10 @@ public final class FabricPermissionService implements PermissionService {
         );
         return JustTeamsPermissionDefaults.resolve(
                 permission,
-                node -> Permissions.getPermissionValue(source, node).orElse(null),
+                node -> {
+                    TriState value = Permissions.getPermissionValue(source, node);
+                    return value == TriState.DEFAULT ? null : value == TriState.TRUE;
+                },
                 operator
         );
     }
