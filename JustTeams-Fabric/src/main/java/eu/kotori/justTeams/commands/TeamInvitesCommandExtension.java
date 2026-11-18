@@ -15,6 +15,7 @@ public final class TeamInvitesCommandExtension {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("team")
                 .then(CommandManager.literal("invites")
+                        .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INVITES))
                         .executes(context -> execute(context.getSource()))));
     }
 
