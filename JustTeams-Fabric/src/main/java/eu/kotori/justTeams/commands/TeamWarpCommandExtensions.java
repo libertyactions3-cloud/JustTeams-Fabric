@@ -42,13 +42,13 @@ public final class TeamWarpCommandExtensions {
 
     private static void registerMemberManagement(CommandDispatcher<ServerCommandSource> dispatcher) {
         CommandNode<ServerCommandSource> team=dispatcher.getRoot().getChild("team"); if(team==null)return;
-        team.addChild(CommandManager.literal("kick").executes(context->usage(context.getSource(),"/team kick <player>"))
+        team.addChild(CommandManager.literal("kick").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_KICK)).executes(context->usage(context.getSource(),"/team kick <player>"))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->kick(context.getSource(),StringArgumentType.getString(context,"player")))).build());
-        team.addChild(CommandManager.literal("promote").executes(context->usage(context.getSource(),"/team promote <player>"))
+        team.addChild(CommandManager.literal("promote").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_PROMOTE)).executes(context->usage(context.getSource(),"/team promote <player>"))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->promote(context.getSource(),StringArgumentType.getString(context,"player")))).build());
-        team.addChild(CommandManager.literal("demote").executes(context->usage(context.getSource(),"/team demote <player>"))
+        team.addChild(CommandManager.literal("demote").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DEMOTE)).executes(context->usage(context.getSource(),"/team demote <player>"))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->demote(context.getSource(),StringArgumentType.getString(context,"player")))).build());
     }
