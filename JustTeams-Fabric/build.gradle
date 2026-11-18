@@ -34,11 +34,8 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// Keep Fabric Permissions API for publishing known nodes to LuckPerms' tab-completion registry.
+	// Fabric Permissions API provides the same command-source permission checks used by Multiverse 1.21.11.
 	include(modImplementation("me.lucko:fabric-permissions-api:0.6.1"))
-
-	// Use the same direct LuckPerms API resolver as Fabric-GriefPrevention for live player checks.
-	compileOnly "net.luckperms:api:5.5"
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
