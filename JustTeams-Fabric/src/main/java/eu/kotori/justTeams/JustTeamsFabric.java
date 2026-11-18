@@ -27,6 +27,7 @@ import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.FabricPermissionService;
 import eu.kotori.justTeams.permission.JustTeamsPermissionDefaults;
+import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.permission.PermissionService;
 import eu.kotori.justTeams.storage.TeamStorage;
 import eu.kotori.justTeams.team.GlowManager;
