@@ -22,6 +22,7 @@ public final class TeamInviteCommandExtension {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
         CommandNode<ServerCommandSource> team=dispatcher.getRoot().getChild("team");if(team==null)return;
         team.addChild(CommandManager.literal("invite")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INVITE))
                 .executes(context->usage(context.getSource()))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->execute(context.getSource(),StringArgumentType.getString(context,"player")))).build());
