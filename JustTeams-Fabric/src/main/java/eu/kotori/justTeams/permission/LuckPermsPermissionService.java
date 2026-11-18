@@ -1,34 +1,50 @@
 package eu.kotori.justTeams.permission;
 
-import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.fabricmc.fabric.api.util.TriState;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.util.Tristate;
 import net.minecraft.command.permission.Permission;
 import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.UUID;
+
 /**
- * LuckPerms-backed permission resolver through Fabric's shared permissions API.
+ * Resolves live player permissions directly from LuckPerms' loaded User cache, matching the
+ * Fabric implementation used by Fabric-GriefPrevention.
  *
- * Using the platform API routes each check through LuckPerms' monitored permission cache, which
- * also records the node in LuckPerms' permission tree for /lp tab completion.
+ * Fabric Permissions API remains responsible for advertising known nodes to LuckPerms'
+ * permission tree; it is deliberately not used as the runtime permission source here.
  */
 public final class LuckPermsPermissionService implements PermissionService {
 
     @Override
     public boolean has(ServerPlayerEntity player, String permission) {
         boolean operator = player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS));
+        UUID playerId = player.getUuid();
         return JustTeamsPermissionDefaults.resolve(
                 permission,
-                node -> permissionValue(player, node),
+                node -> permissionValue(playerId, node),
                 operator
         );
     }
 
-    private Boolean permissionValue(ServerPlayerEntity player, String permission) {
-        TriState value = Permissions.getPermissionValue(player, permission);
-        if (value == TriState.DEFAULT) {
+    private Boolean permissionValue(UUID playerId, String permission) {
+        try {
+            LuckPerms luckPerms = LuckPermsProvider.get();
+            User user = luckPerms.getUserManager().getUser(playerId);
+            if (user == null) {
+                return null;
+            }
+
+            Tristate value = user.getCachedData()
+                    .getPermissionData()
+                    .checkPermission(permission);
+            return value == Tristate.UNDEFINED ? null : value.asBoolean();
+        } catch (IllegalStateException ignored) {
+            // LuckPerms may expose its API class before its singleton is ready during startup.
             return null;
         }
-        return value == TriState.TRUE;
     }
 }

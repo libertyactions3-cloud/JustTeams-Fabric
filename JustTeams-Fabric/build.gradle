@@ -34,9 +34,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// Bundle the Fabric Permissions API so its classes are always available to JustTeams.
-	// LuckPerms listens to this API and records observed nodes for its permission tree.
+	// Keep Fabric Permissions API for publishing known nodes to LuckPerms' tab-completion registry.
 	include(modImplementation("me.lucko:fabric-permissions-api:0.6.1"))
+
+	// Use the same direct LuckPerms API resolver as Fabric-GriefPrevention for live player checks.
+	compileOnly "net.luckperms:api:5.5"
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -88,7 +90,7 @@ publishing {
 	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on setting up publishing.
 	repositories {
 		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the top level.
+		// Notice: This block does NOT have the same function as the repositories block above.
 		// The repositories here will be used for publishing your artifact, not for retrieving artifacts.
 	}
 }
