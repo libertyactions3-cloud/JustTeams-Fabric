@@ -136,6 +136,20 @@ class JustTeamsPermissionDefaultsTest {
     }
 
     @Test
+    void luckPermsSuggestionNodesIncludeNestedWildcards() {
+        java.util.Set<String> nodes = JustTeamsPermissionDefaults.wildcardNodes(
+                JustTeamsPermissionDefaults.declared()
+        );
+
+        assertTrue(nodes.contains("justteams.*"));
+        assertTrue(nodes.contains("justteams.command.*"));
+        assertTrue(nodes.contains("justteams.bypass.*"));
+        assertTrue(nodes.contains("justteams.bypass.bank.*"));
+        assertTrue(nodes.contains("justteams.bypass.enderchest.*"));
+        assertTrue(nodes.contains("justteams.admin.*"));
+    }
+
+    @Test
     void unlistedPermissionsKeepTheOperatorOnlyFallback() {
         assertFalse(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, true));
