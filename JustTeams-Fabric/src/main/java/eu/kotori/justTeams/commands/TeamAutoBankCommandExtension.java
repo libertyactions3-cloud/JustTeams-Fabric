@@ -21,6 +21,7 @@ public final class TeamAutoBankCommandExtension {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("team")
                 .then(CommandManager.literal("autobank")
+                        .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_AUTOBANK))
                         .executes(context -> execute(context.getSource()))));
     }
 
