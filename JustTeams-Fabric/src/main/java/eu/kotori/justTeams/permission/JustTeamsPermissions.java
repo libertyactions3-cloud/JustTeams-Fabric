@@ -240,7 +240,13 @@ public final class JustTeamsPermissions {
             @NotNull String permission,
             int defaultRequireLevel
     ) {
-        if (eu.kotori.justTeams.JustTeamsFabric.config().isUsePermissionsApi()) {
+        // LuckPerms on Fabric provides permission values through Fabric Permissions API v0.
+        // Do not let the legacy default=false setting silently bypass LuckPerms checks.
+        boolean usePermissionsApi =
+                eu.kotori.justTeams.JustTeamsFabric.config().isUsePermissionsApi()
+                        || FabricLoader.getInstance().isModLoaded("luckperms");
+
+        if (usePermissionsApi) {
             try {
                 return Permissions.getPermissionValue(source, permission).orElse(
                         source.getPermissions().hasPermission(
