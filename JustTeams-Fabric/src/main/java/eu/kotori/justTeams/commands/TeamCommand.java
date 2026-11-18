@@ -37,6 +37,7 @@ public final class TeamCommand {
         dispatcher.register(CommandManager.literal("team")
                 .executes(c -> run(c.getSource(), null, () -> openGui(c.getSource())))
                 .then(CommandManager.literal("create")
+                        .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CREATE))
                         .executes(c -> usage(c.getSource(), "/team create <name> <tag>"))
                         .then(CommandManager.argument("name", StringArgumentType.word())
                                 .executes(c -> usage(c.getSource(), "/team create <name> <tag>"))
@@ -44,55 +45,64 @@ public final class TeamCommand {
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CREATE,
                                                 () -> create(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "tag")))))))
                 .then(CommandManager.literal("gui").executes(c -> run(c.getSource(), null, () -> openGui(c.getSource()))))
-                .then(CommandManager.literal("info").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
-                .then(CommandManager.literal("leave").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
-                .then(CommandManager.literal("disband").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
-                .then(CommandManager.literal("pvp").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
-                .then(CommandManager.literal("friendlyfire").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_FRIENDLYFIRE, () -> toggleFriendlyFire(c.getSource()))))
-                .then(CommandManager.literal("glow").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_GLOW, () -> toggleGlow(c.getSource()))))
-                .then(CommandManager.literal("bank").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
-                .then(CommandManager.literal("enderchest").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
-                .then(CommandManager.literal("ec").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
-                .then(CommandManager.literal("sethome").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> setHome(c.getSource()))))
-                .then(CommandManager.literal("delhome").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> clearHome(c.getSource()))))
-                .then(CommandManager.literal("home").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))))
+                .then(CommandManager.literal("info").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INFO)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INFO, () -> info(c.getSource()))))
+                .then(CommandManager.literal("leave").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_LEAVE)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_LEAVE, () -> leave(c.getSource()))))
+                .then(CommandManager.literal("disband").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DISBAND)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DISBAND, () -> disband(c.getSource()))))
+                .then(CommandManager.literal("pvp").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_PVP)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_PVP, () -> togglePvp(c.getSource()))))
+                .then(CommandManager.literal("friendlyfire").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_FRIENDLYFIRE)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_FRIENDLYFIRE, () -> toggleFriendlyFire(c.getSource()))))
+                .then(CommandManager.literal("glow").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_GLOW)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_GLOW, () -> toggleGlow(c.getSource()))))
+                .then(CommandManager.literal("bank").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_BANK)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_BANK, () -> openBank(c.getSource()))))
+                .then(CommandManager.literal("enderchest").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_ENDERCHEST)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
+                .then(CommandManager.literal("ec").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_ENDERCHEST)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ENDERCHEST, () -> openEnderChest(c.getSource()))))
+                .then(CommandManager.literal("sethome").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETHOME)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> setHome(c.getSource()))))
+                .then(CommandManager.literal("delhome").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETHOME)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETHOME, () -> clearHome(c.getSource()))))
+                .then(CommandManager.literal("home").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_HOME)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_HOME, () -> useHome(c.getSource()))))
                 .then(CommandManager.literal("warp")
+                        .requires(source -> JustTeamsFabric.permissions().hasAny(source,
+                                JustTeamsPermissions.COMMAND_SETWARP,
+                                JustTeamsPermissions.COMMAND_DELWARP,
+                                JustTeamsPermissions.COMMAND_WARP,
+                                JustTeamsPermissions.COMMAND_WARPS))
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource())))
                         .then(CommandManager.literal("set")
+                                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETWARP))
                                 .executes(c -> usage(c.getSource(), "/team warp set <name>"))
                                 .then(CommandManager.argument("name", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_SETWARP,
                                                 () -> setWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
                         .then(CommandManager.literal("remove")
+                                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DELWARP))
                                 .executes(c -> usage(c.getSource(), "/team warp remove <name>"))
                                 .then(CommandManager.argument("name", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DELWARP,
                                                 () -> removeWarp(c.getSource(), StringArgumentType.getString(c, "name"))))))
-                        .then(CommandManager.literal("list").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource()))))
+                        .then(CommandManager.literal("list").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_WARPS)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARPS, () -> listWarps(c.getSource()))))
                         .then(CommandManager.argument("name", StringArgumentType.word())
+                                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_WARP))
                                 .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP, () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), "")))
                                 .then(CommandManager.argument("password", StringArgumentType.word())
                                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_WARP,
                                                 () -> useWarp(c.getSource(), StringArgumentType.getString(c, "name"), StringArgumentType.getString(c, "password")))))))
                 .then(CommandManager.literal("invite")
+                        .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INVITE))
                         .then(CommandManager.argument("player", StringArgumentType.word())
                                 .suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                                 .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_INVITE,
                                         () -> invite(c.getSource(), StringArgumentType.getString(c, "player"))))))
-                .then(CommandManager.literal("accept").then(CommandManager.argument("team", StringArgumentType.word())
+                .then(CommandManager.literal("accept").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_ACCEPT)).then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_ACCEPT,
                                 () -> acceptInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("deny").then(CommandManager.argument("team", StringArgumentType.word())
+                .then(CommandManager.literal("deny").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DENY)).then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_DENY,
                                 () -> denyInvite(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("join").then(CommandManager.argument("team", StringArgumentType.word())
+                .then(CommandManager.literal("join").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_JOIN)).then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_JOIN,
                                 () -> requestJoin(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("unjoin").then(CommandManager.argument("team", StringArgumentType.word())
+                .then(CommandManager.literal("unjoin").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_UNJOIN)).then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_UNJOIN,
                                 () -> cancelJoinRequest(c.getSource(), StringArgumentType.getString(c, "team"))))))
-                .then(CommandManager.literal("requests").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS, () -> openRequests(c.getSource()))))
-                .then(CommandManager.literal("chat").executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource())))));
+                .then(CommandManager.literal("requests").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_REQUESTS)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_REQUESTS, () -> openRequests(c.getSource()))))
+                .then(CommandManager.literal("chat").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CHAT)).executes(c -> run(c.getSource(), JustTeamsPermissions.COMMAND_CHAT, () -> toggleChat(c.getSource())))));
     }
 
     @FunctionalInterface
