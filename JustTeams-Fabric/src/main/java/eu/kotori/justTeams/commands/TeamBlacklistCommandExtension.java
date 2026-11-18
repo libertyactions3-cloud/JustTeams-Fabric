@@ -24,6 +24,7 @@ public final class TeamBlacklistCommandExtension {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
         var team=dispatcher.getRoot().getChild("team");if(team==null)return;
         team.addChild(CommandManager.literal("blacklist")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_BLACKLIST))
                 .executes(context->openGui(context.getSource()))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->usage(context.getSource(),"/team blacklist <player> [reason]"))
@@ -31,6 +32,7 @@ public final class TeamBlacklistCommandExtension {
                                 .executes(context->blacklist(context.getSource(),StringArgumentType.getString(context,"player"),StringArgumentType.getString(context,"reason")))))
                 .build());
         team.addChild(CommandManager.literal("unblacklist")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_BLACKLIST))
                 .executes(context->usage(context.getSource(),"/team unblacklist <player>"))
                 .then(CommandManager.argument("player",StringArgumentType.word()).suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(context->unblacklist(context.getSource(),StringArgumentType.getString(context,"player")))).build());
