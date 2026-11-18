@@ -28,7 +28,7 @@ public final class TeamInfoCommandExtensions {
         CommandNode<ServerCommandSource> team = dispatcher.getRoot().getChild("team");
         if (team == null) return;
         LiteralArgumentBuilder<ServerCommandSource> replacement = CommandManager.literal("info")
-                .requires(source -> source.getEntity() instanceof ServerPlayerEntity player && JustTeamsFabric.permissions().has(player, JustTeamsPermissions.COMMAND_INFO))
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INFO))
                 .executes(context -> executeSafely(context.getSource()));
         team.addChild(replacement.build());
     }
