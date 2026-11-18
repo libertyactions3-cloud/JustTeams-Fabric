@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -114,21 +113,7 @@ public final class JustTeamsFabric implements ModInitializer {
         collectPermissionNodes(JustTeamsPermissions.class, permissionNodes);
         permissionNodes.addAll(JustTeamsPermissionDefaults.declared());
 
-        Set<String> wildcardNodes = new LinkedHashSet<>();
-        for (String permission : permissionNodes) {
-            String prefix = "justteams.";
-            if (!permission.startsWith(prefix)) {
-                continue;
-            }
-
-            String[] segments = permission.substring(prefix.length()).split("\\.");
-            for (int segmentCount = 1; segmentCount < segments.length; segmentCount++) {
-                wildcardNodes.add(prefix + String.join(".", Arrays.copyOf(segments, segmentCount)) + ".*");
-            }
-        }
-
-        permissionNodes.addAll(wildcardNodes);
-        permissionNodes.add(JustTeamsPermissions.ALL);
+        permissionNodes.addAll(JustTeamsPermissionDefaults.wildcardNodes(permissionNodes));
 
         for (String permission : permissionNodes) {
             Permissions.getPermissionValue(server.getCommandSource(), permission);
