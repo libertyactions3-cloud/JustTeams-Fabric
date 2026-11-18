@@ -1,9 +1,7 @@
 package eu.kotori.justTeams.permission;
 
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.command.permission.Permission;
 import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.MinecraftServer;
@@ -223,7 +221,7 @@ public final class JustTeamsPermissions {
                 continue;
             }
 
-            String[] segments = permission.substring(prefix.length()).split("\\\\.");
+            String[] segments = permission.substring(prefix.length()).split("\\.");
             for (int segmentCount = 1; segmentCount < segments.length; segmentCount++) {
                 wildcardNodes.add(
                         prefix + String.join(".", Arrays.copyOf(segments, segmentCount)) + ".*"
