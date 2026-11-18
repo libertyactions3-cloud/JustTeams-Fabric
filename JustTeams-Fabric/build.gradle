@@ -34,8 +34,8 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// LuckPerms developer API. LuckPerms itself remains an optional runtime mod.
-	compileOnly "net.luckperms:api:5.5"
+	// The API LuckPerms uses to observe permission checks and expose nodes to its tab completions.
+	modImplementation "me.lucko:fabric-permissions-api:0.6.1"
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -87,7 +87,7 @@ publishing {
 	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on setting up publishing.
 	repositories {
 		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for retrieving dependencies.
+		// Notice: This block does NOT have the same function as the top level.
+		// The repositories here will be used for publishing your artifact, not for retrieving artifacts.
 	}
 }

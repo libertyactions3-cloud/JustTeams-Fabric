@@ -26,6 +26,8 @@ import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
 import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.LuckPermsPermissionService;
+import eu.kotori.justTeams.permission.JustTeamsPermissionDefaults;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import eu.kotori.justTeams.permission.PermissionService;
 import eu.kotori.justTeams.storage.TeamStorage;
 import eu.kotori.justTeams.team.GlowManager;
@@ -66,6 +68,7 @@ public final class JustTeamsFabric implements ModInitializer {
         teamManager = new TeamManager(); teamStorage = new TeamStorage(); permissionService = createPermissionService(); glowManager = new GlowManager(); teleportManager = new TeamTeleportManager(); economyProvider = new ItemEconomyProvider();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> { loadTeamData(server); TeamBankLogManager.pruneAll(); });
+        ServerLifecycleEvents.SERVER_STARTED.register(JustTeamsFabric::registerPermissionNodes);
         ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> saveTeamData(server, false));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> saveTeamData(server, true));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> PlayerNameResolver.remember(server, handler.getPlayer()));
@@ -92,6 +95,19 @@ public final class JustTeamsFabric implements ModInitializer {
         });
         ChatInputEvents.register(); TeamChatEvents.register(); TeamFriendlyFire.register(); TeamStatsEvents.register();
         LOGGER.info("JustTeams Fabric core initialized");
+    }
+
+    private static void registerPermissionNodes(MinecraftServer server) {
+        if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
+            return;
+        }
+
+        int registered = 0;
+        for (String permission : JustTeamsPermissionDefaults.declared()) {
+            Permissions.getPermissionValue(server.getCommandSource(), permission);
+            registered++;
+        }
+        LOGGER.info("Published {} JustTeams permission nodes to LuckPerms tab completions.", registered);
     }
 
     private static PermissionService createPermissionService() {

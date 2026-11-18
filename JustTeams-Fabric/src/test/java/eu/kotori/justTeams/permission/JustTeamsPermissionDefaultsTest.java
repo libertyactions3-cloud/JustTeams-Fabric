@@ -123,6 +123,19 @@ class JustTeamsPermissionDefaultsTest {
     }
 
     @Test
+    void allPublishedPermissionNodesArePresentInTheDeclaredTree() {
+        java.util.Set<String> declared = JustTeamsPermissionDefaults.declared();
+
+        assertTrue(declared.contains(JustTeamsPermissions.ALL));
+        assertTrue(declared.contains(JustTeamsPermissions.USER));
+        assertTrue(declared.contains(JustTeamsPermissions.ADMIN));
+        assertTrue(declared.contains(JustTeamsPermissions.CHAT_SPY));
+        assertTrue(declared.contains(JustTeamsPermissions.ADMIN_PERFORMANCE));
+        assertTrue(declared.contains(JustTeamsPermissions.BYPASS_BANK_WITHDRAW));
+        assertTrue(declared.containsAll(JustTeamsPermissions.USER_COMMANDS));
+    }
+
+    @Test
     void unlistedPermissionsKeepTheOperatorOnlyFallback() {
         assertFalse(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, false));
         assertTrue(JustTeamsPermissionDefaults.resolve("justteams.unlisted", UNDEFINED, true));
