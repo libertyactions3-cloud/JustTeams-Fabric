@@ -35,6 +35,11 @@ public final class TeamCommand {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("team")
+                .requires(source -> JustTeamsFabric.permissions().hasAny(
+                        source,
+                        JustTeamsPermissions.USER,
+                        JustTeamsPermissions.ADMIN
+                ))
                 .executes(c -> run(c.getSource(), null, () -> openGui(c.getSource())))
                 .then(CommandManager.literal("create")
                         .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CREATE))
