@@ -21,6 +21,7 @@ public final class TeamSettingsCommandExtension {
         var team = dispatcher.getRoot().getChild("team");
         if (team == null) return;
         team.addChild(CommandManager.literal("settings")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETTINGS))
                 .executes(context -> open(context.getSource()))
                 .build());
     }
