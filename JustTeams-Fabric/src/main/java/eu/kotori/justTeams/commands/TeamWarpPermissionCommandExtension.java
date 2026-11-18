@@ -26,6 +26,7 @@ public final class TeamWarpPermissionCommandExtension {
         if (warp == null) return;
 
         warp.addChild(CommandManager.literal("set")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETWARP))
                 .then(CommandManager.argument("name", StringArgumentType.word())
                         .executes(context -> createWarp(context.getSource(), StringArgumentType.getString(context, "name"), ""))
                         .then(CommandManager.argument("password", StringArgumentType.greedyString())
@@ -33,6 +34,7 @@ public final class TeamWarpPermissionCommandExtension {
                 .build());
 
         warp.addChild(CommandManager.literal("remove")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DELWARP))
                 .then(CommandManager.argument("name", StringArgumentType.word())
                         .executes(context -> removeWarp(context.getSource(), StringArgumentType.getString(context, "name"))))
                 .build());
