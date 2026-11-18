@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.CommandNode;
 import eu.kotori.justTeams.JustTeamsFabric;
+import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.economy.FeatureCostManager;
 import eu.kotori.justTeams.team.Team;
 import eu.kotori.justTeams.team.TeamLocation;
