@@ -25,7 +25,7 @@ import eu.kotori.justTeams.economy.TeamBankLogManager;
 import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
 import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
-import eu.kotori.justTeams.permission.LuckPermsPermissionService;
+import eu.kotori.justTeams.permission.FabricPermissionService;
 import eu.kotori.justTeams.permission.JustTeamsPermissionDefaults;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import eu.kotori.justTeams.permission.PermissionService;
@@ -65,7 +65,7 @@ public final class JustTeamsFabric implements ModInitializer {
         try { config = new JustTeamsConfig(FabricLoader.getInstance().getConfigDir()); }
         catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams configuration", exception); }
 
-        teamManager = new TeamManager(); teamStorage = new TeamStorage(); permissionService = createPermissionService(); glowManager = new GlowManager(); teleportManager = new TeamTeleportManager(); economyProvider = new ItemEconomyProvider();
+        teamManager = new TeamManager(); teamStorage = new TeamStorage(); permissionService = new FabricPermissionService(); glowManager = new GlowManager(); teleportManager = new TeamTeleportManager(); economyProvider = new ItemEconomyProvider();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> { loadTeamData(server); TeamBankLogManager.pruneAll(); });
         ServerLifecycleEvents.SERVER_STARTED.register(JustTeamsFabric::registerPermissionNodes);
@@ -110,20 +110,6 @@ public final class JustTeamsFabric implements ModInitializer {
         LOGGER.info("Published {} JustTeams permission nodes to LuckPerms tab completions.", registered);
     }
 
-    private static PermissionService createPermissionService() {
-        try {
-            Class.forName(
-                    "net.luckperms.api.LuckPermsProvider",
-                    false,
-                    JustTeamsFabric.class.getClassLoader()
-            );
-            LOGGER.info("LuckPerms API detected; JustTeams permission integration is enabled.");
-            return new LuckPermsPermissionService();
-        } catch (ClassNotFoundException | LinkageError ignored) {
-            LOGGER.info("LuckPerms API not found; using built-in JustTeams permission defaults.");
-            return PermissionService.defaults();
-        }
-    }
 
     private void loadTeamData(MinecraftServer server) { try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); } }
     private void saveTeamData(MinecraftServer server, boolean logSuccess) { try { teamStorage.save(teamManager); if (logSuccess) LOGGER.info("Saved {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { LOGGER.error("Unable to save JustTeams data", exception); } }
