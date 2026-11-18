@@ -20,6 +20,7 @@ public final class TeamLeaderboardCommandExtensions {
         if (team == null) return;
 
         team.addChild(CommandManager.literal("top")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_TOP))
                 .executes(context -> openCategories(context.getSource()))
                 .then(CommandManager.argument("category", StringArgumentType.word())
                         .executes(context -> openCategory(
