@@ -27,6 +27,6 @@
 		"minecraft": "1.21.11",
 		"java": ">=21",
 		"fabric-api": "*",
-		"fabric-permissions-api-v0": ">=0.6.0"
+		"fabric-permissions-api-v0": ">=0.6.1"
 	}
 }

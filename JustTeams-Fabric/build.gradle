@@ -34,8 +34,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// The API LuckPerms uses to observe permission checks and expose nodes to its tab completions.
-	modImplementation "me.lucko:fabric-permissions-api:0.6.1"
+	// Bundle the Fabric Permissions API so its classes are always available to JustTeams.
+	// LuckPerms listens to this API and records observed nodes for its permission tree.
+	include(modImplementation("me.lucko:fabric-permissions-api:0.6.1"))
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
