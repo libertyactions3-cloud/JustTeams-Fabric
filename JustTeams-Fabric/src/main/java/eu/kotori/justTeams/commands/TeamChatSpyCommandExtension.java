@@ -20,9 +20,11 @@ public final class TeamChatSpyCommandExtension {
         if (team == null) return;
 
         team.addChild(CommandManager.literal("chatspy")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.CHAT_SPY))
                 .executes(context -> toggle(context.getSource()))
                 .build());
         team.addChild(CommandManager.literal("spy")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.CHAT_SPY))
                 .executes(context -> toggle(context.getSource()))
                 .build());
     }
