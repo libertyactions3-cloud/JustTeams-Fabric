@@ -18,16 +18,19 @@ public final class TeamMetadataCommandExtensions {
         if (team == null) return;
 
         team.addChild(CommandManager.literal("settag")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETTAG))
                 .then(CommandManager.argument("tag", StringArgumentType.word())
                         .executes(context -> setTag(context.getSource(), StringArgumentType.getString(context, "tag"))))
                 .build());
 
         team.addChild(CommandManager.literal("setdescription")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_SETDESCRIPTION))
                 .then(CommandManager.argument("description", StringArgumentType.greedyString())
                         .executes(context -> setDescription(context.getSource(), StringArgumentType.getString(context, "description"))))
                 .build());
 
         team.addChild(CommandManager.literal("public")
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_PUBLIC))
                 .executes(context -> togglePublic(context.getSource()))
                 .build());
     }
