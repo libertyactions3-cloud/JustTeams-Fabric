@@ -27,7 +27,7 @@ public final class TeamCreationCommandExtensions {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         CommandNode<ServerCommandSource> team=dispatcher.getRoot().getChild("team"); if(team==null)return;
         LiteralArgumentBuilder<ServerCommandSource> replacement=CommandManager.literal("create")
-                .requires(source->source.getEntity() instanceof ServerPlayerEntity player&&JustTeamsFabric.permissions().has(player,JustTeamsPermissions.COMMAND_CREATE))
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CREATE))
                 .executes(context->usage(context.getSource()))
                 .then(CommandManager.argument("name",StringArgumentType.word())
                         .executes(context->usage(context.getSource()))
