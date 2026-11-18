@@ -6,11 +6,10 @@ import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.command.ServerCommandSource;
 
 /**
- * Resolves JustTeams permissions through the Fabric Permissions API.
+ * Resolves JustTeams permissions using the same explicit-value lookup pattern as EssentialCommands.
  *
- * The fallback checks distinguish an explicitly configured value from an unset node, allowing
- * JustTeams' declared parent relationships to behave like the Paper permission hierarchy while
- * using the same Permissions.check API as Multiverse 1.21.11.
+ * The Optional returned by Fabric Permissions API distinguishes an explicit grant or denial from
+ * an unset node. Unset values are then resolved through JustTeams' declared parent groups/defaults.
  */
 public final class FabricPermissionService implements PermissionService {
 
@@ -21,25 +20,8 @@ public final class FabricPermissionService implements PermissionService {
         );
         return JustTeamsPermissionDefaults.resolve(
                 permission,
-                node -> permissionValue(source, node),
+                node -> Permissions.getPermissionValue(source, node).orElse(null),
                 operator
         );
-    }
-
-    /**
-     * Returns the explicit permission value, or null when the permission is not set.
-     *
-     * Fabric Permissions API exposes fallback-aware checks rather than a separate public
-     * tri-state result. Checking with both possible fallbacks lets us tell an explicit grant
-     * or denial apart from an unset permission.
-     */
-    private Boolean permissionValue(ServerCommandSource source, String permission) {
-        boolean allowWhenUnset = Permissions.check(source, permission, true);
-        boolean denyWhenUnset = Permissions.check(source, permission, false);
-
-        if (allowWhenUnset != denyWhenUnset) {
-            return null;
-        }
-        return allowWhenUnset;
     }
 }
