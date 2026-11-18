@@ -27,39 +27,39 @@ public final class TeamCommandParityExtension {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         CommandNode<ServerCommandSource> team = dispatcher.getRoot().getChild("team");
         if (team == null) return;
-        team.addChild(CommandManager.literal("invite")
+        team.addChild(CommandManager.literal("invite").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_INVITE))
                 .then(CommandManager.argument("player", StringArgumentType.word())
                         .suggests(TeamCommandSuggestions.ONLINE_PLAYERS)
                         .executes(c -> executeInvite(c.getSource(), StringArgumentType.getString(c, "player"))))
                 .executes(c -> usage(c.getSource(), "/team invite <player>"))
                 .build());
-        team.addChild(CommandManager.literal("leave")
+        team.addChild(CommandManager.literal("leave").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_LEAVE))
                 .then(CommandManager.argument("teamName", StringArgumentType.word())
                         .executes(c -> executeLeave(c.getSource(), StringArgumentType.getString(c, "teamName"))))
                 .executes(c -> usage(c.getSource(), "/team leave <teamName>"))
                 .build());
-        team.addChild(CommandManager.literal("accept")
+        team.addChild(CommandManager.literal("accept").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_ACCEPT))
                 .then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> executeAccept(c.getSource(), StringArgumentType.getString(c, "team"))))
                 .executes(c -> usage(c.getSource(), "/team accept <teamName>"))
                 .build());
-        team.addChild(CommandManager.literal("deny")
+        team.addChild(CommandManager.literal("deny").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_DENY))
                 .then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> executeDeny(c.getSource(), StringArgumentType.getString(c, "team"))))
                 .executes(c -> usage(c.getSource(), "/team deny <teamName>"))
                 .build());
-        team.addChild(CommandManager.literal("join")
+        team.addChild(CommandManager.literal("join").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_JOIN))
                 .then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> executeJoin(c.getSource(), StringArgumentType.getString(c, "team"))))
                 .executes(c -> usage(c.getSource(), "/team join <teamName>"))
                 .build());
-        team.addChild(CommandManager.literal("unjoin")
+        team.addChild(CommandManager.literal("unjoin").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_UNJOIN))
                 .then(CommandManager.argument("team", StringArgumentType.word())
                         .executes(c -> executeUnjoin(c.getSource(), StringArgumentType.getString(c, "team"))))
                 .executes(c -> usage(c.getSource(), "/team unjoin <teamName>"))
                 .build());
-        team.addChild(CommandManager.literal("pvp").executes(c -> executePvp(c.getSource())).build());
-        team.addChild(CommandManager.literal("chat").executes(c -> executeChat(c.getSource())).build());
+        team.addChild(CommandManager.literal("pvp").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_PVP)).executes(c -> executePvp(c.getSource())).build());
+        team.addChild(CommandManager.literal("chat").requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_CHAT)).executes(c -> executeChat(c.getSource())).build());
     }
 
     private static int executeInvite(ServerCommandSource source, String targetName) {
