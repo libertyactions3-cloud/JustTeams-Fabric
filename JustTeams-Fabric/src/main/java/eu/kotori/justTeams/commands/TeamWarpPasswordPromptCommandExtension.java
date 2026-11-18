@@ -25,6 +25,7 @@ public final class TeamWarpPasswordPromptCommandExtension {
         if (warp == null) return;
 
         warp.addChild(CommandManager.argument("name", StringArgumentType.word())
+                .requires(source -> JustTeamsFabric.permissions().has(source, JustTeamsPermissions.COMMAND_WARP))
                 .executes(context -> executeWithoutPassword(
                         context.getSource(),
                         StringArgumentType.getString(context, "name")))
