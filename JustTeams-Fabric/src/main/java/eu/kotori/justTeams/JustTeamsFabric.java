@@ -26,7 +26,6 @@ import eu.kotori.justTeams.gameplay.TeamFriendlyFire;
 import eu.kotori.justTeams.gameplay.TeamStatsEvents;
 import eu.kotori.justTeams.gui.TeamEnderChestGui;
 import eu.kotori.justTeams.permission.FabricPermissionService;
-import eu.kotori.justTeams.permission.JustTeamsPermissionDefaults;
 import eu.kotori.justTeams.permission.JustTeamsPermissions;
 import eu.kotori.justTeams.permission.PermissionService;
 import eu.kotori.justTeams.storage.TeamStorage;
@@ -35,7 +34,6 @@ import eu.kotori.justTeams.team.TeamManager;
 import eu.kotori.justTeams.team.TeamTeleportManager;
 import eu.kotori.justTeams.util.ChatInputEvents;
 import eu.kotori.justTeams.util.PlayerNameResolver;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -47,10 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 public final class JustTeamsFabric implements ModInitializer {
     public static final String MOD_ID = "justteams";
@@ -75,7 +69,7 @@ public final class JustTeamsFabric implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             loadTeamData(server);
             TeamBankLogManager.pruneAll();
-            registerPermissionNodes(server);
+            JustTeamsPermissions.registerPermissionNodes(server);
         });
         ServerLifecycleEvents.AFTER_SAVE.register((server, flush, force) -> saveTeamData(server, false));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> saveTeamData(server, true));
@@ -103,47 +97,6 @@ public final class JustTeamsFabric implements ModInitializer {
         });
         ChatInputEvents.register(); TeamChatEvents.register(); TeamFriendlyFire.register(); TeamStatsEvents.register();
         LOGGER.info("JustTeams Fabric core initialized");
-    }
-
-    private static void registerPermissionNodes(MinecraftServer server) {
-        if (!FabricLoader.getInstance().isModLoaded("luckperms")) {
-            return;
-        }
-
-        Set<String> permissionNodes = new LinkedHashSet<>();
-        collectPermissionNodes(JustTeamsPermissions.class, permissionNodes);
-        permissionNodes.addAll(JustTeamsPermissionDefaults.declared());
-
-        permissionNodes.addAll(JustTeamsPermissionDefaults.wildcardNodes(permissionNodes));
-
-        for (String permission : permissionNodes) {
-            Permissions.getPermissionValue(server.getCommandSource(), permission);
-        }
-
-        LOGGER.info(
-                "Published {} JustTeams permission nodes to LuckPerms tab completions.",
-                permissionNodes.size()
-        );
-    }
-
-    private static void collectPermissionNodes(Class<?> owner, Set<String> permissionNodes) {
-        for (Field field : owner.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers()) || field.getType() != String.class) {
-                continue;
-            }
-
-            try {
-                String permission = (String) field.get(null);
-                if (permission != null && permission.startsWith("justteams.")) {
-                    permissionNodes.add(permission);
-                }
-            } catch (IllegalAccessException exception) {
-                throw new IllegalStateException(
-                        "Unable to read JustTeams permission registry field " + field.getName(),
-                        exception
-                );
-            }
-        }
     }
 
     private void loadTeamData(MinecraftServer server) { try { teamStorage.load(teamManager); LOGGER.info("Loaded {} team(s) including persistent bank inventories", teamManager.size()); } catch (IOException exception) { throw new RuntimeException("Unable to load JustTeams data", exception); } }

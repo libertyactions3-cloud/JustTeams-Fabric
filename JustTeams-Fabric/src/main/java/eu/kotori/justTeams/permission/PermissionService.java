@@ -1,16 +1,13 @@
 package eu.kotori.justTeams.permission;
 
-import net.minecraft.command.permission.Permission;
-import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 /**
  * Central permission facade for JustTeams.
  *
- * Permission values are queried against the active command source so Fabric permission providers
- * such as LuckPerms can apply the source's player context. Built-in defaults mirror the Paper
- * permission hierarchy declared by JustTeams.
+ * Every check is delegated to the ECPerms-style registry so command predicates and execution-time
+ * checks use the same Fabric Permissions API lookup and fallback rules.
  */
 public interface PermissionService {
     boolean has(ServerCommandSource source, String permission);
@@ -20,19 +17,10 @@ public interface PermissionService {
     }
 
     default boolean hasAny(ServerCommandSource source, String... permissions) {
-        for (String permission : permissions) {
-            if (has(source, permission)) {
-                return true;
-            }
-        }
-        return false;
+        return JustTeamsPermissions.checkAny(source, permissions, 2);
     }
 
     static PermissionService defaults() {
-        return (source, permission) -> JustTeamsPermissionDefaults.resolve(
-                permission,
-                ignored -> null,
-                source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))
-        );
+        return JustTeamsPermissions::checkWithOperatorFallback;
     }
 }
