@@ -1,6 +1,7 @@
 package eu.kotori.justTeams.mixin;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import eu.kotori.justTeams.commands.VanillaTeamCommandRenamer;
 import net.minecraft.server.command.ServerCommandSource;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +23,7 @@ class VanillaTeamCommandMixinTest {
                         .executes(context -> 1)
                         .then(LiteralArgumentBuilder.<ServerCommandSource>literal("list"));
 
-        var renamed = VanillaTeamCommandMixin.renameVanillaTeamRoot(original);
+        var renamed = VanillaTeamCommandRenamer.renameRoot(original);
 
         assertEquals("scoreboardteam", renamed.getLiteral());
         assertSame(operatorOnly, renamed.getRequirement());
@@ -37,6 +38,6 @@ class VanillaTeamCommandMixinTest {
         LiteralArgumentBuilder<ServerCommandSource> original =
                 LiteralArgumentBuilder.<ServerCommandSource>literal("scoreboard");
 
-        assertSame(original, VanillaTeamCommandMixin.renameVanillaTeamRoot(original));
+        assertSame(original, VanillaTeamCommandRenamer.renameRoot(original));
     }
 }

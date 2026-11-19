@@ -1,7 +1,7 @@
 package eu.kotori.justTeams.mixin;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.tree.CommandNode;
+import eu.kotori.justTeams.commands.VanillaTeamCommandRenamer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.command.TeamCommand;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,28 +31,6 @@ public abstract class VanillaTeamCommandMixin {
     private static LiteralArgumentBuilder<ServerCommandSource> justTeams$renameVanillaTeamRoot(
             LiteralArgumentBuilder<ServerCommandSource> original
     ) {
-        return renameVanillaTeamRoot(original);
-    }
-
-    static LiteralArgumentBuilder<ServerCommandSource> renameVanillaTeamRoot(
-            LiteralArgumentBuilder<ServerCommandSource> original
-    ) {
-        if (!"team".equals(original.getLiteral())) {
-            return original;
-        }
-
-        LiteralArgumentBuilder<ServerCommandSource> renamed =
-                LiteralArgumentBuilder.<ServerCommandSource>literal("scoreboardteam")
-                        .requires(original.getRequirement());
-
-        if (original.getCommand() != null) {
-            renamed.executes(original.getCommand());
-        }
-
-        for (CommandNode<ServerCommandSource> child : original.getArguments()) {
-            renamed.then(child);
-        }
-
-        return renamed;
+        return VanillaTeamCommandRenamer.renameRoot(original);
     }
 }
